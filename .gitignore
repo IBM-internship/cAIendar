@@ -6,3 +6,15 @@ obj/
 *.suo
 *.exe
 *.dll
+.env
+*.zip
+*.pkl
+.DS_Store
+prompts/
+__pycache__
+testing/
+logs/
+*.pub
+id_rsa
+node_modules/
+.env
