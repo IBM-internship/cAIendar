@@ -18,7 +18,23 @@ namespace AiCalendarAssistant
 
             builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddEntityFrameworkStores<ApplicationDbContext>();
-            builder.Services.AddControllersWithViews();
+
+			builder.Services.AddAuthentication()
+	            .AddGoogle(options =>
+	            {
+		            options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
+		            options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
+
+		            // Optional: Configure additional options
+		            options.CallbackPath = "/signin-google"; // Default callback path
+		            options.SaveTokens = true; // Save access and refresh tokens
+
+		            // Optional: Request additional scopes
+		            options.Scope.Add("profile");
+		            options.Scope.Add("email");
+	            });
+
+			builder.Services.AddControllersWithViews();
 
             var app = builder.Build();
 
