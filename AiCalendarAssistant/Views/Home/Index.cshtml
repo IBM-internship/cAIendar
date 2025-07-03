@@ -1,8 +1,58 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<header class="bg-primary text-white py-5">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold">AI Calendar Assistant</h1>
+        <p class="lead">Планирай по-умно. Управлявай времето си с помощта на изкуствен интелект.</p>
+        <a class="btn btn-light btn-lg mt-3" asp-page="/Account/Register">Започни сега</a>
+    </div>
+</header>
+
+<section class="py-5 bg-light">
+    <div class="container text-center">
+        <h2 class="mb-4">Какво предлага приложението?</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <i class="bi bi-calendar3 fs-1 text-primary"></i>
+                        <h5 class="card-title mt-3">Личен календар</h5>
+                        <p class="card-text">Създавай, редактирай и управлявай своите събития лесно и интуитивно.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <i class="bi bi-robot fs-1 text-primary"></i>
+                        <h5 class="card-title mt-3">AI препоръки</h5>
+                        <p class="card-text">Изкуственият интелект ти предлага оптимални времена за задачи и срещи.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <i class="bi bi-people fs-1 text-primary"></i>
+                        <h5 class="card-title mt-3">Споделяне и публичност</h5>
+                        <p class="card-text">Споделяй определени събития с други потребители или ги прави публични.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container text-center">
+        <h2 class="mb-4">Виж как изглежда</h2>
+        <img src="/images/calendar-preview.png" alt="Calendar Preview" class="img-fluid rounded shadow" />
+    </div>
+</section>
+
+<footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+        <p class="mb-0">&copy; 2025 AI Calendar Assistant. Всички права запазени.</p>
+        <p class="mb-0"><a href="/Privacy" class="text-white text-decorat

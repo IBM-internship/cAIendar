@@ -1,0 +1,96 @@
+﻿@{
+    ViewData["Title"] = "AI Календар";
+}
+
+<div class="container mt-5">
+    <div class="text-center mb-4">
+        <h1 class="display-5">🧠 AI Calendar Assistant</h1>
+        <p class="lead text-muted">Планирай умно. Живей по-добре.</p>
+    </div>
+
+    <div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-primary" id="addEventBtn">+ Ново събитие</button>
+    </div>
+
+    <!-- Карта за календара -->
+    <div class="card shadow-sm">
+        <div class="card-body p-3">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+    #calendar {
+        max-width: 100%;
+    }
+
+    .fc .fc-toolbar-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .fc-daygrid-day-number {
+        font-weight: 500;
+        color: #0d6efd; /* Bootstrap primary */
+    }
+
+    .fc-daygrid-day-frame {
+        padding: 6px;
+    }
+
+    .fc-theme-standard .fc-scrollgrid {
+        border: 1px solid #dee2e6; /* Bootstrap border color */
+    }
+
+    .fc .fc-button-primary {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+        .fc .fc-button-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+        }
+</style>
+
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+
+<script>
+        document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('calendar');
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'bg',
+            selectable: true,
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: [
+                {
+                    title: 'Събитие пример',
+                    start: new Date().toISOString().split('T')[0]
+                }
+            ],
+            select: function (info) {
+                const title = prompt('Заглавие на събитието:');
+                if (title) {
+                    calendar.addEvent({
+                        title: title,
+                        start: info.start,
+                        end: info.end,
+                        allDay: info.allDay
+                    });
+                }
+            }
+        });
+
+        calendar.render();
+    });
+
+</script>
