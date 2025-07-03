@@ -2,7 +2,7 @@
 
 namespace AiCalendarAssistant.Controllers
 {
-	public class EventsController : Controller
+	public class EventsController : BaseController
 	{
 		public IActionResult Index()
 		{
