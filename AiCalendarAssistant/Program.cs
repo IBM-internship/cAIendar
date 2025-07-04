@@ -28,21 +28,35 @@ namespace AiCalendarAssistant
             builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
 
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+            
+            builder.Services.AddDefaultIdentity<IdentityUser>(options => 
+                {
+                    options.SignIn.RequireConfirmedAccount = false;
+                    options.Password.RequireDigit = false;
+                    options.Password.RequireLowercase = false;
+                    options.Password.RequireUppercase = false;
+                    options.Password.RequireNonAlphanumeric = false;
+                    options.Password.RequiredLength = 4;
+                })
+                .AddEntityFrameworkStores<ApplicationDbContext>();
 
-            builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
-            {
-                options.SignIn.RequireConfirmedAccount = false;
-                options.SignIn.RequireConfirmedEmail = false;
+			builder.Services.AddAuthentication()
+	            .AddGoogle(options =>
+	            {
+		            options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
+		            options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
 
-                options.Password.RequireDigit = false;
-                options.Password.RequireLowercase = false;
-                options.Password.RequireUppercase = false;
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequiredLength = 4;
-            })
-            .AddEntityFrameworkStores<ApplicationDbContext>();
+		            // Optional: Configure additional options
+		            options.CallbackPath = "/signin-google"; // Default callback path
+		            options.SaveTokens = true; // Save access and refresh tokens
 
-            builder.Services.AddControllersWithViews();
+		            // Optional: Request additional scopes
+		            options.Scope.Add("profile");
+		            options.Scope.Add("email");
+	            });
+
+			builder.Services.AddControllersWithViews();
+
 
             var app = builder.Build();
 
