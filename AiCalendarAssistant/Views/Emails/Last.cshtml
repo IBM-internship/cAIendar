@@ -1,0 +1,28 @@
+﻿@model List<AiCalendarAssistant.Models.Email>
+
+@{
+    ViewData["Title"] = "Last 10 Emails";
+}
+
+<h2>@ViewData["Title"]</h2>
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Date</th>
+        <th>From</th>
+        <th>Subject</th>
+        <th>Snippet</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var email in Model)
+    {
+        <tr>
+            <td>@email.Date.ToString("g")</td>
+            <td>@email.From</td>
+            <td>@email.Subject</td>
+            <td>@email.Snippet</td>
+        </tr>
+    }
+    </tbody>
+</table>
