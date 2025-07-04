@@ -1,4 +1,5 @@
 using AiCalendarAssistant.Data;
+using AiCalendarAssistant.Data.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,10 +11,22 @@ namespace AiCalendarAssistant
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Load connection string from file
+            string connectionStringFile = "db_connection.txt";
+
+            if (!File.Exists(connectionStringFile))
+            {
+                throw new FileNotFoundException("Connection string file not found.", connectionStringFile);
+            }
+
+            string connectionString = File.ReadAllText(connectionStringFile).Trim();
+
             // Add services to the container.
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString));
+            //var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? 
+            //    throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            
+            builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
+
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
             
             builder.Services.AddDefaultIdentity<IdentityUser>(options => 
@@ -23,7 +36,7 @@ namespace AiCalendarAssistant
                     options.Password.RequireLowercase = false;
                     options.Password.RequireUppercase = false;
                     options.Password.RequireNonAlphanumeric = false;
-                    options.Password.RequiredLength = 1;
+                    options.Password.RequiredLength = 4;
                 })
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
@@ -43,6 +56,7 @@ namespace AiCalendarAssistant
 	            });
 
 			builder.Services.AddControllersWithViews();
+
 
             var app = builder.Build();
 
