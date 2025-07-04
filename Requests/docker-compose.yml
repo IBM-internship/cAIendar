@@ -2,11 +2,11 @@ services:
   dotnet-dev:
     build: .
     image: my/dotnet9-dev
-    # mount your project folder into /workspace
     volumes:
       - ./:/workspace
     working_dir: /workspace
-    # map host port 2222 → container port 22 (for ssh)
     ports:
       - "2222:22"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 

@@ -6,7 +6,7 @@ using System.Text.Json;                            // NEW
 
 namespace WatsonxDemo.Services;
 
-internal sealed class WatsonxClient
+internal sealed class WatsonxClient: ILlmClient
 {
     private readonly HttpClient     _http;
     private readonly TokenProvider  _tokens;
@@ -16,22 +16,11 @@ internal sealed class WatsonxClient
                          IOptions<WatsonxSettings> cfg)
         => (_http, _tokens, _cfg) = (http, tokens, cfg.Value);
 
-	public async Task<string?> ChatAsync(string question,
-                                     CancellationToken ct = default)
-{
-    var url = $"{_cfg.Url.TrimEnd('/')}/ml/v1/text/chat" +
-              $"?version={_cfg.Version}";
-
-    var request = new ChatRequest(
-        _cfg.ModelId,
-        _cfg.ProjectId,
-        new[]
-        {
-            new ChatMessage("system",
-                new[] { new ChatContent("text", "You are a helpful assistant.") }),
-            new ChatMessage("user",
-                new[] { new ChatContent("text", question) })
-        });
+    public async Task<string?> ChatAsync(ChatRequest request,
+                                         CancellationToken ct = default)
+    {
+        var url = $"{_cfg.Url.TrimEnd('/')}/ml/v1/text/chat" +
+                  $"?version={_cfg.Version}";
 
     var opts = new JsonSerializerOptions
     {
