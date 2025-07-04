@@ -4,8 +4,8 @@ using WatsonxDemo.Services;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// builder.Services.Configure<WatsonxSettings>(
-//     builder.Configuration.GetSection("Watsonx"));
+builder.Services.Configure<WatsonxSettings>(
+    builder.Configuration.GetSection("Watsonx"));
 
 builder.Services.AddHttpClient<TokenProvider>();
 builder.Services.AddHttpClient<WatsonxClient>();
@@ -17,12 +17,9 @@ while (true)
 {
     Console.Write("You > ");
     var prompt = Console.ReadLine();
-	Console.WriteLine();
     if (string.IsNullOrWhiteSpace(prompt)) break;
-	Console.WriteLine("Thinking...\n");
 
     var answer = await client.ChatAsync(prompt!);
-	Console.WriteLine("Done!\n");
     Console.WriteLine($"Bot > {answer}\n");
 }
 
