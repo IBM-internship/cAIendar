@@ -28,14 +28,45 @@ builder.Services.AddSingleton<ILlmClient>(sp =>
 var host   = builder.Build();
 var router = host.Services.GetRequiredService<ChatRouter>();
 
-while (true)
-{
-    Console.Write("You > ");
-    var prompt = Console.ReadLine();
-    if (string.IsNullOrWhiteSpace(prompt)) break;
+// while (true)
+// {
+//     Console.Write("You > ");
+//     var prompt = Console.ReadLine();
+//     if (string.IsNullOrWhiteSpace(prompt)) break;
+//
+//     using var doc = JsonDocument.Parse(JsonSerializer.Serialize(new { prompt }));
+//     var answer = await router.PromptAsync(doc);
+//     Console.WriteLine($"Bot > {answer}\n");
+// }
 
-    using var doc = JsonDocument.Parse(JsonSerializer.Serialize(new { prompt }));
-    var answer = await router.PromptAsync(doc);
-    Console.WriteLine($"Bot > {answer}\n");
+using (var simple = JsonDocument.Parse(
+    """{ "prompt": "What is the capital of France?" }"""))
+{
+	var resp = await router.PromptAsync(simple);
+    Console.WriteLine($"Capital? {resp}\n");
 }
 
+
+// --- structured JSON schema example ---
+var schemaJson =
+    """
+    {
+      "prompt": "List the capitals of France and Germany.",
+      "system": "Return the answer as JSON that matches the schema.",
+      "schema": {
+        "title": "CountryCapitals",
+        "type": "object",
+        "properties": {
+          "france":  { "type": "string", "description": "Capital of France" },
+          "germany": { "type": "string", "description": "Capital of Germany" }
+        },
+        "required": ["france", "germany"]
+      }
+    }
+    """;
+
+using (var withSchema = JsonDocument.Parse(schemaJson))
+{
+    var resp2 = await router.PromptAsync(withSchema);
+    Console.WriteLine($"Capitals JSON: {resp2}\n");
+}
