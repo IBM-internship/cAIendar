@@ -4,6 +4,9 @@ using System.Net.Http.Json;
 using System.Collections.Generic;                 
 using WatsonxDemo.Models;                     
 
+using Microsoft.Extensions.Options;
+
+
 namespace WatsonxDemo.Services;
 
 internal sealed class TokenProvider
