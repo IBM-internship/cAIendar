@@ -11,7 +11,6 @@ namespace AiCalendarAssistant.Data
         {
         }
 
-        public DbSet<ApplicationUser> ApplicationUsers { get; set; }
         public DbSet<Event> Events { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
