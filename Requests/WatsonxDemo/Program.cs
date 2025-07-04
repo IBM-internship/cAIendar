@@ -70,3 +70,58 @@ using (var withSchema = JsonDocument.Parse(schemaJson))
     var resp2 = await router.PromptAsync(withSchema);
     Console.WriteLine($"Capitals JSON: {resp2}\n");
 }
+
+// --- function calling example ---
+var functionJson =
+    // """
+    // {
+    //   "prompt": "What's the weather like in Berlin?",
+    //   "functions": [
+    //     {
+    //       "name": "get_current_weather",
+    //       "description": "Get the current weather in a city",
+    //       "parameters": {
+    //         "type": "object",
+    //         "properties": {
+    //           "location": {
+    //             "type": "string"
+    //           }
+    //         },
+    //         "required": ["location"]
+    //       }
+    //     }
+    //   ],
+    //   "function_call": "auto"
+    // }
+    // """;
+	"""
+	{
+	  "prompt": "What's the weather like in Berlin?",
+	  "tools": [
+		{
+		  "type": "function",
+		  "function": {
+			"name": "get_current_weather",
+			"description": "Get the current weather in a city",
+			"parameters": {
+			  "type": "object",
+			  "properties": {
+				"location": {
+				  "type": "string",
+				  "description": "City name"
+				}
+			  },
+			  "required": ["location"]
+			}
+		  }
+		}
+	  ],
+	  "tool_choice": "auto"
+	}
+	""";
+
+using (var withFunction = JsonDocument.Parse(functionJson))
+{
+    var resp3 = await router.PromptAsync(withFunction);
+    Console.WriteLine($"Weather JSON: {resp3}\n");
+}

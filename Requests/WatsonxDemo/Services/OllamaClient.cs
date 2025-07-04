@@ -24,15 +24,22 @@ internal sealed class OllamaClient : ILlmClient
         var baseUrl = _cfg.OllamaUrl.TrimEnd('/');
         var url     = $"{baseUrl}/v1/chat/completions";          // OpenAI-style :contentReference[oaicite:1]{index=1}
 
-        var reqBody = new
-        {
-            model = _cfg.OllamaModel,
+	var tools = request.Tools ?? request.Functions?.Select(fn => new {
+					  type = "function",
+					  function = new { fn.Name, fn.Description, parameters = fn.Parameters }
+				   });
+
+		var reqBody = new
+		{
+			model = _cfg.OllamaModel,
             messages = request.Messages.Select(m => new
             {
                 role    = m.Role,
                 content = m.Content.First().Text
             }).ToArray()
-        };
+			tools = tools?.Any() == true ? tools : null,
+			tool_choice = request.ToolChoice ?? request.FunctionCall ?? "auto"
+		};
 
         var resp = await _http.PostAsJsonAsync(url, reqBody, JsonOpts, ct);
         resp.EnsureSuccessStatusCode();
