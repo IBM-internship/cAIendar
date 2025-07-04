@@ -2,8 +2,9 @@
 using System.Text.Json.Serialization;             
 using System.Net.Http.Json;
 using System.Collections.Generic;                 
-using Services.WatsonxSettings;
 using WatsonxDemo.Models;                     
+
+namespace WatsonxDemo.Services;
 
 internal sealed class TokenProvider
 {
