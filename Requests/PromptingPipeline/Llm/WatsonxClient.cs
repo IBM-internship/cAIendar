@@ -43,9 +43,10 @@ internal sealed class WatsonxClient : ILlmClient
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _tokens.GetAsync(ct));
 
         var resp = await _http.SendAsync(req, ct);
+        var json = await resp.Content.ReadFromJsonAsync<JsonElement>(ct);
+		Console.WriteLine($"Watsonx response: {json}");
         resp.EnsureSuccessStatusCode();
 
-        var json = await resp.Content.ReadFromJsonAsync<JsonElement>(ct);
         return CommonJson.ParseResponse(json);
     }
 }

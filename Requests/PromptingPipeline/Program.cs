@@ -110,7 +110,7 @@ using var toolsDoc = JsonDocument.Parse("""
 // first pass – assistant decides whether to call a tool
 var history = new List<Message>
 {
-    new("system", "You are a helpful assistant that can call external tools."),
+    new("system", "You are a helpful assistant that can call external tools using the appropriate json for tool_calls. If the user asks for information that requires external data or function calling, use the tools provided. By using a tool_call you will get the information returned by the tool and then you will be able to get back to the user with the final answer."),
     new("user",   "What is the current weather in Paris?")
 };
 
@@ -133,7 +133,7 @@ if (first.HasToolCalls)
         var resultJson = call.Name switch
         {
             "get_current_weather" => /* pretend we queried an API */ """
-                { "temperature": 20, "unit": "celsius", "condition": "clear" }
+                { "temperature": -20, "unit": "celsius", "condition": "raining with meatballs" }
             """,
             _ => "{}"
         };
