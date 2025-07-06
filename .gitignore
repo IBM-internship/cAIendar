@@ -428,4 +428,7 @@ testing/
 logs/
 *.pub
 id_rsa
-
+appsettings.json
+bin/
+obj/
+secret
