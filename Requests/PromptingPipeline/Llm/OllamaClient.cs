@@ -26,7 +26,7 @@ internal sealed class OllamaClient : ILlmClient
         var payload = new Dictionary<string, object?>
         {
             ["model"]    = _cfg.OllamaModel,
-            ["messages"] = p.Messages.Select(m => new { role = m.Role, content = m.Content }).ToArray()
+            ["messages"] = p.Messages.Select(m => new { role = m.Role, content = m.Content, tool_call_id = m.ToolCallId }).ToArray()
         };
         if (p.ResponseFormat.HasValue) payload["response_format"] = p.ResponseFormat.Value;
         if (p.Tools.HasValue) { payload["tools"] = p.Tools.Value; payload["tool_choice"] = p.ToolChoice ?? "auto"; }

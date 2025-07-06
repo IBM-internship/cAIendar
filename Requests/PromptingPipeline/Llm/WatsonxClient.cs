@@ -30,7 +30,7 @@ internal sealed class WatsonxClient : ILlmClient
         {
             ["model_id"]   = _cfg.ModelId,
             ["project_id"] = _cfg.ProjectId,
-            ["messages"]   = p.Messages.Select(m => new { role = m.Role, content = m.Content }).ToArray()
+            ["messages"]   = p.Messages.Select(m => new { role = m.Role, content = m.Content, tool_call_id = m.ToolCallId }).ToArray()
         };
         if (p.ResponseFormat.HasValue) payload["response_format"] = p.ResponseFormat.Value;
         if (p.Tools.HasValue) { payload["tools"] = p.Tools.Value; payload["tool_choice"] = p.ToolChoice ?? "auto"; }

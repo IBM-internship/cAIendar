@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace PromptingPipeline.Models;
 
-public sealed record Message(string Role, string Content);
+public sealed record Message(string Role, string Content, string? ToolCallId = null);
 
 public sealed record ToolCall(string Id, string Name, JsonElement Arguments);
 

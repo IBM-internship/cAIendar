@@ -139,7 +139,7 @@ if (first.HasToolCalls)
         };
 
         // append tool result for second round
-        history.Add(new("tool", resultJson));
+        history.Add(new("tool", resultJson, call.Id));
     }
 
     // second pass – assistant gets the tool output and produces the final answer
