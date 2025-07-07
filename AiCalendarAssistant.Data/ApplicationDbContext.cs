@@ -14,6 +14,8 @@ namespace AiCalendarAssistant.Data
         public DbSet<Event> Events { get; set; }
         public DbSet<Email> Emails { get; set; }
         public DbSet<UserNote> UserNotes { get; set; }
+        public DbSet<Chat> Chats { get; set; }
+        public DbSet<Message> Messages { get; set; }
        
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -22,6 +24,8 @@ namespace AiCalendarAssistant.Data
             builder.ApplyConfiguration(new EventConfiguration());
             builder.ApplyConfiguration(new EmailConfiguration());
             builder.ApplyConfiguration(new UserNoteConfiguration());
+            builder.ApplyConfiguration(new ChatConfiguration());
+            builder.ApplyConfiguration(new MessageConfiguration());
 
             base.OnModelCreating(builder);
         }
