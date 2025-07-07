@@ -34,9 +34,11 @@ internal sealed class EmailProcessor
                 "date": { "type": "string" },
                 "start_time": { "type": "string" },
                 "end_time": { "type": "string" },
-                "description": { "type": "string" }
+                "description": { "type": "string" },
+                "is_in_person": { "type": "boolean" },
+                "has_end_time": { "type": "boolean" }
               },
-              "required": ["title_of_event", "date", "start_time", "end_time", "importance", "description"],
+              "required": ["title_of_event", "date", "start_time", "end_time", "importance", "description", "has_end_time"],
               "additionalProperties": false
             }
           }

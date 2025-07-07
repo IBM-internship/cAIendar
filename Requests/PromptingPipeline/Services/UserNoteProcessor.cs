@@ -34,9 +34,11 @@ internal sealed class UserNoteProcessor
                 "date": { "type": "string" },
                 "start_time": { "type": "string" },
                 "end_time": { "type": "string" },
-                "description": { "type": "string" }
+                "description": { "type": "string" },
+                "is_in_person": { "type": "boolean" },
+                "has_end_time": { "type": "boolean" }
               },
-              "required": ["title_of_event", "date", "start_time", "end_time", "importance", "description"],
+              "required": ["title_of_event", "date", "start_time", "importance", "description", "has_end_time"],
               "additionalProperties": false
             }
           }
@@ -50,6 +52,8 @@ internal sealed class UserNoteProcessor
             new("user",
                 $"Extract the imporant parts of this note and format them in the coresponding json so the event can be added into my calendar\n\nTitle: {note.Title}\nBody:\n{note.Body}\nDate Created: {note.DateCreated}\nTime Created: {note.TimeCreated}\nDay of Week: {note.DayOfWeek}")
         },
+		// Extra: new(){["temperature"] = 0.7, ["top_p"] = 0.9},
+		// Extra: new(){["temperature"] = 1.5, ["top_p"] = 0.8},
         ResponseFormat: schemaDoc.RootElement);
 
         var response = await _router.SendAsync(prompt, ct);

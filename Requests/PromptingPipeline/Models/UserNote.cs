@@ -5,5 +5,5 @@ public sealed record UserNote(
     string Body,
 	string DateCreated,
 	string TimeCreated,
-	string IsProcessed = "false",
-	string DayOfWeek); // again not important/dont keep in the db
+	string DayOfWeek, // again not important/dont keep in the db
+	string IsProcessed = "false");
