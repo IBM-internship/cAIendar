@@ -1,3 +1,2 @@
 ﻿Authentication__Google__ClientId=
 Authentication__Google__ClientSecret=
-ConnectionStrings__DefaultConnection=
