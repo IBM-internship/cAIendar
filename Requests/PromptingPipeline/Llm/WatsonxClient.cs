@@ -44,7 +44,7 @@ internal sealed class WatsonxClient : ILlmClient
 
         var resp = await _http.SendAsync(req, ct);
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(ct);
-		Console.WriteLine($"Watsonx response: {json}");
+		// Console.WriteLine($"Watsonx response: {json}");
         resp.EnsureSuccessStatusCode();
 
         return CommonJson.ParseResponse(json);

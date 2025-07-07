@@ -36,7 +36,7 @@ internal sealed class OllamaClient : ILlmClient
         resp.EnsureSuccessStatusCode();
 
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(ct);
-		Console.WriteLine($"Ollama response: {json}");
+		// Console.WriteLine($"Ollama response: {json}");
         return CommonJson.ParseResponse(json);
     }
 }

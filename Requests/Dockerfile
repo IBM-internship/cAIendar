@@ -1,5 +1,5 @@
 # ---- build/development stage ----
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS dev
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS dev
 
 # install OpenSSH (optional)
 RUN apt-get update \
