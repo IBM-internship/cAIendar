@@ -1,6 +1,7 @@
 using PromptingPipeline.Interfaces;
 using PromptingPipeline.Models;
 using PromptingPipeline.Services;
+using AiCalendarAssistant.Data.Models;
 using System.Text.Json;
 
 namespace PromptingPipeline.Services;
@@ -59,6 +60,23 @@ internal sealed class UserNoteProcessor
         var response = await _router.SendAsync(prompt, ct);
 
         Console.WriteLine($"Extracted UserNote Info → {response.Content}");
-    }
+
+		var n = new Event
+		{
+			Title = response.GetString("title_of_event") ?? string.Empty,
+			Description = response.GetString("description"),
+			Start = DateTime.Parse($"{response.GetString("date")}T{response.GetString("start_time")}:00"),
+			End = response.GetBool("has_end_time") 
+				? DateTime.Parse($"{response.GetString("date")}T{response.GetString("end_time")}:00")
+				: DateTime.Parse($"{response.GetString("date")}T{response.GetString("start_time")}:00"),
+			IsAllDay = false,
+			Color = null,
+			Location = null,
+			IsInPerson = response.GetBool("is_in_person"),
+			MeetingLink = null,
+			UserId = null,
+			User = null
+		};
+	}
 }
 

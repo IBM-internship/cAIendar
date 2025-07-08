@@ -2,7 +2,7 @@ using PromptingPipeline.Interfaces;
 using PromptingPipeline.Models;
 using PromptingPipeline.Services;
 using System.Text.Json;
-
+using AiCalendarAssistant.Data.Models;
 namespace PromptingPipeline.Services;
 
 internal sealed class EmailProcessor
@@ -57,6 +57,30 @@ internal sealed class EmailProcessor
         var response = await _router.SendAsync(prompt, ct);
 
         Console.WriteLine($"Extracted Email Info → {response.Content}");
+
+        var e = new Event
+        {
+            Title = response.GetString("title_of_event"),
+            Description = response.GetString("description"),
+            Start = DateTime.Parse($"{response.GetString("date")}T{response.GetString("start_time")}"),
+            End = response.GetBoolean("has_end_time")
+                ? DateTime.Parse($"{response.GetString("date")}T{response.GetString("end_time")}")
+                : DateTime.Parse($"{response.GetString("date")}T{response.GetString("start_time")}"),
+            IsAllDay = false,
+            Color = null,
+            Location = null,
+            IsInPerson = response.GetBoolean("is_in_person"),
+            MeetingLink = null,
+            UserId = null,
+            User = null
+        };
+		//
+		// Console.WriteLine($"Event Created: {e.Title} on {e.Date.ToShortDateString()} from {e.StartTime} to {e.EndTime}");
+		//
+		// email.IsProcessed = true;
+		//
+		//
+		// await ICalendarService.AddEventAsync(e);
     }
 }
 
