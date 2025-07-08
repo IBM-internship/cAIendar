@@ -50,7 +50,7 @@ internal sealed class EmailProcessor
         {
             new("system", "You are an assistant that extracts information from emails and helps organise the user's calendar events. Pay attention to the format required for the response - hours must be in 24 hour format., you must list the importance of the event, and the date must be in YYYY-MM-DD format."),
             new("user",
-                $"Extract the imporant parts of the email and format them in the coresponding json so the event can be added into my calendar\n\nFrom: {email.From}\nSubject: {email.Subject}\nBody:\n{email.Body}")
+                $"Extract the imporant parts of the email and format them in the coresponding json so the event can be added into my calendar\n\nFrom: {email.SendingUserEmail}\nSubject: {email.Title}\nBody:\n{email.Body}")
         },
         ResponseFormat: schemaDoc.RootElement);
 
