@@ -1,180 +1,87 @@
-﻿// Program.cs
-//
-// Demo console that exercises every prompt flavour and shows a full
-// tool-calling round-trip:
-//
-//   1) plain chat
-//   2) JSON-schema extraction
-//   3) tool selection  ⟶ mock function ⟶ assistant follow-up
-//
-// Requires the canvas files (“PromptingPipeline – v2”) to be present in
-// the project and an appsettings.json with the “Llm” section.
+﻿using AiCalendarAssistant.Data;
+using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Services;
+using Microsoft.EntityFrameworkCore;
+using DotNetEnv;
+using System.Collections;
+using AiCalendarAssistant.Services.Contracts;
 
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using PromptingPipeline.Config;
-using PromptingPipeline.Infrastructure;
-using PromptingPipeline.Interfaces;
-using PromptingPipeline.Llm;
-using PromptingPipeline.Models;
-using PromptingPipeline.Services;
-using System.Text.Json;
-using System;
+var builder = WebApplication.CreateBuilder(args);
 
-Console.WriteLine(DateTime.UtcNow.AddHours(3).ToString("yyyy-MM-dd"));
-Console.WriteLine(TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).ToString("HH:mm"));
-Console.WriteLine(DateTime.UtcNow.AddHours(3).DayOfWeek.ToString(),"\n\n");
-// Console.WriteLine(DateTime.UtcNow.AddHours(3).ToString("yyyy-MM-dd"));
-// Console.WriteLine(TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).ToString("HH:mm"));
-// Console.WriteLine(DateTime.UtcNow.AddHours(3).DayOfWeek.ToString(),"\n\n");
+// Load .env from current directory (project root)
+DotNetEnv.Env.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
 
 
-//
-// ─── BOOTSTRAP DI/HTTP/CONFIG ──────────────────────────────────────────────
-//
-var builder = Host.CreateApplicationBuilder(args);
-builder.Services.Configure<LlmSettings>(builder.Configuration.GetSection("Llm"));
+// Read connection string from environment variables (set in .env)
+const string connectionStringFile = "db_connection.txt";
 
-builder.Services.AddHttpClient<TokenProvider>();
-builder.Services.AddHttpClient<WatsonxClient>();
-builder.Services.AddHttpClient<OllamaClient>();
-
-builder.Services.AddSingleton<PromptRouter>();
-builder.Services.AddSingleton<IEmailReader, EmailReader>();
-builder.Services.AddSingleton<EmailProcessor>();
-
-var host   = builder.Build();
-var router = host.Services.GetRequiredService<PromptRouter>();
-if (false){
-//
-// ─── 1) SIMPLE CHAT ────────────────────────────────────────────────────────
-//
-var chat = new PromptRequest(new()
+if (!File.Exists(connectionStringFile))
 {
-    new("system", "You are a helpful assistant."),
-    new("user",   "What is the capital of France?")
-});
-
-var chatResp = await router.SendAsync(chat);
-Console.WriteLine($"Capital → {chatResp.Content}");
-Console.WriteLine();
-
-//
-// ─── 2) JSON-SCHEMA EXTRACTION ─────────────────────────────────────────────
-//
-using var schemaDoc = JsonDocument.Parse("""
-{
-  "type": "json_schema",
-  "json_schema": {
-    "name": "book_info",
-    "strict": true,
-    "schema": {
-      "type": "object",
-      "properties": {
-        "book_title":       { "type": "string" },
-        "author":           { "type": "string" },
-        "publication_year": { "type": "integer" }
-      },
-      "required": ["book_title","author","publication_year"],
-      "additionalProperties": false
-    }
-  }
+	throw new FileNotFoundException("Connection string file not found.", connectionStringFile);
 }
-""");
 
-var json = new PromptRequest(new()
+var connectionString = File.ReadAllText(connectionStringFile).Trim();
+
+// Add services to the container
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
+
+builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
-    new("system", "You are a helpful assistant."),
-    new("user",
-        "Extract the book title, author, and publication year from this text:\n\n" +
-        "The Hobbit by J.R.R. Tolkien was first published in 1937.")
-},
-ResponseFormat: schemaDoc.RootElement);
+	options.SignIn.RequireConfirmedAccount = false;
+	options.Password.RequireDigit = false;
+	options.Password.RequireLowercase = false;
+	options.Password.RequireUppercase = false;
+	options.Password.RequireNonAlphanumeric = false;
+	options.Password.RequiredLength = 4;
+})
+	.AddEntityFrameworkStores<ApplicationDbContext>();
 
-var jsonResp = await router.SendAsync(json);
-Console.WriteLine($"Book JSON → {jsonResp.Content}");
-Console.WriteLine();
+var googleClientId = Environment.GetEnvironmentVariable("Authentication__Google__ClientId")
+	?? throw new InvalidOperationException("Google ClientId not found in environment variables.");
+var googleClientSecret = Environment.GetEnvironmentVariable("Authentication__Google__ClientSecret")
+	?? throw new InvalidOperationException("Google ClientSecret not found in environment variables.");
 
-//
-// ─── 3) TOOL-CALL ROUND-TRIP ───────────────────────────────────────────────
-//
-using var toolsDoc = JsonDocument.Parse("""
-[
-  {
-    "type": "function",
-    "function": {
-      "name": "get_current_weather",
-      "description": "Fetches the current weather for a given location",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "location": { "type": "string", "description": "City and country" },
-          "unit":     { "type": "string", "enum": ["celsius","fahrenheit"] }
-        },
-        "required": ["location"]
-      }
-    }
-  }
-]
-""");
+builder.Services.AddAuthentication()
+	.AddGoogle(options =>
+	{
+		options.ClientId = googleClientId;
+		options.ClientSecret = googleClientSecret;
+		options.CallbackPath = "/signin-google";
+		options.SaveTokens = true;
+		options.Scope.Add("https://www.googleapis.com/auth/gmail.readonly");
+	});
 
-// first pass – assistant decides whether to call a tool
-var history = new List<Message>
+builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<GmailEmailService>();
+builder.Services.AddScoped<ICalendarService, CalendarService>();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
 {
-    new("system", "You are a helpful assistant that can call external tools using the appropriate json for tool_calls. If the user asks for information that requires external data or function calling, use the tools provided. By using a tool_call you will get the information returned by the tool and then you will be able to get back to the user with the final answer."),
-    new("user",   "What is the current weather in Paris?")
-};
-
-var toolPrompt = new PromptRequest(
-    history,
-    Tools: toolsDoc.RootElement,
-    ToolChoice: "auto",
-    Extra: new() { ["max_tokens"] = 10000 });
-
-var first = await router.SendAsync(toolPrompt);
-
-// If the assistant called a tool, execute it (mock) and send results back
-if (first.HasToolCalls)
-{
-    foreach (var call in first.ToolCalls!)
-    {
-        Console.WriteLine($"Assistant requested tool → {call.Name}: {call.Arguments}");
-
-        // ─── mock tool implementation ──────────────────────────────────
-        var resultJson = call.Name switch
-        {
-            "get_current_weather" => /* pretend we queried an API */ """
-                { "temperature": -20, "unit": "celsius", "condition": "raining with meatballs" }
-            """,
-            _ => "{}"
-        };
-
-        // append tool result for second round
-        history.Add(new("tool", resultJson, call.Id));
-    }
-
-    // second pass – assistant gets the tool output and produces the final answer
-    var followUp = new PromptRequest(history);
-    var final = await router.SendAsync(followUp);
-
-    Console.WriteLine();
-    Console.WriteLine($"Assistant reply → {final.Content}");
+	app.UseMigrationsEndPoint();
 }
 else
 {
-    Console.WriteLine("Assistant did not request a tool – nothing to do.");
-	Console.WriteLine("Raw response:");
-	Console.WriteLine(JsonSerializer.Serialize(first, new JsonSerializerOptions { WriteIndented = true }));
+	app.UseExceptionHandler("/Home/Error");
+	app.UseHsts();
 }
 
-}
-//
-// ─── 4) EMAIL PROCESSING ───────────────────────────────────────────────────
-//
-var emailProcessor = host.Services.GetRequiredService<EmailProcessor>();
-await emailProcessor.ProcessEmailAsync();
+app.UseHttpsRedirection();
+app.UseStaticFiles();
 
-// -- ─── 5) USER NOTE PROCESSING ──────────────────────────────────────────────
-var userNoteProcessor = new UserNoteProcessor(router, new UserNoteReader());
-await userNoteProcessor.ProcessUserNoteAsync();
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllerRoute(
+	name: "default",
+	pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapRazorPages();
+
+app.Run();
