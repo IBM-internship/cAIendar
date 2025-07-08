@@ -4,6 +4,7 @@ using AiCalendarAssistant.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AiCalendarAssistant.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250707110353_AddedModels")]
+    partial class AddedModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -85,24 +88,6 @@ namespace AiCalendarAssistant.Data.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("AiCalendarAssistant.Data.Models.Chat", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Chats");
                 });
 
             modelBuilder.Entity("AiCalendarAssistant.Data.Models.Email", b =>
@@ -185,34 +170,6 @@ namespace AiCalendarAssistant.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Events");
-                });
-
-            modelBuilder.Entity("AiCalendarAssistant.Data.Models.Message", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ChatId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Pos")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SentOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChatId");
-
-                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("AiCalendarAssistant.Data.Models.UserNote", b =>
@@ -385,16 +342,6 @@ namespace AiCalendarAssistant.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("AiCalendarAssistant.Data.Models.Chat", b =>
-                {
-                    b.HasOne("AiCalendarAssistant.Data.Models.ApplicationUser", "User")
-                        .WithMany("Chats")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("AiCalendarAssistant.Data.Models.Email", b =>
                 {
                     b.HasOne("AiCalendarAssistant.Data.Models.ApplicationUser", "RecievingUser")
@@ -414,17 +361,6 @@ namespace AiCalendarAssistant.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("AiCalendarAssistant.Data.Models.Message", b =>
-                {
-                    b.HasOne("AiCalendarAssistant.Data.Models.Chat", "Chat")
-                        .WithMany("Messages")
-                        .HasForeignKey("ChatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Chat");
                 });
 
             modelBuilder.Entity("AiCalendarAssistant.Data.Models.UserNote", b =>
@@ -491,18 +427,11 @@ namespace AiCalendarAssistant.Data.Migrations
 
             modelBuilder.Entity("AiCalendarAssistant.Data.Models.ApplicationUser", b =>
                 {
-                    b.Navigation("Chats");
-
                     b.Navigation("Emails");
 
                     b.Navigation("Events");
 
                     b.Navigation("UserNotes");
-                });
-
-            modelBuilder.Entity("AiCalendarAssistant.Data.Models.Chat", b =>
-                {
-                    b.Navigation("Messages");
                 });
 #pragma warning restore 612, 618
         }

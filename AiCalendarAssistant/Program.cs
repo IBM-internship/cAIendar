@@ -2,67 +2,70 @@ using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Services;
 using Microsoft.EntityFrameworkCore;
+using DotNetEnv;
+using System.Collections;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load connection string from file
+// Load .env from current directory (project root)
+DotNetEnv.Env.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
+
+
+// Read connection string from environment variables (set in .env)
 const string connectionStringFile = "db_connection.txt";
 
 if (!File.Exists(connectionStringFile))
 {
-    throw new FileNotFoundException("Connection string file not found.", connectionStringFile);
+	throw new FileNotFoundException("Connection string file not found.", connectionStringFile);
 }
 
 var connectionString = File.ReadAllText(connectionStringFile).Trim();
 
-// Add services to the container.
-//var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? 
-//    throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-
+// Add services to the container
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
-    {
-        options.SignIn.RequireConfirmedAccount = false;
-        options.Password.RequireDigit = false;
-        options.Password.RequireLowercase = false;
-        options.Password.RequireUppercase = false;
-        options.Password.RequireNonAlphanumeric = false;
-        options.Password.RequiredLength = 4;
-    })
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+{
+	options.SignIn.RequireConfirmedAccount = false;
+	options.Password.RequireDigit = false;
+	options.Password.RequireLowercase = false;
+	options.Password.RequireUppercase = false;
+	options.Password.RequireNonAlphanumeric = false;
+	options.Password.RequiredLength = 4;
+})
+	.AddEntityFrameworkStores<ApplicationDbContext>();
+
+var googleClientId = Environment.GetEnvironmentVariable("Authentication__Google__ClientId")
+	?? throw new InvalidOperationException("Google ClientId not found in environment variables.");
+var googleClientSecret = Environment.GetEnvironmentVariable("Authentication__Google__ClientSecret")
+	?? throw new InvalidOperationException("Google ClientSecret not found in environment variables.");
 
 builder.Services.AddAuthentication()
-    .AddGoogle(options =>
-    {
-        options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
-        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
-
-        // Optional: Configure additional options
-        options.CallbackPath = "/signin-google"; // Default callback path
-        options.SaveTokens = true; // Save access and refresh tokens
-
-        options.Scope.Add("https://www.googleapis.com/auth/gmail.readonly");
-    });
+	.AddGoogle(options =>
+	{
+		options.ClientId = googleClientId;
+		options.ClientSecret = googleClientSecret;
+		options.CallbackPath = "/signin-google";
+		options.SaveTokens = true;
+		options.Scope.Add("https://www.googleapis.com/auth/gmail.readonly");
+	});
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<GmailEmailService>();
 
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.UseMigrationsEndPoint();
+	app.UseMigrationsEndPoint();
 }
 else
 {
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+	app.UseExceptionHandler("/Home/Error");
+	app.UseHsts();
 }
 
 app.UseHttpsRedirection();
@@ -74,9 +77,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+	name: "default",
+	pattern: "{controller=Home}/{action=Index}/{id?}");
+
 app.MapRazorPages();
 
 app.Run();
-

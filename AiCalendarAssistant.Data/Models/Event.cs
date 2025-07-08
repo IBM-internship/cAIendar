@@ -17,7 +17,7 @@
         public string? Color { get; set; } // Hex цветове за различни типове
         public string? Location { get; set; } // Местоположение на събитието
         public bool IsInPerson { get; set; } // Събитието присъствено ли е?
-        string? MeetingLink { get; set; } // Линк за онлайн среща (ако е приложимо)
+        public string? MeetingLink { get; set; } // Линк за онлайн среща (ако е приложимо)
 
         // Ако има потребители в системата
         public string? UserId { get; set; } // За връзка с потребител            
