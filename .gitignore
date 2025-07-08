@@ -431,3 +431,7 @@ id_rsa
 db_connection.txt
 .idea/
 sqlserver_data/
+appsettings.json
+bin/
+obj/
+secret
