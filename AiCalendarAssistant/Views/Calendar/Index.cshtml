@@ -3,10 +3,6 @@
 }
 
 <div class="container mt-5">
-    <div class="text-center mb-4">
-        <h1 class="display-5">🧠 AI Calendar Assistant</h1>
-        <p class="lead text-muted">Планирай умно. Живей по-добре.</p>
-    </div>
 
     <div class="d-flex justify-content-end mb-3">
         <button class="btn btn-primary" id="addEventBtn">+ Ново събитие</button>
@@ -16,6 +12,55 @@
     <div class="card shadow-sm">
         <div class="card-body p-3">
             <div id="calendar"></div>
+        </div>
+    </div>
+    <!-- Modal -->
+    <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form id="eventForm" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventModalLabel">Ново събитие</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="eventTitle" class="form-label">Заглавие</label>
+                        <input type="text" class="form-control" id="eventTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="eventDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="eventDescription" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="eventStart" class="form-label">Начален час</label>
+                        <input type="datetime-local" class="form-control" id="eventStart" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="eventEnd" class="form-label">Краен час</label>
+                        <input type="datetime-local" class="form-control" id="eventEnd" required>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="eventAllDay">
+                        <label class="form-check-label" for="eventAllDay">Цял ден</label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="eventLocation" class="form-label">Място</label>
+                        <input type="text" class="form-control" id="eventLocation">
+                    </div>
+                    <div class="mb-3">
+                        <label for="eventMeetingLink" class="form-label">Линк към срещата</label>
+                        <input type="url" class="form-control" id="eventMeetingLink">
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="eventIsInPerson">
+                        <label class="form-check-label" for="eventIsInPerson">Лично присъствие</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
+                    <button type="submit" class="btn btn-primary">Запази</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -61,7 +106,6 @@
 <script>
         document.addEventListener('DOMContentLoaded', function () {
         const calendarEl = document.getElementById('calendar');
-
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             locale: 'bg',
@@ -71,26 +115,65 @@
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
-            events: [
-                {
-                    title: 'Събитие пример',
-                    start: new Date().toISOString().split('T')[0]
-                }
-            ],
-            select: function (info) {
-                const title = prompt('Заглавие на събитието:');
-                if (title) {
-                    calendar.addEvent({
-                        title: title,
-                        start: info.start,
-                        end: info.end,
-                        allDay: info.allDay
-                    });
-                }
-            }
+            events: '/api/calendarapi/all'
+            // you can keep select if you want, but now it won't prompt
         });
 
         calendar.render();
+
+        // Bootstrap modal instance
+        const eventModalEl = document.getElementById('eventModal');
+        const eventModal = new bootstrap.Modal(eventModalEl);
+
+        // Show modal on button click
+        document.getElementById('addEventBtn').addEventListener('click', () => {
+            // Clear previous values
+            document.getElementById('eventForm').reset();
+            eventModal.show();
+        });
+
+        // Handle form submit
+        document.getElementById('eventForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const newEvent = {
+                Title: document.getElementById('eventTitle').value.trim(),
+                Description: document.getElementById('eventDescription').value.trim(),
+                Start: new Date(document.getElementById('eventStart').value).toISOString(),
+                End: new Date(document.getElementById('eventEnd').value).toISOString(),
+                IsAllDay: document.getElementById('eventAllDay').checked,
+                Location: document.getElementById('eventLocation').value.trim(),
+                MeetingLink: document.getElementById('eventMeetingLink').value.trim(),
+                IsInPerson: document.getElementById('eventIsInPerson').checked
+            };
+
+            try {
+                const response = await fetch('/api/calendarapi/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newEvent)
+                });
+
+                if (response.ok) {
+                    const id = await response.json();
+
+                    calendar.addEvent({
+                        id: id,
+                        ...newEvent
+                    });
+
+                    eventModal.hide();
+                } else {
+                    alert('Грешка при създаване на събитието.');
+                }
+            } catch (error) {
+                console.error('Грешка при заявката:', error);
+                alert('Възникна грешка.');
+            }
+        });
     });
 
 </script>
+

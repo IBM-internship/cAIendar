@@ -1,58 +1,91 @@
-﻿
+﻿<!-- 🎥 Background Video -->
+<div class="video-background">
+    <video autoplay muted loop playsinline>
+        <source src="/videos/bg-video-landing.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+    </video>
+    <div class="video-overlay"></div>
+</div>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<!-- 💬 Hero Section with Content -->
+<section class="text-center py-5 bg-transparent position-relative" style="z-index: 1;">
 
-<header class="bg-primary text-white py-5">
-    <div class="container text-center">
-        <h1 class="display-4 fw-bold">AI Calendar Assistant</h1>
-        <p class="lead">Планирай по-умно. Управлявай времето си с помощта на изкуствен интелект.</p>
-        <a class="btn btn-light btn-lg mt-3" asp-page="/Account/Register">Започни сега</a>
-    </div>
-</header>
+    <div class="container text-white">
+        <h1 class="display-4 fw-bold">
+            Welcome to your <span class="text-primary"> personal</span><br>
+            <span class="text-primary">AI-powered </span><br />
+            calendar <span class="text-primary"> assistant</span>
+        </h1>
+        <p class="lead mt-3">Imagine the freedom of personal assistance, for free.</p><br />
 
-<section class="py-5 bg-light">
-    <div class="container text-center">
-        <h2 class="mb-4">Какво предлага приложението?</h2>
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <i class="bi bi-calendar3 fs-1 text-primary"></i>
-                        <h5 class="card-title mt-3">Личен календар</h5>
-                        <p class="card-text">Създавай, редактирай и управлявай своите събития лесно и интуитивно.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <i class="bi bi-robot fs-1 text-primary"></i>
-                        <h5 class="card-title mt-3">AI препоръки</h5>
-                        <p class="card-text">Изкуственият интелект ти предлага оптимални времена за задачи и срещи.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <i class="bi bi-people fs-1 text-primary"></i>
-                        <h5 class="card-title mt-3">Споделяне и публичност</h5>
-                        <p class="card-text">Споделяй определени събития с други потребители или ги прави публични.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <a class="btn btn-light btn-lg px-4" href="/Account/Register">Get Started →</a>
+        <p class="text-light mt-2">No credit card required.</p>
     </div>
 </section>
 
-<section class="py-5">
-    <div class="container text-center">
-        <h2 class="mb-4">Виж как изглежда</h2>
-        <img src="/images/calendar-preview.png" alt="Calendar Preview" class="img-fluid rounded shadow" />
-    </div>
-</section>
 
-<footer class="bg-dark text-white py-4">
-    <div class="container text-center">
-        <p class="mb-0">&copy; 2025 AI Calendar Assistant. Всички права запазени.</p>
-        <p class="mb-0"><a href="/Privacy" class="text-white text-decorat
+
+<!-- 🎨 CSS -->
+<style>
+    :root {
+        --blue-accent: #5DB097;
+        --teal: #4F46E5;
+    }
+
+    .text-primary {
+        color: var(--blue-accent) !important;
+    }
+
+    .text-teal {
+        color: var(--teal) !important;
+    }
+
+    .badge input[type="checkbox"] {
+        accent-color: var(--blue-accent);
+        transform: scale(1.2);
+    }
+
+    .badge {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+        .badge:hover {
+            background-color: #f0f4ff;
+        }
+
+    /* 🔥 Background Video Styling */
+    .video-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: -1;
+    }
+
+        .video-background video {
+            min-width: 100%;
+            min-height: 100%;
+            object-fit: cover;
+            filter: brightness(0.6) contrast(1.1);
+            animation: zoomVideo 30s ease-in-out infinite alternate;
+        }
+
+    .video-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom right, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7));
+    }
+
+        
+        @@keyframes zoomVideo {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+    
+</style>
