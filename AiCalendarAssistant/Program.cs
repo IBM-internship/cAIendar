@@ -4,6 +4,7 @@ using AiCalendarAssistant.Services;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
 using System.Collections;
+using AiCalendarAssistant.Services.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +55,7 @@ builder.Services.AddAuthentication()
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<GmailEmailService>();
+builder.Services.AddScoped<ICalendarService, CalendarService>();
 
 var app = builder.Build();
 
