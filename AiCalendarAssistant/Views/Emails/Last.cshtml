@@ -1,28 +1,69 @@
-﻿@model List<AiCalendarAssistant.Models.Email>
+﻿@model List<AiCalendarAssistant.Data.Models.Email>
 
 @{
     ViewData["Title"] = "Last 10 Emails";
 }
 
 <h2>@ViewData["Title"]</h2>
-<table class="table table-striped">
-    <thead>
-    <tr>
-        <th>Date</th>
-        <th>From</th>
-        <th>Subject</th>
-        <th>Snippet</th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var email in Model)
-    {
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
         <tr>
-            <td>@email.Date.ToString("g")</td>
-            <td>@email.From</td>
-            <td>@email.Subject</td>
-            <td>@email.Snippet</td>
+            <th>Date</th>
+            <th>From</th>
+            <th>Subject</th>
+            <th>Message</th>
+            <th>Actions</th>
         </tr>
-    }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+        @foreach (var email in Model)
+        {
+            <tr>
+                <td>@email.CreatedOn.ToString("g")</td>
+                <td>@email.SendingUserEmail</td>
+                <td>@email.Title</td>
+                <td>@email.Body</td>
+                <td>
+                    <form asp-action="Reply" method="post" style="display: inline;">
+                        <input type="hidden" name="messageId" value="@email.Id" />
+                        <input type="hidden" name="threadId" value="@email.ThreadId" />
+                        <input type="hidden" name="originalSubject" value="@email.Title" />
+                        <input type="hidden" name="fromEmail" value="@email.SendingUserEmail" />
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-reply"></i> Reply
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    setTimeout(function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }, 5000);
+</script>

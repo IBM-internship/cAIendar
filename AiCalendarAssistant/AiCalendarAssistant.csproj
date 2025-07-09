@@ -4,8 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>aspnet-AiCalendarAssistant-eaf5e5f9-bdce-4681-b6bb-1c6d5f0a53da</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+       <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AiCalendarAssistant.Data\AiCalendarAssistant.Data.csproj" />
+    <ProjectReference Include="..\AiCalendarAssistant.Services\AiCalendarAssistant.Services.csproj" />
   </ItemGroup>
 
 </Project>

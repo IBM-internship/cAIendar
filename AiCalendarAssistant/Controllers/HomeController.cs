@@ -1,26 +1,29 @@
-using System.Diagnostics;
+using AiCalendarAssistant.Data;
+using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Models;
 using AiCalendarAssistant.Services;
 using Google.Apis.Gmail.v1;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 
 namespace AiCalendarAssistant.Controllers
 {
-	[Authorize]
-	public class HomeController : BaseController
-	{
-		private readonly GmailEmailService _gmail;
+    public class HomeController : BaseController
+    {
+        private readonly ApplicationDbContext data;
 
-		public HomeController(GmailEmailService gmail)
-		{
-			_gmail = gmail;
-		}
+        private readonly UserManager<ApplicationUser> userManager;
 
-		public IActionResult Index()
-		{
-			return View();
-		}
+        public HomeController(ApplicationDbContext data, UserManager<ApplicationUser> userManager)
+        {
+            this.data = data;
+            this.userManager = userManager;
+        }
+        public IActionResult Index()
+        {
+            return View();
+        }
 
 		public IActionResult Calendar()
 		{
