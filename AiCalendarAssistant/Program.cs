@@ -54,8 +54,9 @@ builder.Services.AddAuthentication()
 	});
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddSingleton<GmailEmailService>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<GmailEmailService>();
 
 var app = builder.Build();
 
