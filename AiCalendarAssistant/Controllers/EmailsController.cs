@@ -7,8 +7,15 @@ using Microsoft.AspNetCore.Authentication.Google;
 namespace AiCalendarAssistant.Controllers;
 
 [Authorize]
-public class EmailsController(GmailEmailService gmail) : BaseController
+public class EmailsController : BaseController
 {
+    private readonly GmailEmailService _gmail;
+
+    public EmailsController(GmailEmailService gmail)
+    {
+        _gmail = gmail;
+    }
+
     public async Task<IActionResult> Last()
     {
         if (!(User.Identity?.IsAuthenticated ?? false))
@@ -33,7 +40,7 @@ public class EmailsController(GmailEmailService gmail) : BaseController
             );
         }
 
-        var emails = await gmail.GetLastEmailsAsync();
+        var emails = await _gmail.GetLastEmailsAsync();
         return View(emails);
     }
 }
