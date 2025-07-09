@@ -1,6 +1,5 @@
-using PromptingPipeline.Interfaces;
-using PromptingPipeline.Models;
-using PromptingPipeline.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using System.Text.Json;
 
 namespace PromptingPipeline.Services;
@@ -8,9 +7,9 @@ namespace PromptingPipeline.Services;
 internal sealed class EmailProcessor
 {
     private readonly PromptRouter _router;
-    private readonly IEmailReader _reader;
+    private readonly IEmailSender _reader;
 
-    public EmailProcessor(PromptRouter router, IEmailReader reader)
+    public EmailProcessor(PromptRouter router, IEmailSender reader)
     {
         _router = router;
         _reader = reader;

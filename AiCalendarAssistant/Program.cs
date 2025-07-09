@@ -5,6 +5,7 @@ using DotNetEnv;
 using AiCalendarAssistant.Services.Contracts;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using AiCalendarAssistant.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,7 +96,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<GmailEmailService>();
 builder.Services.AddScoped<TokenRefreshService>(provider =>
-    new TokenRefreshService(
+    new AiCalendarAssistant.Services.TokenRefreshService(
         provider.GetRequiredService<IHttpContextAccessor>(),
         provider.GetRequiredService<IConfiguration>(),
         provider.GetRequiredService<ILogger<TokenRefreshService>>(),

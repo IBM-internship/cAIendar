@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using PromptingPipeline.Config;
 using PromptingPipeline.Models;
+using AiCalendarAssistant.Interfaces;
 // using PromptingPipeline.Interfaces;
 using PromptingPipeline.Llm;
 namespace PromptingPipeline.Services;

@@ -1,11 +1,13 @@
 using AiCalendarAssistant.Data.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using PromptingPipeline.Interfaces;
 using PromptingPipeline.Models;
 using System;
 
 namespace PromptingPipeline.Services;
 
-internal sealed class EmailReader : IEmailReader
+internal sealed class EmailReader : IEmailSender
 {
 	public Task<Email> GetNextEmailAsync(CancellationToken ct = default)
 	{
@@ -20,5 +22,10 @@ internal sealed class EmailReader : IEmailReader
 		};
 
         return Task.FromResult(email);
+    }
+
+    public Task SendEmailAsync(string email, string subject, string htmlMessage)
+    {
+        throw new NotImplementedException();
     }
 }
