@@ -1,20 +1,23 @@
 ﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Gmail.v1;
 using Google.Apis.Services;
-using Microsoft.AspNetCore.Authentication;
 using System.Globalization;
 using AiCalendarAssistant.Models;
-using Microsoft.AspNetCore.Authentication.Google;
 
 namespace AiCalendarAssistant.Services
 {
-    public class GmailEmailService(IHttpContextAccessor ctx)
+    public class GmailEmailService(IHttpContextAccessor ctx, TokenRefreshService tokenService)
     {
         public async Task<List<Email>> GetLastEmailsAsync()
         {
-            var http = ctx.HttpContext!;
-            var token = await ctx.HttpContext!.GetTokenAsync(GoogleDefaults.AuthenticationScheme, "access_token");
-            var cred  = GoogleCredential.FromAccessToken(token!)
+            var token = await tokenService.GetValidAccessTokenAsync();
+        
+            if (string.IsNullOrEmpty(token))
+            {
+                throw new UnauthorizedAccessException("Valid access token not available");
+            }
+
+            var cred = GoogleCredential.FromAccessToken(token)
                 .CreateScoped(GmailService.Scope.GmailReadonly);
 
             var svc = new GmailService(new BaseClientService.Initializer
