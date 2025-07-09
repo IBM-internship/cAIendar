@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using AiCalendarAssistant.Data.Models;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace AiCalendarAssistant.Areas.Identity.Pages.Account
 {
-    public class LoginModel(SignInManager<IdentityUser> signInManager) : PageModel
+    public class LoginModel(SignInManager<ApplicationUser> signInManager) : PageModel
     {
         public string ReturnUrl { get; set; } = string.Empty;
 
