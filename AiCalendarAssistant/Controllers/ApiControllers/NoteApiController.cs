@@ -1,4 +1,5 @@
 using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;

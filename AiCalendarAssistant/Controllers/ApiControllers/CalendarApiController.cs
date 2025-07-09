@@ -1,4 +1,5 @@
 using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Models.DTOs;
 using AiCalendarAssistant.Services;
 using AiCalendarAssistant.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -20,15 +21,16 @@ namespace AiCalendarAssistant.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<ActionResult<List<Event>>> GetAllEvents()
+        public async Task<ActionResult<List<EventDto>>> GetAllEvents()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var events = await _calendarService.GetEventsAsync(e => e.UserId == userId);
-            return Ok(events);
+            var dtoList = events.Select(EventDto.FromEvent).ToList();
+            return Ok(dtoList);
         }
 
         [HttpPost("range")]
-        public async Task<ActionResult<List<Event>>> GetEventsInRange([FromBody] TimeRangeRequest range)
+        public async Task<ActionResult<List<EventDto>>> GetEventsInRange([FromBody] TimeRangeRequest range)
         {
             if (range.End <= range.Start)
                 return BadRequest("End must be after start.");
@@ -39,13 +41,15 @@ namespace AiCalendarAssistant.Controllers
                 e.Start < range.End &&
                 e.End > range.Start);
 
-            return Ok(events);
+            var dtoList = events.Select(EventDto.FromEvent).ToList();
+            return Ok(dtoList);
         }
 
         [HttpPost("add")]
-        public async Task<ActionResult<int>> AddEvent([FromBody] Event newEvent)
+        public async Task<ActionResult<int>> AddEvent([FromBody] EventDto newEventDto)
         {
-            newEvent.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var newEvent = newEventDto.ToEvent(userId);
             await _calendarService.AddEventAsync(newEvent);
             return Ok(newEvent.Id);
         }
@@ -65,14 +69,14 @@ namespace AiCalendarAssistant.Controllers
         }
 
         [HttpPut("replace")]
-        public async Task<ActionResult> ReplaceEvent([FromBody] Event updatedEvent)
+        public async Task<ActionResult> ReplaceEvent([FromBody] EventDto updatedDto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var existing = await _calendarService.GetEventByIdAsync(updatedEvent.Id);
+            var existing = await _calendarService.GetEventByIdAsync(updatedDto.Id);
             if (existing == null || existing.UserId != userId)
-                return NotFound($"Event with ID {updatedEvent.Id} not found or unauthorized.");
+                return NotFound($"Event with ID {updatedDto.Id} not found or unauthorized.");
 
-            updatedEvent.UserId = userId;
+            var updatedEvent = updatedDto.ToEvent(userId);
             await _calendarService.ReplaceEventAsync(updatedEvent);
             return NoContent();
         }
