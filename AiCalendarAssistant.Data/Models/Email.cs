@@ -23,5 +23,8 @@ namespace AiCalendarAssistant.Data.Models
         public string RecievingUserId { get; set; }
 		public ApplicationUser RecievingUser { get; set; }
 		public bool IsProcessed { get; set; }
+		
+		public string ThreadId { get; set; } = string.Empty;
+		public string MessageId { get; set; } = string.Empty;
 	}
 }
