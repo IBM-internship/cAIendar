@@ -5,8 +5,9 @@ using Microsoft.AspNetCore.Authentication;
 using System.Globalization;
 using AiCalendarAssistant.Models;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Http;
 
-namespace AiCalendarAssistant.Services
+namespace AiCalendarAssistant.Services.Services
 {
     public class GmailEmailService(IHttpContextAccessor ctx)
     {

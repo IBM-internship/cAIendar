@@ -2,24 +2,88 @@
     ViewData["Title"] = "AI Календар";
 }
 
-<div class="container mt-5">
-    <div class="text-center mb-4">
-        <h1 class="display-5">🧠 AI Calendar Assistant</h1>
-        <p class="lead text-muted">Планирай умно. Живей по-добре.</p>
-    </div>
+<!-- FullCalendar CSS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
 
-    <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-primary" id="addEventBtn">+ Ново събитие</button>
-    </div>
+<!-- FullCalendar JS -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
-    <!-- Карта за календара -->
-    <div class="card shadow-sm">
-        <div class="card-body p-3">
-            <div id="calendar"></div>
+<div class="container mt-4">
+    <div id="calendar"></div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('calendar');
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'bg', // Bulgarian locale example
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            selectable: true,
+            events:{
+                url: '/Calendar/All',
+                method: 'GET',
+                extraParams: {},
+                failure: function () {
+                    alert('There was an error while fetching events!');},
+                credentials: 'include'}, // ← this is important!'/Calendar/All', // Endpoint for fetching events
+            select: function (info) {
+                const start = encodeURIComponent(info.startStr);
+                const end = encodeURIComponent(info.endStr);
+
+                // Redirect to the Create Event page with the selected range
+                window.location.href = `/Events/Create?start=${start}&end=${end}`;
+            },
+
+            eventClick: function (info) {
+                alert("Clicked event: " + info.event.title);
+            }
+        });
+
+        calendar.render();
+    });
+</script>
+
+@*
+
+<!-- Modal for Creating New Event -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="eventForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventModalLabel">Създай събитие</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="start" />
+                    <input type="hidden" id="end" />
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Заглавие</label>
+                        <input type="text" class="form-control" id="title" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="description"></textarea>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="isAllDay" />
+                        <label class="form-check-label" for="isAllDay">Целодневно</label>
+                    </div>
+                    <!-- Add more fields as needed (Color, Location, etc.) -->
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Създай</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
-
 
 <style>
     #calendar {
@@ -55,7 +119,8 @@
         }
 </style>
 
-<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
+
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
 
 <script>
@@ -71,26 +136,54 @@
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
-            events: [
-                {
-                    title: 'Събитие пример',
-                    start: new Date().toISOString().split('T')[0]
-                }
-            ],
+            events: '/Calendar/All',
             select: function (info) {
-                const title = prompt('Заглавие на събитието:');
-                if (title) {
-                    calendar.addEvent({
-                        title: title,
-                        start: info.start,
-                        end: info.end,
-                        allDay: info.allDay
-                    });
-                }
+                // Pre-fill hidden fields
+                document.getElementById('start').value = info.startStr;
+                document.getElementById('end').value = info.endStr;
+
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+                modal.show();
+            },
+            eventClick: function (info) {
+                info.jsEvent.preventDefault();
+                const eventId = info.event.id;
+                window.location.href = `/Event/Details/${eventId}`;
             }
         });
 
         calendar.render();
+
+         document.getElementById('eventForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const data = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                start: document.getElementById('start').value,
+                end: document.getElementById('end').value,
+                isAllDay: document.getElementById('isAllDay').checked
+                // Add more fields if needed
+            };
+
+            const response = await fetch('/Events/Create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('eventModal'));
+                modal.hide();
+                calendar.refetchEvents(); // Refresh calendar with new event
+            } else {
+                alert('Грешка при създаване на събитието.');
+            }
+        });
+    });
     });
 
-</script>
+</script>*@

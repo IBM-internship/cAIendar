@@ -1,5 +1,86 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model DetailedEvent
+
 @{
+    ViewData["Title"] = "Създай събитие";
 }
+
+<div class="container mt-4">
+    <h2 class="mb-4">📅 Създаване на събитие</h2>
+
+    <form asp-controller="Events" asp-action="Create" method="post" class="needs-validation" novalidate>
+        <div class="mb-3">
+            <label asp-for="Title" class="form-label">Заглавие *</label>
+            <input asp-for="Title" class="form-control" required />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label">Описание</label>
+            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Start" class="form-label">Начален час</label>
+            <input asp-for="Start" class="form-control" type="datetime-local"
+                   value="@Model.Start.ToString("yyyy-MM-ddTHH:mm")" />
+            <span asp-validation-for="Start" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="End" class="form-label">Краен час</label>
+            <input asp-for="End" class="form-control" type="datetime-local"
+                   value="@Model.End.ToString("yyyy-MM-ddTHH:mm")" />
+            <span asp-validation-for="End" class="text-danger"></span>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="IsAllDay" class="form-check-input" type="checkbox" />
+            <label asp-for="IsAllDay" class="form-check-label">Целодневно събитие</label>
+        </div>
+
+        <div id="Location" class="mb-3">
+            <label asp-for="Location" class="form-label">Местоположение</label>
+            <input asp-for="Location" class="form-control" />
+        </div>
+
+        <div id="isInPerson" class="form-check mb-3">
+            <input asp-for="IsInPerson" class="form-check-input" type="checkbox" />
+            <label asp-for="IsInPerson" class="form-check-label">Присъствено събитие</label>
+        </div>
+
+        <div id="meetingLink" class="mb-3">
+            <label asp-for="MeetingLink" class="form-label">Линк за среща (ако е онлайн)</label>
+            <input asp-for="MeetingLink" class="form-control" type="url" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Color" class="form-label">Цвят на събитието</label>
+            <input asp-for="Color" class="form-control form-control-color" type="color" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">💾 Запази събитието</button>
+        <a asp-controller="Calendar" asp-action="Index" class="btn btn-secondary ms-2">Назад</a>
+        <div class="container mt-4 mb-5"> <!-- Increased bottom margin -->
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+}
+
+<script>
+    function toggleFields() {
+        const isInPerson = document.getElementById("isInPerson").checked;
+        document.getElementsById("Location").style.display = isInPerson ? "block" : "none";
+        document.getElementById("meetingLink").style.display = isInPerson ? "none" : "block";
+    }
+
+    // Run on page load
+    document.addEventListener("DOMContentLoaded", function () {
+        toggleFields();
+
+        // Attach change event
+        document.getElementById("isInPersonCheckbox").addEventListener("change", toggleFields);
+    });
+</script>

@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AiCalendarAssistant.Data\AiCalendarAssistant.Data.csproj" />
+    <ProjectReference Include="..\AiCalendarAssistant.Services\AiCalendarAssistant.Services.csproj" />
   </ItemGroup>
 
 </Project>

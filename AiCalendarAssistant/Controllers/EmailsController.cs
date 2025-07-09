@@ -1,14 +1,18 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using AiCalendarAssistant.Services;
+﻿using AiCalendarAssistant.Data;
+using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Services.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AiCalendarAssistant.Controllers;
 
 [Authorize]
 public class EmailsController(GmailEmailService gmail) : BaseController
 {
+    
     public async Task<IActionResult> Last()
     {
         if (!(User.Identity?.IsAuthenticated ?? false))

@@ -1,11 +1,23 @@
-using System.Diagnostics;
+using AiCalendarAssistant.Data;
+using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 
 namespace AiCalendarAssistant.Controllers
 {
     public class HomeController : BaseController
     {
+        private readonly ApplicationDbContext data;
+
+        private readonly UserManager<ApplicationUser> userManager;
+
+        public HomeController(ApplicationDbContext data, UserManager<ApplicationUser> userManager)
+        {
+            this.data = data;
+            this.userManager = userManager;
+        }
         public IActionResult Index()
         {
             return View();

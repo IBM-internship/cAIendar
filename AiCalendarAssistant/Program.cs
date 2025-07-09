@@ -1,9 +1,9 @@
 using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
-using AiCalendarAssistant.Services;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
 using System.Collections;
+using AiCalendarAssistant.Services.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
