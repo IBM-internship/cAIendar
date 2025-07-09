@@ -1,10 +1,8 @@
 using PromptingPipeline.Interfaces;
 using PromptingPipeline.Models;
-using PromptingPipeline.Services;
 using AiCalendarAssistant.Data.Models;
 using System.Text.Json;
 
-namespace PromptingPipeline.Services;
 
 internal sealed class UserNoteProcessor
 {

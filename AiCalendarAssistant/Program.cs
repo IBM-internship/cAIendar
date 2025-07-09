@@ -18,7 +18,6 @@ using PromptingPipeline.Infrastructure;
 using PromptingPipeline.Interfaces;
 using PromptingPipeline.Llm;
 using PromptingPipeline.Models;
-using PromptingPipeline.Services;
 using System.Text.Json;
 using System;
 using DotNetEnv;

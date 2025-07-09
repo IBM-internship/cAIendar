@@ -1,9 +1,7 @@
 using PromptingPipeline.Interfaces;
 using PromptingPipeline.Models;
-using PromptingPipeline.Services;
 using System.Text.Json;
 using AiCalendarAssistant.Data.Models;
-namespace PromptingPipeline.Services;
 
 internal sealed class EmailProcessor
 {
