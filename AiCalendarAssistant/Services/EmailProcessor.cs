@@ -19,7 +19,7 @@ internal sealed class EmailProcessor
         _reader   = reader;
         _calendar = calendar;
     }
-    public async Task ProcessEmailAsync(CancellationToken ct = default)
+    public async Task<Email> ProcessEmailAsync(CancellationToken ct = default)
     {
         var email = await _reader.GetNextEmailAsync(ct);
 
@@ -99,8 +99,7 @@ internal sealed class EmailProcessor
 
         Console.WriteLine($"Extracted Email Info → {response.Content}");
 
-		await _calendar.AddEventAsync(calendarEvent);   
-		Console.WriteLine($"Event #{calendarEvent.Id} saved!");
+		return calendarEvent;
 
 	}
 }
