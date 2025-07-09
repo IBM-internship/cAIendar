@@ -53,7 +53,7 @@ builder.Services.AddAuthentication()
         options.Scope.Add("openid");
         options.Scope.Add("profile");
         options.Scope.Add("email");
-        options.Scope.Add("https://www.googleapis.com/auth/gmail.readonly");
+        options.Scope.Add("https://www.googleapis.com/auth/gmail.modify");
 
         options.Events.OnTicketReceived = async context =>
         {

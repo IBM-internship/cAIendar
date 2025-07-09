@@ -1,8 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AiCalendarAssistant.Services;
-using Microsoft.AspNetCore.Authentication.Google;
 
 namespace AiCalendarAssistant.Controllers;
 
@@ -29,38 +27,48 @@ public class EmailsController(GmailEmailService gmail, TokenRefreshService token
             TempData["ErrorMessage"] = "Please log in again to access Gmail functionality.";
             return RedirectToAction("Logout", "Account");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            ModelState.AddModelError("", "Unable to fetch emails. Please try again.");
+            TempData["ErrorMessage"] = "Unable to fetch emails. Please try again.";
             return RedirectToAction("Index", "Home");
         }
     }
-    
-    public IActionResult LinkGoogleAccount()
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Reply(string messageId, string threadId, string originalSubject, string fromEmail)
     {
-        var properties = new AuthenticationProperties
+        try
         {
-            RedirectUri = Url.Action("GoogleCallback", "Emails"),
-            IsPersistent = true
-        };
+            var hasValidToken = await tokenService.IsTokenValidAsync();
+            
+            if (!hasValidToken)
+            {
+                TempData["ErrorMessage"] = "Please log in again to access Gmail functionality.";
+                return RedirectToAction("Logout", "Account");
+            }
 
-        properties.SetParameter("access_type", "offline");
-        properties.SetParameter("prompt", "consent");
-
-        return Challenge(properties, GoogleDefaults.AuthenticationScheme);
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> GoogleCallback()
-    {
-        var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
-    
-        if (result.Succeeded)
-        {
-            return RedirectToAction("Last");
+            var success = await gmail.ReplyToEmailAsync(messageId, threadId, originalSubject, fromEmail);
+            
+            if (success)
+            {
+                TempData["SuccessMessage"] = $"Reply sent successfully to {fromEmail}";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to send reply. Please try again.";
+            }
         }
-    
-        ModelState.AddModelError("", "Failed to authenticate with Google");
-        return RedirectToAction("Index", "Home");
+        catch (UnauthorizedAccessException)
+        {
+            TempData["ErrorMessage"] = "Please log in again to access Gmail functionality.";
+            return RedirectToAction("Logout", "Account");
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = "An error occurred while sending the reply.";
+        }
+
+        return RedirectToAction("Last");
     }
 }
