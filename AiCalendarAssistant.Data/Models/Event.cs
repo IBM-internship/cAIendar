@@ -22,5 +22,13 @@
         // Ако има потребители в системата
         public string? UserId { get; set; } // За връзка с потребител            
         public ApplicationUser? User { get; set; } 
+		public Importance Importance { get; set; } = Importance.Medium; // Важност на събитието
     }
+public enum Importance
+	{
+		High,
+		Medium,
+		Low
+	}
 }
+

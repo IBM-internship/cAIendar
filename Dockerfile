@@ -11,6 +11,7 @@ RUN apt-get update \
 WORKDIR /workspace
 
 EXPOSE 22
+EXPOSE 5032
 
 CMD ["/usr/sbin/sshd","-D"]
 

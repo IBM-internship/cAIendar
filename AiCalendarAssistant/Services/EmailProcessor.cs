@@ -34,7 +34,9 @@ internal sealed class EmailProcessor
                 "end_time": { "type": "string" },
                 "description": { "type": "string" },
                 "is_in_person": { "type": "boolean" },
-                "has_end_time": { "type": "boolean" }
+                "has_end_time": { "type": "boolean" },
+                "is_all_day": { "type": "boolean" },
+                "location": { "type": "string" }
               },
               "required": ["title_of_event", "date", "start_time", "end_time", "importance", "description", "has_end_time"],
               "additionalProperties": false
@@ -54,31 +56,34 @@ internal sealed class EmailProcessor
 
         var response = await _router.SendAsync(prompt, ct);
 
-        Console.WriteLine($"Extracted Email Info → {response.Content}");
+        // Parse the response content into a JsonDocument
+        using var eventDoc = JsonDocument.Parse(response.Content);
 
-        // var e = new Event
-        // {
-        //     Title = response.GetString("title_of_event"),
-        //     Description = response.GetString("description"),
-        //     Start = DateTime.Parse($"{response.GetString("date")}T{response.GetString("start_time")}"),
-        //     End = response.GetBoolean("has_end_time")
-        //         ? DateTime.Parse($"{response.GetString("date")}T{response.GetString("end_time")}")
-        //         : DateTime.Parse($"{response.GetString("date")}T{response.GetString("start_time")}"),
-        //     IsAllDay = false,
-        //     Color = null,
-        //     Location = null,
-        //     IsInPerson = response.GetBoolean("is_in_person"),
-        //     MeetingLink = null,
-        //     UserId = null,
-        //     User = null
-        // };
-		//
-		// Console.WriteLine($"Event Created: {e.Title} on {e.Date.ToShortDateString()} from {e.StartTime} to {e.EndTime}");
-		//
-		// email.IsProcessed = true;
-		//
-		//
-		// await ICalendarService.AddEventAsync(e);
-    }
+        var root = eventDoc.RootElement;
+
+        // Map the extracted fields to the Event model
+        var calendarEvent = new Event
+        {
+            Title = root.GetProperty("title_of_event").GetString() ?? "",
+            Description = root.TryGetProperty("description", out var desc) ? desc.GetString() : null,
+            Start = DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("start_time").GetString()}"),
+            End = root.GetProperty("has_end_time").GetBoolean()
+                ? DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("end_time").GetString()}")
+                : DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("start_time").GetString()}"),
+            IsAllDay = root.TryGetProperty("is_all_day", out var isAllDay) && isAllDay.GetBoolean(),
+            IsInPerson = root.TryGetProperty("is_in_person", out var inPerson) && inPerson.GetBoolean(),
+			Location = root.TryGetProperty("location", out var location) ? location.GetString() : null,
+			Importance = root.GetProperty("importance").GetString() switch
+			{
+				"high" => Importance.High,
+				"medium" => Importance.Medium,
+				"low" => Importance.Low,
+				_ => Importance.Medium // Default to Medium if not specified
+			},
+            // Color, Location, MeetingLink, UserId, User can be set as needed
+        };
+
+        Console.WriteLine($"Extracted Email Info → {response.Content}");
+	}
 }
 

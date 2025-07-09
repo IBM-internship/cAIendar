@@ -2,11 +2,12 @@ services:
   dotnet-dev:
     build: .
     image: my/dotnet9-dev
+    working_dir: /workspace
     volumes:
       - ./:/workspace
-    working_dir: /workspace
     ports:
-      - "2223:22"
+      - "2223:22"     # SSH
+      - "5032:5032"   # ← publish 5032
     extra_hosts:
       - "host.docker.internal:host-gateway"
   sqlserver:
