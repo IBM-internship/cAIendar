@@ -55,6 +55,7 @@ builder.Services.AddAuthentication()
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
+builder.Services.AddScoped<INoteService, NoteService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<GmailEmailService>();
 
