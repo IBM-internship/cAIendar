@@ -193,14 +193,10 @@
 // 	Console.WriteLine("Raw response:");
 // 	Console.WriteLine(JsonSerializer.Serialize(first, new JsonSerializerOptions { WriteIndented = true }));
 // }
-//
-// }
-// //
-// // ─── 4) EMAIL PROCESSING ───────────────────────────────────────────────────
-// //
 // var emailProcessor = host.Services.GetRequiredService<EmailProcessor>();
 // await emailProcessor.ProcessEmailAsync();
 //
 // // -- ─── 5) USER NOTE PROCESSING ──────────────────────────────────────────────
 // var userNoteProcessor = new UserNoteProcessor(router, new UserNoteReader());
 // await userNoteProcessor.ProcessUserNoteAsync();
+// }

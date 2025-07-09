@@ -2,6 +2,7 @@ using PromptingPipeline.Interfaces;
 using PromptingPipeline.Models;
 using System.Text.Json;
 using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Services.Contracts;
 
 internal sealed class EmailProcessor
 {
@@ -73,8 +74,7 @@ internal sealed class EmailProcessor
             Start = DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("start_time").GetString()}"),
             End = root.GetProperty("has_end_time").GetBoolean()
                 ? DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("end_time").GetString()}")
-                // : DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("start_time").GetString()}"),
-                : null, 
+                : DateTime.Parse($"{root.GetProperty("date").GetString()} 23:59:59"),
             IsAllDay = root.TryGetProperty("is_all_day", out var isAllDay) && isAllDay.GetBoolean(),
             IsInPerson = root.TryGetProperty("is_in_person", out var inPerson) && inPerson.GetBoolean(),
 			Location = root.TryGetProperty("location", out var location) ? location.GetString() : null,
@@ -95,11 +95,11 @@ internal sealed class EmailProcessor
 			MeetingLink = null,
 			UserId = null, // FIX THIS!
 			User = null, // maybe this also idk what it does
-		}
+		};
 
         Console.WriteLine($"Extracted Email Info → {response.Content}");
 
-		await _calendar.AddEventAsync(calendarEvent, ct);   
+		await _calendar.AddEventAsync(calendarEvent);   
 		Console.WriteLine($"Event #{calendarEvent.Id} saved!");
 
 	}
