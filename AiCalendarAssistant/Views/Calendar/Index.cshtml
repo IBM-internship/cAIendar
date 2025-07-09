@@ -4,14 +4,75 @@
 
 <div class="container mt-5">
 
-    <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-primary" id="addEventBtn">+ Ново събитие</button>
-    </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('calendar');
 
-    <!-- Карта за календара -->
-    <div class="card shadow-sm">
-        <div class="card-body p-3">
-            <div id="calendar"></div>
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'bg', // Bulgarian locale example
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            selectable: true,
+            events:{
+                url: '/Calendar/All',
+                method: 'GET',
+                extraParams: {},
+                failure: function () {
+                    alert('There was an error while fetching events!');},
+                credentials: 'include'}, // ← this is important!'/Calendar/All', // Endpoint for fetching events
+            select: function (info) {
+                const start = encodeURIComponent(info.startStr);
+                const end = encodeURIComponent(info.endStr);
+
+                // Redirect to the Create Event page with the selected range
+                window.location.href = `/Events/Create?start=${start}&end=${end}`;
+            },
+
+            eventClick: function (info) {
+                alert("Clicked event: " + info.event.title);
+            }
+        });
+
+        calendar.render();
+    });
+</script>
+
+@*
+
+<!-- Modal for Creating New Event -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="eventForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventModalLabel">Създай събитие</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="start" />
+                    <input type="hidden" id="end" />
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Заглавие</label>
+                        <input type="text" class="form-control" id="title" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="description"></textarea>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="isAllDay" />
+                        <label class="form-check-label" for="isAllDay">Целодневно</label>
+                    </div>
+                    <!-- Add more fields as needed (Color, Location, etc.) -->
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Създай</button>
+                </div>
+            </form>
         </div>
     </div>
     <!-- Modal -->
@@ -65,7 +126,6 @@
     </div>
 </div>
 
-
 <style>
     #calendar {
         max-width: 100%;
@@ -100,7 +160,8 @@
         }
 </style>
 
-<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
+
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
 
 <script>
