@@ -1,4 +1,4 @@
-﻿@model List<AiCalendarAssistant.Models.Email>
+﻿@model List<AiCalendarAssistant.Data.Models.Email>
 
 @{
     ViewData["Title"] = "Last 10 Emails";
@@ -29,7 +29,7 @@
             <th>Date</th>
             <th>From</th>
             <th>Subject</th>
-            <th>Snippet</th>
+            <th>Message</th>
             <th>Actions</th>
         </tr>
         </thead>
@@ -37,16 +37,16 @@
         @foreach (var email in Model)
         {
             <tr>
-                <td>@email.Date.ToString("g")</td>
-                <td>@email.From</td>
-                <td>@email.Subject</td>
-                <td>@email.Snippet</td>
+                <td>@email.CreatedOn.ToString("g")</td>
+                <td>@email.SendingUserEmail</td>
+                <td>@email.Title</td>
+                <td>@email.Body</td>
                 <td>
                     <form asp-action="Reply" method="post" style="display: inline;">
                         <input type="hidden" name="messageId" value="@email.Id" />
                         <input type="hidden" name="threadId" value="@email.ThreadId" />
-                        <input type="hidden" name="originalSubject" value="@email.Subject" />
-                        <input type="hidden" name="fromEmail" value="@email.From" />
+                        <input type="hidden" name="originalSubject" value="@email.Title" />
+                        <input type="hidden" name="fromEmail" value="@email.SendingUserEmail" />
                         <button type="submit" class="btn btn-sm btn-primary">
                             <i class="bi bi-reply"></i> Reply
                         </button>

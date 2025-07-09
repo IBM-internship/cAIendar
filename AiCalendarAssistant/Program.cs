@@ -37,8 +37,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 var googleClientId = Environment.GetEnvironmentVariable("Authentication__Google__ClientId")
                      ?? throw new InvalidOperationException("Google ClientId not found in environment variables.");
 var googleClientSecret = Environment.GetEnvironmentVariable("Authentication__Google__ClientSecret")
-                         ?? throw new InvalidOperationException(
-                             "Google ClientSecret not found in environment variables.");
+                         ?? throw new InvalidOperationException("Google ClientSecret not found in environment variables.");
 
 builder.Services.AddAuthentication()
     .AddGoogle(options =>
@@ -106,6 +105,7 @@ builder.Services.AddScoped<TokenRefreshService>(provider =>
         googleClientSecret
     ));
 builder.Services.AddScoped<ICalendarService, CalendarService>();
+builder.Services.AddScoped<INoteService, NoteService>();
 
 var app = builder.Build();
 
