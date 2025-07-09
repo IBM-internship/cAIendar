@@ -1,9 +1,9 @@
-using AiCalendarAssistant.Data;
+﻿using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
 using System.Collections;
-using AiCalendarAssistant.Services.Services;
+using AiCalendarAssistant.Services.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,7 +53,10 @@ builder.Services.AddAuthentication()
 	});
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddSingleton<GmailEmailService>();
+builder.Services.AddScoped<ICalendarService, CalendarService>();
+builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<GmailEmailService>();
 
 var app = builder.Build();
 

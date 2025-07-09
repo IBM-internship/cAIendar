@@ -1,4 +1,4 @@
-﻿@model List<AiCalendarAssistant.Models.Email>
+﻿@model List<AiCalendarAssistant.Data.Models.Email>
 
 @{
     ViewData["Title"] = "Last 10 Emails";
@@ -11,17 +11,17 @@
         <th>Date</th>
         <th>From</th>
         <th>Subject</th>
-        <th>Snippet</th>
+        <th>Message</th>
     </tr>
     </thead>
     <tbody>
     @foreach (var email in Model)
     {
         <tr>
-            <td>@email.Date.ToString("g")</td>
-            <td>@email.From</td>
-            <td>@email.Subject</td>
-            <td>@email.Snippet</td>
+            <td>@email.CreatedOn.ToString("g")</td>
+            <td>@email.SendingUserEmail</td>
+            <td>@email.Title</td>
+            <td>@email.Body</td>
         </tr>
     }
     </tbody>

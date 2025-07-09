@@ -15,10 +15,20 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PromptingPipeline.Config;
 using PromptingPipeline.Infrastructure;
+using PromptingPipeline.Interfaces;
 using PromptingPipeline.Llm;
 using PromptingPipeline.Models;
 using PromptingPipeline.Services;
 using System.Text.Json;
+using System;
+
+Console.WriteLine(DateTime.UtcNow.AddHours(3).ToString("yyyy-MM-dd"));
+Console.WriteLine(TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).ToString("HH:mm"));
+Console.WriteLine(DateTime.UtcNow.AddHours(3).DayOfWeek.ToString(),"\n\n");
+// Console.WriteLine(DateTime.UtcNow.AddHours(3).ToString("yyyy-MM-dd"));
+// Console.WriteLine(TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).ToString("HH:mm"));
+// Console.WriteLine(DateTime.UtcNow.AddHours(3).DayOfWeek.ToString(),"\n\n");
+
 
 //
 // ─── BOOTSTRAP DI/HTTP/CONFIG ──────────────────────────────────────────────
@@ -31,10 +41,12 @@ builder.Services.AddHttpClient<WatsonxClient>();
 builder.Services.AddHttpClient<OllamaClient>();
 
 builder.Services.AddSingleton<PromptRouter>();
+builder.Services.AddSingleton<IEmailReader, EmailReader>();
+builder.Services.AddSingleton<EmailProcessor>();
 
 var host   = builder.Build();
 var router = host.Services.GetRequiredService<PromptRouter>();
-
+if (false){
 //
 // ─── 1) SIMPLE CHAT ────────────────────────────────────────────────────────
 //
@@ -156,3 +168,13 @@ else
 	Console.WriteLine(JsonSerializer.Serialize(first, new JsonSerializerOptions { WriteIndented = true }));
 }
 
+}
+//
+// ─── 4) EMAIL PROCESSING ───────────────────────────────────────────────────
+//
+var emailProcessor = host.Services.GetRequiredService<EmailProcessor>();
+await emailProcessor.ProcessEmailAsync();
+
+// -- ─── 5) USER NOTE PROCESSING ──────────────────────────────────────────────
+var userNoteProcessor = new UserNoteProcessor(router, new UserNoteReader());
+await userNoteProcessor.ProcessUserNoteAsync();
