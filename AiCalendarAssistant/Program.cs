@@ -56,6 +56,7 @@ builder.Services.AddAuthentication()
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<GmailEmailService>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
+builder.Services.AddScoped<INoteService, NoteService>();
 
 var app = builder.Build();
 
