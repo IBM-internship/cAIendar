@@ -6,10 +6,13 @@ services:
     volumes:
       - ./:/workspace
     ports:
-      - "2223:22"     # SSH
-      - "5032:5032"   # ← publish 5032
+      - "2223:22"
+      - "5032:5032"
+      - "7194:7194"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - app-network
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sqlserver
@@ -21,5 +24,10 @@ services:
     volumes:
       - ./sqlserver_data:/var/opt/mssql/data
     user: "0:0"
+    networks:
+      - app-network
 volumes:
   sqlserver_data:
+networks:
+  app-network:
+    driver: bridge
