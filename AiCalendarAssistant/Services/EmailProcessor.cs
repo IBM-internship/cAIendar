@@ -7,13 +7,17 @@ internal sealed class EmailProcessor
 {
     private readonly PromptRouter _router;
     private readonly IEmailReader _reader;
+    private readonly ICalendarService _calendar;     
 
-    public EmailProcessor(PromptRouter router, IEmailReader reader)
+    public EmailProcessor(
+        PromptRouter router,
+        IEmailReader reader,
+        ICalendarService calendar)                   
     {
-        _router = router;
-        _reader = reader;
+        _router   = router;
+        _reader   = reader;
+        _calendar = calendar;
     }
-
     public async Task ProcessEmailAsync(CancellationToken ct = default)
     {
         var email = await _reader.GetNextEmailAsync(ct);
@@ -69,7 +73,8 @@ internal sealed class EmailProcessor
             Start = DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("start_time").GetString()}"),
             End = root.GetProperty("has_end_time").GetBoolean()
                 ? DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("end_time").GetString()}")
-                : DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("start_time").GetString()}"),
+                // : DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("start_time").GetString()}"),
+                : null, 
             IsAllDay = root.TryGetProperty("is_all_day", out var isAllDay) && isAllDay.GetBoolean(),
             IsInPerson = root.TryGetProperty("is_in_person", out var inPerson) && inPerson.GetBoolean(),
 			Location = root.TryGetProperty("location", out var location) ? location.GetString() : null,
@@ -78,12 +83,25 @@ internal sealed class EmailProcessor
 				"high" => Importance.High,
 				"medium" => Importance.Medium,
 				"low" => Importance.Low,
-				_ => Importance.Medium // Default to Medium if not specified
+				_ => Importance.Medium 
 			},
-            // Color, Location, MeetingLink, UserId, User can be set as needed
-        };
+			Color = root.GetProperty("importance").GetString() switch
+			{
+				"high" => "red",
+				"medium" => "blue",
+				"low" => "green",
+				_ => "blue"
+			},
+			MeetingLink = null,
+			UserId = null, // FIX THIS!
+			User = null, // maybe this also idk what it does
+		}
 
         Console.WriteLine($"Extracted Email Info → {response.Content}");
+
+		await _calendar.AddEventAsync(calendarEvent, ct);   
+		Console.WriteLine($"Event #{calendarEvent.Id} saved!");
+
 	}
 }
 
