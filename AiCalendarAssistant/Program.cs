@@ -21,6 +21,7 @@ using PromptingPipeline.Models;
 using PromptingPipeline.Services;
 using System.Text.Json;
 using System;
+using DotNetEnv;
 
 Console.WriteLine(DateTime.UtcNow.AddHours(3).ToString("yyyy-MM-dd"));
 Console.WriteLine(TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).ToString("HH:mm"));
@@ -29,6 +30,7 @@ Console.WriteLine(DateTime.UtcNow.AddHours(3).DayOfWeek.ToString(),"\n\n");
 // Console.WriteLine(TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).ToString("HH:mm"));
 // Console.WriteLine(DateTime.UtcNow.AddHours(3).DayOfWeek.ToString(),"\n\n");
 
+Env.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
 
 //
 // ─── BOOTSTRAP DI/HTTP/CONFIG ──────────────────────────────────────────────
@@ -36,22 +38,29 @@ Console.WriteLine(DateTime.UtcNow.AddHours(3).DayOfWeek.ToString(),"\n\n");
 var builder = Host.CreateApplicationBuilder(args);
 // builder.Services.Configure<LlmSettings>(builder.Configuration.GetSection("Llm"));
 
+var watsonxUrl        = Environment.GetEnvironmentVariable("Llm__Url");
+var watsonxProjectId  = Environment.GetEnvironmentVariable("Llm__ProjectId");
+var watsonxModelId    = Environment.GetEnvironmentVariable("Llm__ModelId");
+var watsonxApiKey     = Environment.GetEnvironmentVariable("Llm__ApiKey");
+var watsonxVersion    = Environment.GetEnvironmentVariable("Llm__Version");
+var ollamaUse         = Environment.GetEnvironmentVariable("Llm__UseOllama");
+var ollamaUrl         = Environment.GetEnvironmentVariable("Llm__OllamaUrl");
+var ollamaModel       = Environment.GetEnvironmentVariable("Llm__OllamaModel");
+Console.WriteLine($"Ollama model: {ollamaModel}");
+// Create LlmSettings from environment variables
+var llmSettings = new LlmSettings
+{
+    Url         = watsonxUrl        ?? throw new InvalidOperationException("Missing Llm__Url"),
+    ProjectId   = watsonxProjectId  ?? throw new InvalidOperationException("Missing Llm__ProjectId"),
+    ModelId     = watsonxModelId    ?? throw new InvalidOperationException("Missing Llm__ModelId"),
+    ApiKey      = watsonxApiKey     ?? throw new InvalidOperationException("Missing Llm__ApiKey"),
+    Version     = watsonxVersion    ?? "2023-10-25",
+    UseOllama   = bool.TryParse(ollamaUse, out var useOllama) && useOllama,
+    OllamaUrl   = ollamaUrl         ?? "http://host.docker.internal:11434",
+    OllamaModel = ollamaModel       ?? "granite3.3:latest"
+};
 
-builder.Configuration.AddEnvironmentVariables();
-
-// var llmSettings = new LlmSettings
-// {
-//     Url          = Environment.GetEnvironmentVariable("Url")          ?? throw new InvalidOperationException("Missing Url"),
-//     ProjectId    = Environment.GetEnvironmentVariable("ProjectId")    ?? throw new InvalidOperationException("Missing ProjectId"),
-//     ModelId      = Environment.GetEnvironmentVariable("ModelId")      ?? throw new InvalidOperationException("Missing ModelId"),
-//     ApiKey       = Environment.GetEnvironmentVariable("ApiKey")       ?? throw new InvalidOperationException("Missing ApiKey"),
-//     UseOllama   = bool.Parse(Environment.GetEnvironmentVariable("UseOllama") ?? "false"),
-//     OllamaModel  = Environment.GetEnvironmentVariable("OllamaModel")  ?? throw new InvalidOperationException("Missing OllamaModel"),
-//     OllamaUrl    = Environment.GetEnvironmentVariable("OllamaUrl")    ?? throw new InvalidOperationException("Missing OllamaUrl"),
-// };
-//
-// builder.Services.AddSingleton(llmSettings);
-
+builder.Services.AddSingleton(llmSettings);
 
 
 builder.Services.AddHttpClient<TokenProvider>();
