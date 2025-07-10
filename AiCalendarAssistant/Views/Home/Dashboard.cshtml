@@ -31,31 +31,7 @@
     </div>
 
     <!-- Recent Emails -->
-    <div class="mt-5">
-        <h3 class="fw-semibold text-mint mb-3">Recent Emails</h3>
-        <div class="table-responsive bg-dark rounded shadow-sm">
-            <table class="table table-dark table-striped table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>From</th>
-                        <th>Subject</th>
-                        <th>Snippet</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var email in Model)
-                    {
-                        <tr>
-                            <td>@email.Date.ToString("g")</td>
-                            <td>@email.From</td>
-                            <td>@email.Subject</td>
-                            <td>@email.Snippet</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+    
     </div>
 
     <!-- Optional: Quick Actions -->

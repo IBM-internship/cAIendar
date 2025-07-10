@@ -17,25 +17,70 @@ namespace AiCalendarAssistant.Controllers
 		}
 
 		[HttpGet("all")]
-		public async Task<ActionResult<List<Event>>> GetAllEvents()
+		public async Task<ActionResult<List<object>>> GetAllEvents()
 		{
-			var events = await _calendarService.GetEventsAsync(e => true);
-			return Ok(events);
+			var events = await _calendarService.GetAllEventsAsync();
+
+			var formattedEvents = events.Select(e => new
+			{
+				id = e.Id.ToString(),
+				calendarId = "1",
+				title = e.Title,
+				category = e.IsAllDay ? "allday" : "time",
+				start = e.Start.ToString("o"),
+				end = e.End.ToString("o"),
+				isAllday = e.IsAllDay,
+				location = e.Location,
+				raw = new
+				{
+					description = e.Description,
+					meetingLink = e.MeetingLink,
+					isInPerson = e.IsInPerson,
+					userId = e.UserId
+				},
+				color = e.Color
+			});
+
+			return Ok(formattedEvents);
 		}
 
 		[HttpPost("range")]
-		public async Task<ActionResult<List<Event>>> GetEventsInRange([FromBody] TimeRangeRequest range)
+		public async Task<ActionResult<List<object>>> GetEventsInRange([FromBody] TimeRangeRequest range)
 		{
 			if (range.End <= range.Start)
 				return BadRequest("End must be after start.");
 
 			var events = await _calendarService.GetEventsInTimeRangeAsync(range.Start, range.End);
-			return Ok(events);
+
+			var formattedEvents = events.Select(e => new
+			{
+				id = e.Id.ToString(),
+				calendarId = "1",
+				title = e.Title,
+				category = e.IsAllDay ? "allday" : "time",
+				start = e.Start.ToString("o"),
+				end = e.End.ToString("o"),
+				isAllday = e.IsAllDay,
+				location = e.Location,
+				raw = new
+				{
+					description = e.Description,
+					meetingLink = e.MeetingLink,
+					isInPerson = e.IsInPerson,
+					userId = e.UserId
+				},
+				color = e.Color
+			});
+
+			return Ok(formattedEvents);
 		}
 
 		[HttpPost("add")]
 		public async Task<ActionResult<int>> AddEvent([FromBody] Event newEvent)
 		{
+			newEvent.Start = DateTime.SpecifyKind(newEvent.Start, DateTimeKind.Utc);
+			newEvent.End = DateTime.SpecifyKind(newEvent.End, DateTimeKind.Utc);
+
 			await _calendarService.AddEventAsync(newEvent);
 			return Ok(newEvent.Id);
 		}
@@ -56,7 +101,20 @@ namespace AiCalendarAssistant.Controllers
 			if (existing == null)
 				return NotFound($"Event with ID {updatedEvent.Id} not found.");
 
+			updatedEvent.Start = DateTime.SpecifyKind(updatedEvent.Start, DateTimeKind.Utc);
+			updatedEvent.End = DateTime.SpecifyKind(updatedEvent.End, DateTimeKind.Utc);
+
 			await _calendarService.ReplaceEventAsync(updatedEvent);
+			return NoContent();
+		}
+
+		[HttpPut("move")]
+		public async Task<IActionResult> UpdateEventTime([FromBody] UpdateTimeRequest update)
+		{
+			var success = await _calendarService.UpdateEventTimeAsync(update.Id, update.Start, update.End);
+			if (!success)
+				return NotFound();
+
 			return NoContent();
 		}
 
@@ -70,5 +128,13 @@ namespace AiCalendarAssistant.Controllers
 		{
 			public int Id { get; set; }
 		}
+
+		public class UpdateTimeRequest
+		{
+			public int Id { get; set; }
+			public DateTime Start { get; set; }
+			public DateTime End { get; set; }
+		}
 	}
+
 }
