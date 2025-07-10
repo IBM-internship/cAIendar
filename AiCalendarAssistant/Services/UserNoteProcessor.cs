@@ -61,6 +61,7 @@ internal sealed class UserNoteProcessor
 
         Console.WriteLine($"Extracted UserNote Info → {response.Content}");
 
+        using var eventDoc = JsonDocument.Parse(response.Content);
         var root = eventDoc.RootElement;
 
         // Map the extracted fields to the Event model
