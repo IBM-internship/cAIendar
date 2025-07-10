@@ -68,17 +68,17 @@ namespace AiCalendarAssistant.Controllers
             return NoContent();
         }
 
-        [HttpPut("replace")]
-        public async Task<ActionResult> ReplaceEvent([FromBody] EventDto updatedDto)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var existing = await _calendarService.GetEventByIdAsync(updatedDto.Id);
-            if (existing == null || existing.UserId != userId)
-                return NotFound($"Event with ID {updatedDto.Id} not found or unauthorized.");
+        //[HttpPut("replace")]
+        //public async Task<ActionResult> ReplaceEvent([FromBody] EventDto updatedDto)
+        //{
+        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    var existing = await _calendarService.GetEventByIdAsync(updatedDto.Id);
+        //    if (existing == null || existing.UserId != userId)
+        //        return NotFound($"Event with ID {updatedDto.Id} not found or unauthorized.");
 
-            await _calendarService.ReplaceEventAsync(updatedEvent);
-            return NoContent();
-        }
+        //    await _calendarService.ReplaceEventAsync(updatedEvent);
+        //    return NoContent();
+        ////}
 
 		public class TimeRangeRequest
 		{

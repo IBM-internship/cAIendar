@@ -4,6 +4,7 @@ using AiCalendarAssistant.Models;
 using AiCalendarAssistant.Services;
 using Google.Apis.Gmail.v1;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -32,9 +33,7 @@ namespace AiCalendarAssistant.Controllers
 
 		public async Task<IActionResult> Dashboard()
 		{
-			var emails = await _gmail.GetLastEmailsAsync();
-			;
-			return View(emails);
+			return View();
 		}
 
 		[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
