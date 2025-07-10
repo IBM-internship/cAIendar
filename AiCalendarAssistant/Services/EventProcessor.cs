@@ -40,16 +40,14 @@ public class EventProcessor(
         if ((sameCategory && !shouldReplace) || mostImportantEvent.Importance > newEvent.Importance)
         {
             // If the most important event is more important than the new event, skip adding the new event
-            // TODO: remove dummy parameters after adding Email to the Event model
-            SendCancellationEmailAsync("rosenlepilkov@gmail.com", mostImportantEvent, new Email());
+            SendCancellationEmailAsync(newEvent.EventCreatedFromEmail!.SendingUserEmail, mostImportantEvent, newEvent.EventCreatedFromEmail!);
         }
         else if ((sameCategory && shouldReplace) || mostImportantEvent.Importance < newEvent.Importance)
         {
             foreach (var collidingEvent in collidingEvents)
             {
                 db.Events.Remove(collidingEvent);
-                // TODO: remove dummy parameters after adding Email to the Event model
-                SendCancellationEmailAsync("rosenlepilkov@gmail.com", newEvent, new Email());
+                SendCancellationEmailAsync(collidingEvent.EventCreatedFromEmail!.SendingUserEmail, newEvent, collidingEvent.EventCreatedFromEmail!);
             }
 
             db.Events.Add(newEvent);
@@ -98,30 +96,15 @@ public class EventProcessor(
     
     private bool ShouldReplaceEvent(List<Event> existingEvents, Event newEvent)
     {
-        // TODO: remove dummy email
-        Email eventEmail = new Email();
-        
-        Func<Event, string> eventToString = e => 
-            $"""
-            Title: {e.Title}
-            Date: {e.Start:yyyy-MM-dd}
-            Start Time: {e.Start:HH:mm}
-            End Time: {e.End:HH:mm}
-            Importance: {e.Importance}
-            Email Sender: {eventEmail.SendingUserEmail}
-            Email Subject: {eventEmail.Title}
-            Description: {e.Description ?? "No description provided."}
-            """;
-        
         StringBuilder eventsInfo = new();
         eventsInfo.AppendLine("Existing events:");
         foreach (var existingEvent in existingEvents)
         {
-            eventsInfo.AppendLine(eventToString(existingEvent));
+            eventsInfo.AppendLine(EventToString(existingEvent));
             eventsInfo.AppendLine("---------------------------------");
         }
         eventsInfo.AppendLine("New event:");
-        eventsInfo.AppendLine(eventToString(newEvent));
+        eventsInfo.AppendLine(EventToString(newEvent));
         
         var prompt = new PromptRequest(
             [
@@ -134,6 +117,7 @@ public class EventProcessor(
                     $"""
                     {eventsInfo}
                     Should I replace the existing events with the new one?
+                    Write true if yes, false if no.
                     """)
             ],
             ResponseFormat: ShouldReplaceEventSchema.RootElement);
@@ -142,5 +126,17 @@ public class EventProcessor(
         using var doc = JsonDocument.Parse(response.Content!);
 
         return doc.RootElement.GetProperty("should-change-event").GetBoolean();
+
+        string EventToString(Event e) =>
+            $"""
+             Title: {e.Title}
+             Date: {e.Start:yyyy-MM-dd}
+             Start Time: {e.Start:HH:mm}
+             End Time: {e.End:HH:mm}
+             Importance: {e.Importance}
+             Email Sender: {e.EventCreatedFromEmail!.SendingUserEmail}
+             Email Subject: {e.Title}
+             Description: {e.Description ?? "No description provided."}
+             """;
     }
 }
