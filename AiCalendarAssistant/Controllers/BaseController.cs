@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace AiCalendarAssistant.Controllers
+namespace AiCalendarAssistant.Controllers;
+
+[AutoValidateAntiforgeryToken]
+public class BaseController : Controller
 {
-    [AutoValidateAntiforgeryToken]
-    public class BaseController : Controller
-    {
-    }
 }

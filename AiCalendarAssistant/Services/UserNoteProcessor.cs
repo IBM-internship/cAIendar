@@ -1,25 +1,15 @@
-using PromptingPipeline.Interfaces;
-using PromptingPipeline.Models;
-using AiCalendarAssistant.Data.Models;
 using System.Text.Json;
-using AiCalendarAssistant.Services.Contracts;
-using PromptingPipeline.Services;
-namespace PromptingPipeline.Services;
+using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Interfaces;
+using AiCalendarAssistant.Models;
 
-internal sealed class UserNoteProcessor
+namespace AiCalendarAssistant.Services;
+
+public class UserNoteProcessor(PromptRouter router, IUserNoteReader reader)
 {
-    private readonly PromptRouter _router;
-    private readonly IUserNoteReader _reader;
-
-    public UserNoteProcessor(PromptRouter router, IUserNoteReader reader)
+	public async Task<Event> ProcessUserNoteAsync(CancellationToken ct = default)
     {
-        _router = router;
-        _reader = reader;
-    }
-
-    public async Task<Event> ProcessUserNoteAsync(CancellationToken ct = default)
-    {
-        var note = await _reader.GetNextUserNoteAsync(ct);
+        var note = await reader.GetNextUserNoteAsync(ct);
 
         using var schemaDoc = JsonDocument.Parse("""
         {
@@ -57,7 +47,7 @@ internal sealed class UserNoteProcessor
 		// Extra: new(){["temperature"] = 1.5, ["top_p"] = 0.8},
         ResponseFormat: schemaDoc.RootElement);
 
-        var response = await _router.SendAsync(prompt, ct);
+        var response = await router.SendAsync(prompt, ct);
 
         Console.WriteLine($"Extracted UserNote Info → {response.Content}");
 

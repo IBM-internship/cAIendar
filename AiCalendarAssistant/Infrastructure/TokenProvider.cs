@@ -1,19 +1,14 @@
-using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using AiCalendarAssistant.Config;
 using Microsoft.Extensions.Options;
-using PromptingPipeline.Config;
 
-namespace PromptingPipeline.Infrastructure;
+namespace AiCalendarAssistant.Infrastructure;
 
-internal sealed class TokenProvider
+public class TokenProvider(HttpClient http, IOptions<LlmSettings> cfg)
 {
-    private readonly HttpClient  _http;
-    private readonly LlmSettings _cfg;
+    private readonly LlmSettings _cfg = cfg.Value;
     private string?  _token;
     private DateTime _expiresUtc;
-
-    public TokenProvider(HttpClient http, IOptions<LlmSettings> cfg)
-        => (_http, _cfg) = (http, cfg.Value);
 
     public async ValueTask<string> GetAsync(CancellationToken ct = default)
     {
@@ -32,7 +27,7 @@ internal sealed class TokenProvider
         };
         req.Headers.Accept.ParseAdd("application/json");
 
-        var resp = await _http.SendAsync(req, ct);
+        var resp = await http.SendAsync(req, ct);
         resp.EnsureSuccessStatusCode();
 
         var body = await resp.Content.ReadFromJsonAsync<IamTokenResponse>(ct)

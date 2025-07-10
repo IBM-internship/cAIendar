@@ -1,9 +1,9 @@
 using AiCalendarAssistant.Data.Models;
-using PromptingPipeline.Interfaces;
-using PromptingPipeline.Models;
-using System;
+using AiCalendarAssistant.Interfaces;
 
-internal sealed class UserNoteReader : IUserNoteReader
+namespace AiCalendarAssistant.Services;
+
+public class UserNoteReader : IUserNoteReader
 {
 	public Task<UserNote> GetNextUserNoteAsync(CancellationToken ct = default)
 	{
@@ -16,6 +16,6 @@ internal sealed class UserNoteReader : IUserNoteReader
 			IsProcessed=false
 		};
 
-        return Task.FromResult(note);
-    }
+		return Task.FromResult(note);
+	}
 }

@@ -1,26 +1,22 @@
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
+using AiCalendarAssistant.Config;
+using AiCalendarAssistant.Infrastructure;
+using AiCalendarAssistant.Interfaces;
+using AiCalendarAssistant.Models;
 using Microsoft.Extensions.Options;
-using PromptingPipeline.Config;
-using PromptingPipeline.Infrastructure;
-using PromptingPipeline.Models;
 
-namespace PromptingPipeline.Llm;
+namespace AiCalendarAssistant.Llm;
 
-internal sealed class WatsonxClient : ILlmClient
+public class WatsonxClient(HttpClient http, TokenProvider tokens, IOptions<LlmSettings> cfg)
+    : ILlmClient
 {
-    private readonly HttpClient    _http;
-    private readonly TokenProvider _tokens;
-    private readonly LlmSettings   _cfg;
+    private readonly LlmSettings   _cfg = cfg.Value;
 
     private static readonly JsonSerializerOptions Opts = new()
     {
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
-
-    public WatsonxClient(HttpClient http, TokenProvider tokens, IOptions<LlmSettings> cfg)
-        => (_http, _tokens, _cfg) = (http, tokens, cfg.Value);
 
     public async Task<PromptResponse> SendAsync(PromptRequest p, CancellationToken ct = default)
     {
@@ -40,9 +36,9 @@ internal sealed class WatsonxClient : ILlmClient
         {
             Content = JsonContent.Create(payload, options: Opts)
         };
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _tokens.GetAsync(ct));
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await tokens.GetAsync(ct));
 
-        var resp = await _http.SendAsync(req, ct);
+        var resp = await http.SendAsync(req, ct);
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(ct);
 		// Console.WriteLine($"Watsonx response: {json}");
         resp.EnsureSuccessStatusCode();

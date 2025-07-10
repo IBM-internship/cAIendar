@@ -1,8 +1,9 @@
 // Llm/CommonJson.cs
-using System.Text.Json;
-using PromptingPipeline.Models;
 
-namespace PromptingPipeline.Llm;
+using System.Text.Json;
+using AiCalendarAssistant.Models;
+
+namespace AiCalendarAssistant.Llm;
 
 internal static class CommonJson
 {

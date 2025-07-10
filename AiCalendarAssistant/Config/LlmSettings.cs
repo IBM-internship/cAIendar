@@ -1,4 +1,4 @@
-namespace PromptingPipeline.Config;
+namespace AiCalendarAssistant.Config;
 
 public sealed record LlmSettings
 {

@@ -7,15 +7,13 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PromptingPipeline.Config;
-using PromptingPipeline.Infrastructure;
-using PromptingPipeline.Interfaces;
-using PromptingPipeline.Llm;
-using PromptingPipeline.Models;
 using System.Text.Json;
 using System;
+using AiCalendarAssistant.Config;
+using AiCalendarAssistant.Infrastructure;
+using AiCalendarAssistant.Llm;
+using AiCalendarAssistant.Models;
 using DotNetEnv;
-using PromptingPipeline.Services;
 using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -145,21 +143,22 @@ builder.Services.AddHttpClient<TokenProvider>();
 builder.Services.AddHttpClient<WatsonxClient>();
 builder.Services.AddHttpClient<OllamaClient>();
 builder.Services.AddSingleton<PromptRouter>();
-builder.Services.AddSingleton<IEmailReader, EmailReader>();
 builder.Services.AddSingleton<EmailProcessor>();
+builder.Services.AddSingleton<EventProcessor>();
+builder.Services.AddSingleton<EmailComposer>();
 
 
 var app = builder.Build();
-var router = app.Services.GetRequiredService<PromptRouter>();
+// var router = app.Services.GetRequiredService<PromptRouter>();
 
-var chat = new PromptRequest(new()
-{
-    new("system", "You are a helpful assistant."),
-    new("user",   "What is the capital of France?")
-});
-
-var chatResp = await router.SendAsync(chat);
-Console.WriteLine($"Capital → {chatResp.Content}");
+// var chat = new PromptRequest(new()
+// {
+//     new("system", "You are a helpful assistant."),
+//     new("user",   "What is the capital of France?")
+// });
+//
+// var chatResp = await router.SendAsync(chat);
+// Console.WriteLine($"Capital → {chatResp.Content}");
 
 if (app.Environment.IsDevelopment())
 {

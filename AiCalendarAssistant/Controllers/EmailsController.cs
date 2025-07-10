@@ -48,7 +48,7 @@ public class EmailsController(GmailEmailService gmail, TokenRefreshService token
                 return RedirectToAction("Logout", "Account");
             }
 
-            var success = await gmail.ReplyToEmailAsync(messageId, threadId, originalSubject, fromEmail);
+            var success = await gmail.ReplyToEmailAsync(messageId, threadId, originalSubject, fromEmail, "this is a test reply");
             
             if (success)
             {

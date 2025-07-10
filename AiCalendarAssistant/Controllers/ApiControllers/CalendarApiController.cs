@@ -1,95 +1,85 @@
-using AiCalendarAssistant.Data.Models;
+using System.Security.Claims;
 using AiCalendarAssistant.Models.DTOs;
-using AiCalendarAssistant.Services;
 using AiCalendarAssistant.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
-namespace AiCalendarAssistant.Controllers
+namespace AiCalendarAssistant.Controllers.ApiControllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class CalendarApiController(ICalendarService calendarService) : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
-    public class CalendarApiController : ControllerBase
+    [HttpGet("all")]
+    public async Task<ActionResult<List<EventDto>>> GetAllEvents()
     {
-        private readonly ICalendarService _calendarService;
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var events = await calendarService.GetEventsAsync(e => e.UserId == userId);
+        var dtoList = events.Select(EventDto.FromEvent).ToList();
+        return Ok(dtoList);
+    }
 
-        public CalendarApiController(ICalendarService calendarService)
-        {
-            _calendarService = calendarService;
-        }
+    [HttpPost("range")]
+    public async Task<ActionResult<List<EventDto>>> GetEventsInRange([FromBody] TimeRangeRequest range)
+    {
+        if (range.End <= range.Start)
+            return BadRequest("End must be after start.");
 
-        [HttpGet("all")]
-        public async Task<ActionResult<List<EventDto>>> GetAllEvents()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var events = await _calendarService.GetEventsAsync(e => e.UserId == userId);
-            var dtoList = events.Select(EventDto.FromEvent).ToList();
-            return Ok(dtoList);
-        }
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var events = await calendarService.GetEventsAsync(e =>
+            e.UserId == userId &&
+            e.Start < range.End &&
+            e.End > range.Start);
 
-        [HttpPost("range")]
-        public async Task<ActionResult<List<EventDto>>> GetEventsInRange([FromBody] TimeRangeRequest range)
-        {
-            if (range.End <= range.Start)
-                return BadRequest("End must be after start.");
+        var dtoList = events.Select(EventDto.FromEvent).ToList();
+        return Ok(dtoList);
+    }
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var events = await _calendarService.GetEventsAsync(e =>
-                e.UserId == userId &&
-                e.Start < range.End &&
-                e.End > range.Start);
+    [HttpPost("add")]
+    public async Task<ActionResult<int>> AddEvent([FromBody] EventDto newEventDto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var newEvent = newEventDto.ToEvent(userId);
+        await calendarService.AddEventAsync(newEvent);
+        return Ok(newEvent.Id);
+    }
 
-            var dtoList = events.Select(EventDto.FromEvent).ToList();
-            return Ok(dtoList);
-        }
+    [HttpDelete("delete")]
+    public async Task<ActionResult> DeleteEvent([FromBody] DeleteEventRequest request)
+    {
+        var existing = await calendarService.GetEventByIdAsync(request.Id);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (existing == null || existing.UserId != userId)
+            return NotFound($"Event with ID {request.Id} not found or unauthorized.");
 
-        [HttpPost("add")]
-        public async Task<ActionResult<int>> AddEvent([FromBody] EventDto newEventDto)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var newEvent = newEventDto.ToEvent(userId);
-            await _calendarService.AddEventAsync(newEvent);
-            return Ok(newEvent.Id);
-        }
+        var success = await calendarService.DeleteEventAsync(request.Id);
+        if (!success)
+            return NotFound($"Event with ID {request.Id} could not be deleted.");
+        return NoContent();
+    }
 
-        [HttpDelete("delete")]
-        public async Task<ActionResult> DeleteEvent([FromBody] DeleteEventRequest request)
-        {
-            var existing = await _calendarService.GetEventByIdAsync(request.Id);
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (existing == null || existing.UserId != userId)
-                return NotFound($"Event with ID {request.Id} not found or unauthorized.");
+    [HttpPut("replace")]
+    public async Task<ActionResult> ReplaceEvent([FromBody] EventDto updatedDto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var existing = await calendarService.GetEventByIdAsync(updatedDto.Id);
+        if (existing == null || existing.UserId != userId)
+            return NotFound($"Event with ID {updatedDto.Id} not found or unauthorized.");
 
-            var success = await _calendarService.DeleteEventAsync(request.Id);
-            if (!success)
-                return NotFound($"Event with ID {request.Id} could not be deleted.");
-            return NoContent();
-        }
+        var updatedEvent = updatedDto.ToEvent(userId);
+        await calendarService.ReplaceEventAsync(updatedEvent);
+        return NoContent();
+    }
 
-        [HttpPut("replace")]
-        public async Task<ActionResult> ReplaceEvent([FromBody] EventDto updatedDto)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var existing = await _calendarService.GetEventByIdAsync(updatedDto.Id);
-            if (existing == null || existing.UserId != userId)
-                return NotFound($"Event with ID {updatedDto.Id} not found or unauthorized.");
+    public class TimeRangeRequest
+    {
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+    }
 
-            var updatedEvent = updatedDto.ToEvent(userId);
-            await _calendarService.ReplaceEventAsync(updatedEvent);
-            return NoContent();
-        }
-
-        public class TimeRangeRequest
-        {
-            public DateTime Start { get; set; }
-            public DateTime End { get; set; }
-        }
-
-        public class DeleteEventRequest
-        {
-            public int Id { get; set; }
-        }
+    public class DeleteEventRequest
+    {
+        public int Id { get; set; }
     }
 }
