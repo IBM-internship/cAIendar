@@ -5,34 +5,25 @@ using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Models;
 using AiCalendarAssistant.Services.Contracts;
 using Microsoft.EntityFrameworkCore;
-using DataMessage = AiCalendarAssistant.Data.Models.Message;
-using PromptMessage = AiCalendarAssistant.Models.Message;
+using DataMessage  = AiCalendarAssistant.Data.Models.Message;
 
 namespace AiCalendarAssistant.Services;
 
-/// <summary>
-/// Handles the message round-trip with the LLM, including tool calls.
-/// The assistant now has one built-in tool:
-///   • get_events_in_time_range – returns all events whose <see cref="Event.Start"/>
-///     is inside the inclusive window [start, end].
-/// </summary>
-public class ChatMessager(
+public sealed class ChatMessager(
     ApplicationDbContext context,
     PromptRouter router,
     ICalendarService calendarService)
 {
-    // ── 1) system prompt ──────────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────────────────
     private const string SystemPrompt =
         """
         You are the user's personal calendar manager. You help them organise events,
         meetings, notes and tasks.  
         When the user asks for information that requires external data, call one of
-        the available tools with a JSON tool_call.  
+        the available tools with a JSON tool_call.
         """;
 
-    // ── 2) tool definition (JSON) ────────────────────────────────────────────────
-    //   The LLM receives this every turn so it knows the tool exists.
-    private static readonly JsonDocument EventToolDoc = JsonDocument.Parse(
+    private static readonly JsonDocument ToolDoc = JsonDocument.Parse(
         """
         [
           {
@@ -46,7 +37,7 @@ public class ChatMessager(
                   "start": { "type": "string", "description": "Start of the window (ISO-8601)" },
                   "end":   { "type": "string", "description": "End of the window (ISO-8601)" }
                 },
-                "required": ["start", "end"]
+                "required": ["start","end"]
               }
             }
           },
@@ -54,31 +45,28 @@ public class ChatMessager(
             "type": "function",
             "function": {
               "name": "get_tasks_in_day_range",
-              "description": "Fetch all calendar tasks that the user has between two timestamps days, if you use only for one day, use the same date for start and end",
+              "description": "Fetch all tasks whose date lies between two calendar days (inclusive). If you need a single day use the same date for start_day and end_day.",
               "parameters": {
                 "type": "object",
                 "properties": {
-                  "start_day": { "type": "string", "description": "Start Day" },
-                  "end_day":   { "type": "string", "description": "End Day" }
+                  "start_day": { "type": "string", "description": "YYYY-MM-DD or any ISO-8601 date" },
+                  "end_day":   { "type": "string", "description": "YYYY-MM-DD or any ISO-8601 date" }
                 },
-                "required": ["start_day", "end_day"]
+                "required": ["start_day","end_day"]
               }
             }
           }
         ]
         """);
+    // ──────────────────────────────────────────────────────────────────────────
 
-    // ── 3) ctor ──────────────────────────────────────────────────────────────────
-
-    // ── 4) public entry-point ────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────────────────
     public async Task<DataMessage> GenerateAssistantMessageAsync(
-        Chat               chat,
-        CancellationToken  ct = default)
+        Chat              chat,
+        CancellationToken ct = default)
     {
-        // 4-a) load prior conversation and prepend system message
+        // 1) build conversation history
         var history = new List<PromptMessage> { new("system", SystemPrompt) };
-
-		var userId = chat.UserId;
 
         var messages = await context.Messages
             .Where(m => m.ChatId == chat.Id)
@@ -87,92 +75,146 @@ public class ChatMessager(
 
         history.AddRange(messages.Select(m => new PromptMessage(m.Role.ToString().ToLowerInvariant(), m.Text)));
 
-        // 4-b) ── FIRST PASS ─ assistant decides whether to call the tool
-        var firstRequest = new PromptRequest(
+        // 2) first pass – let the model decide whether to call a tool
+        var firstReq = new PromptRequest(
             history,
-            Tools      : EventToolDoc.RootElement,
-            ToolChoice : "auto"          // let the model decide
-        );
+            Tools      : ToolDoc.RootElement,
+            ToolChoice : "auto");
 
-        var firstResponse = await router.SendAsync(firstRequest, ct);
+        var firstResp = await router.SendAsync(firstReq, ct);
 
-        // 4-c) If the assistant did NOT request a tool, we can return immediately.
-        if (!firstResponse.HasToolCalls)
+        // 3) if no tool call, persist answer & return
+        if (!firstResp.HasToolCalls)
             return await PersistAssistantReplyAsync(
-                chat,
-                firstResponse.Content ?? string.Empty,
-                messages.Count,
-                ct);
+                chat, firstResp.Content ?? string.Empty, messages.Count, ct);
 
-        // 4-d) ── TOOL EXECUTION & SECOND PASS ─────────────────────────────────
-        foreach (var call in firstResponse.ToolCalls!)
+        // 4) handle each tool-call, append results
+        foreach (var call in firstResp.ToolCalls!)
         {
-			Console.WriteLine("\n\n\n\n\nAssistant called tool: " + call.Name);
-            if (call.Name != "get_events_in_time_range" || call.Name != "get_tasks_in_day_range")
-				Console.WriteLine("\n\n\nIgnoring tool call: " + call.Name + "\n\n\n");
-                continue; // unknown tool – ignore
+            var payload = await ExecuteToolCallAsync(call, chat.UserId, ct);
+            if (payload is null) continue;           // unknown tool → skip
 
-			JsonElement args = call.Arguments;          // could be { … }  OR  "{"start": … }"
-
-			if (args.ValueKind == JsonValueKind.String)
-			{
-				// LLM wrapped the JSON in quotes → unwrap it
-				using var tmpDoc = JsonDocument.Parse(args.GetString() ?? "{}");
-				args = tmpDoc.RootElement.Clone();      // clone keeps it alive after disposal
-			}
-
-			var start = DateTime.Parse(
-				args.GetProperty("start").GetString()!,
-				null, DateTimeStyles.RoundtripKind);
-
-			var end   = DateTime.Parse(
-				args.GetProperty("end").GetString()!,
-				null, DateTimeStyles.RoundtripKind);
-
-
-            // Run the tool
-            var events = await calendarService.GetEventsInTimeRangeAsync(start, end, userId);
-
-            var payload = JsonSerializer.Serialize(new
-            {
-                events = events.Select(e => new
-                {
-                    e.Id,
-                    e.Title,
-                    e.Description,
-                    start  = e.Start,
-                    end    = e.End,
-                    e.Location,
-                    e.IsAllDay,
-                    e.IsInPerson,
-                    e.MeetingLink,
-                    importance = e.Importance.ToString()
-                })
-            });
-
-            // Append the tool result so the LLM sees it in the *next* round
             history.Add(new("tool", payload, call.Id));
         }
 
-        // Second (and final) round: the model now has the tool output
-        var followUpRequest  = new PromptRequest(history);
-		var finalResponse    = await router.SendAsync(followUpRequest, ct);
+        // 5) second pass – assistant now has the data
+        var followUp      = new PromptRequest(history);
+        var finalResp     = await router.SendAsync(followUp, ct);
 
         return await PersistAssistantReplyAsync(
-            chat,
-            finalResponse.Content ?? string.Empty,
-            messages.Count,
-            ct);
+            chat, finalResp.Content ?? string.Empty, messages.Count, ct);
     }
+    // ──────────────────────────────────────────────────────────────────────────
 
-    // ── 5) helpers ───────────────────────────────────────────────────────────────
-    private async Task<DataMessage> PersistAssistantReplyAsync(
-        Chat              chat,
-        string            replyText,
-        int               position,
+    private async Task<string?> ExecuteToolCallAsync(
+        ToolCall          call,
+        string?           userId,
         CancellationToken ct)
     {
-        var nextMessage = new DataMessage
+        return call.Name switch
+        {
+            "get_events_in_time_range" => await HandleGetEventsInTimeRangeAsync(call, userId, ct),
+            "get_tasks_in_day_range"   => await HandleGetTasksInDayRangeAsync(call, userId, ct),
+            _                          => null   // unknown tool
+        };
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private static JsonElement NormalizeArguments(JsonElement element)
+    {
+        // The LLM sometimes returns a JSON-encoded string instead of an object.
+        if (element.ValueKind != JsonValueKind.String) return element;
+
+        using var tmp = JsonDocument.Parse(element.GetString() ?? "{}");
+        return tmp.RootElement.Clone();   // keep alive after tmp.Dispose()
+    }
+
+    private async Task<string> HandleGetEventsInTimeRangeAsync(
+        ToolCall          call,
+        string?           userId,
+        CancellationToken ct)
+    {
+        var args  = NormalizeArguments(call.Arguments);
+
+        var start = DateTime.Parse(
+            args.GetProperty("start").GetString()!,
+            null, DateTimeStyles.RoundtripKind);
+
+        var end   = DateTime.Parse(
+            args.GetProperty("end").GetString()!,
+            null, DateTimeStyles.RoundtripKind);
+
+        // Fetch events via service, then enforce per-user filter (if any)
+        var events = await calendarService.GetEventsInTimeRangeAsync(start, end, userId);
+        if (!string.IsNullOrEmpty(userId))
+            events = events.Where(e => e.UserId == userId).ToList();
+
+        return JsonSerializer.Serialize(new
+        {
+            events = events.Select(e => new
+            {
+                e.Id,
+                e.Title,
+                e.Description,
+                start  = e.Start,
+                end    = e.End,
+                e.Location,
+                e.IsAllDay,
+                e.IsInPerson,
+                e.MeetingLink,
+                importance = e.Importance.ToString()
+            })
+        });
+    }
+
+    private async Task<string> HandleGetTasksInDayRangeAsync(
+        ToolCall          call,
+        string?           userId,
+        CancellationToken ct)
+    {
+        var args = NormalizeArguments(call.Arguments);
+
+        var startDay = DateOnly.FromDateTime(
+            DateTime.Parse(args.GetProperty("start_day").GetString()!,
+                           null, DateTimeStyles.RoundtripKind));
+
+        var endDay   = DateOnly.FromDateTime(
+            DateTime.Parse(args.GetProperty("end_day").GetString()!,
+                           null, DateTimeStyles.RoundtripKind));
+
+        var tasksQry = context.UserTasks.AsQueryable();
+
+        if (!string.IsNullOrEmpty(userId))
+            tasksQry = tasksQry.Where(t => t.UserId == userId);
+
+        var tasks = await tasksQry
+            .Where(t => t.Date >= startDay && t.Date <= endDay)
+            .OrderBy(t => t.Date)
+            .ToListAsync(ct);
+
+        return JsonSerializer.Serialize(new
+        {
+            tasks = tasks.Select(t => new
+            {
+                t.Id,
+                t.Title,
+                t.Description,
+                date       = t.Date,
+                importance = t.Importance.ToString(),
+                t.IsCompleted
+            })
+        });
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private async Task<DataMessage> PersistAssistantReplyAsync(
+        Chat               chat,
+        string             replyText,
+        int                position,
+        CancellationToken  ct)
+    {
+        var msg = new DataMessage
         {
             ChatId = chat.Id,
             Role   = MessageRole.Assistant,
@@ -181,10 +223,9 @@ public class ChatMessager(
             SentOn = DateTime.UtcNow
         };
 
-        context.Messages.Add(nextMessage);
+        context.Messages.Add(msg);
         await context.SaveChangesAsync(ct);
-
-        return nextMessage;
+        return msg;
     }
 }
 
