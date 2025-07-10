@@ -1,0 +1,24 @@
+namespace AiCalendarAssistant.Data.Models
+{
+    public class UserTask
+    {
+        public int Id { get; set; } 
+
+        public string Title { get; set; } = null!; 
+
+        public string? Description { get; set; } 
+
+        public string? Color { get; set; } 
+
+        public string? UserId { get; set; } 
+        public ApplicationUser? User { get; set; } 
+		public Importance Importance { get; set; } = Importance.Medium; 
+    }
+public enum Importance
+	{
+		High,
+		Medium,
+		Low
+	}
+}
+
