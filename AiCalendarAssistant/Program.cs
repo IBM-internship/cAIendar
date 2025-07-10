@@ -1,13 +1,12 @@
-﻿using AiCalendarAssistant.Config;
-using AiCalendarAssistant.Data;
+﻿using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
-using AiCalendarAssistant.Llm;
-using AiCalendarAssistant.Models;
 using AiCalendarAssistant.Services;
 using Microsoft.EntityFrameworkCore;
 using AiCalendarAssistant.Services.Contracts;
 using Microsoft.AspNetCore.Authentication;
+using AiCalendarAssistant.Config;
 using AiCalendarAssistant.Infrastructure;
+using AiCalendarAssistant.Llm;
 using DotNetEnv;
 using Microsoft.AspNetCore.Identity;
 

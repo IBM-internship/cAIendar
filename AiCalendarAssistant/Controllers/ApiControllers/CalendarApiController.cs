@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AiCalendarAssistant.Controllers.ApiControllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/events")]
 [Authorize]
 public class CalendarApiController(ICalendarService calendarService) : ControllerBase
 {
