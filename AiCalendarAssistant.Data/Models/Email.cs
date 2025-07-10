@@ -26,5 +26,6 @@ public class Email
 		
 	public string ThreadId { get; set; } = string.Empty;
 	public string MessageId { get; set; } = string.Empty;
-	public bool IsDeleted { get; set; } = false; // Flag to mark user as deleted without removing from database
+    public Event? EmailCreatedEvent { get; set; }
+    public bool IsDeleted { get; set; } = false; // Flag to mark user as deleted without removing from database
 }
