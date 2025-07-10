@@ -3,6 +3,7 @@ using PromptingPipeline.Config;
 using PromptingPipeline.Models;
 // using PromptingPipeline.Interfaces;
 using PromptingPipeline.Llm;
+namespace PromptingPipeline.Services;
 
 internal sealed class PromptRouter
 {

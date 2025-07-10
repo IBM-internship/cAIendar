@@ -2,7 +2,9 @@ using PromptingPipeline.Interfaces;
 using PromptingPipeline.Models;
 using AiCalendarAssistant.Data.Models;
 using System.Text.Json;
-
+using AiCalendarAssistant.Services.Contracts;
+using PromptingPipeline.Services;
+namespace PromptingPipeline.Services;
 
 internal sealed class UserNoteProcessor
 {
@@ -15,7 +17,7 @@ internal sealed class UserNoteProcessor
         _reader = reader;
     }
 
-    public async Task ProcessUserNoteAsync(CancellationToken ct = default)
+    public async Task<Event> ProcessUserNoteAsync(CancellationToken ct = default)
     {
         var note = await _reader.GetNextUserNoteAsync(ct);
 
@@ -59,22 +61,43 @@ internal sealed class UserNoteProcessor
 
         Console.WriteLine($"Extracted UserNote Info → {response.Content}");
 
-		// var n = new Event
-		// {
-		// 	Title = response.GetString("title_of_event") ?? string.Empty,
-		// 	Description = response.GetString("description"),
-		// 	Start = DateTime.Parse($"{response.GetString("date")}T{response.GetString("start_time")}:00"),
-		// 	End = response.GetBool("has_end_time") 
-		// 		? DateTime.Parse($"{response.GetString("date")}T{response.GetString("end_time")}:00")
-		// 		: DateTime.Parse($"{response.GetString("date")}T{response.GetString("start_time")}:00"),
-		// 	IsAllDay = false,
-		// 	Color = null,
-		// 	Location = null,
-		// 	IsInPerson = response.GetBool("is_in_person"),
-		// 	MeetingLink = null,
-		// 	UserId = null,
-		// 	User = null
-		// };
+        using var eventDoc = JsonDocument.Parse(response.Content);
+        var root = eventDoc.RootElement;
+
+        // Map the extracted fields to the Event model
+        var calendarEvent = new Event
+        {
+            Title = root.GetProperty("title_of_event").GetString() ?? "",
+            Description = root.TryGetProperty("description", out var desc) ? desc.GetString() : null,
+            Start = DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("start_time").GetString()}"),
+            End = root.GetProperty("has_end_time").GetBoolean()
+                ? DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("end_time").GetString()}")
+                : DateTime.Parse($"{root.GetProperty("date").GetString()} 23:59:59"),
+            IsAllDay = root.TryGetProperty("is_all_day", out var isAllDay) && isAllDay.GetBoolean(),
+            IsInPerson = root.TryGetProperty("is_in_person", out var inPerson) && inPerson.GetBoolean(),
+			Location = root.TryGetProperty("location", out var location) ? location.GetString() : null,
+			Importance = root.GetProperty("importance").GetString() switch
+			{
+				"high" => Importance.High,
+				"medium" => Importance.Medium,
+				"low" => Importance.Low,
+				_ => Importance.Medium 
+			},
+			Color = root.GetProperty("importance").GetString() switch
+			{
+				"high" => "red",
+				"medium" => "blue",
+				"low" => "green",
+				_ => "blue"
+			},
+			MeetingLink = null,
+			UserId = null, // FIX THIS!
+			User = null, // maybe this also idk what it does
+		};
+
+        Console.WriteLine($"Extracted Email Info → {response.Content}");
+
+		return calendarEvent;
 	}
 }
 
