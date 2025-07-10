@@ -1,199 +1,1163 @@
-﻿
-@{
-    ViewData["Title"] = "AI Календар";
-}
+﻿<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Календар</title>
 
-<!-- TOAST UI Calendar CSS -->
-<link rel="stylesheet" href="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.css" />
+    <!-- Toast UI Calendar CSS -->
+    <link rel="stylesheet" href="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.css" />
 
-<!-- Bootstrap CSS (if not already in _Layout.cshtml) -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-<div class="container mt-5">
-    <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-primary" id="addEventBtn">+ Ново събитие</button>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+
+        body {
+            background: linear-gradient(135deg, #FDF0D5 0%, #43AA8B 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .calendar-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin: 20px 0;
+        }
+
+        .calendar-header {
+            background: linear-gradient(135deg, #FDF0D5 0%, #43AA8B 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .calendar-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .calendar-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+            .nav-btn:hover {
+                background: rgba(255, 255, 255, 0.3);
+                transform: translateY(-2px);
+            }
+
+        .view-buttons {
+            display: flex;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 5px;
+        }
+
+        .view-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+            .view-btn.active {
+                background: rgba(255, 255, 255, 0.3);
+                transform: scale(1.05);
+            }
+
+        .add-event-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+
+            .add-event-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+            }
+
+        #calendar {
+            max-width: 100%;
+            border: none;
+            background-color: #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            min-height: 700px;
+            height: 700px;
+        }
+
+        /* Enhanced Calendar Styling */
+        .tui-full-calendar-weekday-grid-line {
+            background-color: #f8f9fa;
+        }
+
+        .tui-full-calendar-timegrid-time {
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .calendar-day {
+            font-weight: 600;
+            color: #0d6efd;
+        }
+
+        .tui-full-calendar-popup {
+            z-index: 1055;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        /* Fix for Monthly View Display */
+        .tui-full-calendar-month {
+            height: 100% !important;
+        }
+
+        .tui-full-calendar-month-week {
+            height: calc(100% / 6) !important;
+            min-height: 100px !important;
+        }
+
+        .tui-full-calendar-month-date {
+            height: 100% !important;
+            min-height: 100px !important;
+        }
+
+        .tui-full-calendar-month-date-container {
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        .tui-full-calendar-month-week-item {
+            flex: 1 !important;
+            min-height: 100px !important;
+        }
+
+        /* Calendar Grid Fixes */
+        .tui-full-calendar-layout {
+            height: 100% !important;
+        }
+
+        .tui-full-calendar-month-view {
+            height: 100% !important;
+        }
+
+        .tui-full-calendar-month-view-container {
+            height: 100% !important;
+        }
+
+        .tui-full-calendar-month-view-table {
+            height: 100% !important;
+            table-layout: fixed !important;
+        }
+
+            .tui-full-calendar-month-view-table td {
+                height: calc(100% / 6) !important;
+                min-height: 100px !important;
+                vertical-align: top !important;
+            }
+
+        /* Month view weekday header */
+        .tui-full-calendar-month-weekday {
+            height: 40px !important;
+            line-height: 40px !important;
+            background-color: #f8f9fa !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+
+        /* Fix for date numbers */
+        .tui-full-calendar-month-date-number {
+            padding: 8px !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+        }
+
+        /* Event styling in month view */
+        .tui-full-calendar-month-more {
+            cursor: pointer !important;
+            color: #667eea !important;
+            font-weight: 500 !important;
+        }
+
+            .tui-full-calendar-month-more:hover {
+                color: #764ba2 !important;
+                text-decoration: underline !important;
+            }
+
+        /* Enhanced Modal Styling */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+            .form-control:focus, .form-select:focus {
+                border-color: #667eea;
+                box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            }
+
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        .color-picker-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+            .color-option:hover, .color-option.selected {
+                border-color: #333;
+                transform: scale(1.1);
+            }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            }
+
+        .btn-secondary {
+            border-radius: 10px;
+            padding: 12px 25px;
+            font-weight: 600;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 25px;
+            font-weight: 600;
+        }
+
+        /* Event Details Modal */
+        .event-details {
+            padding: 20px;
+        }
+
+        .event-detail-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .event-detail-icon {
+            width: 20px;
+            margin-right: 10px;
+            color: #667eea;
+        }
+
+        .event-color-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .calendar-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .calendar-controls {
+                justify-content: center;
+            }
+
+            .calendar-container {
+                padding: 15px;
+                margin: 10px;
+            }
+
+            .calendar-title {
+                font-size: 1.5rem;
+            }
+
+            .view-buttons {
+                flex-wrap: wrap;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 400px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1060;
+        }
+
+        .toast {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .toast-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .toast-error {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <h1 class="calendar-title">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                </h1>
+                <div class="calendar-controls">
+                    <button class="nav-btn" id="prevBtn">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="nav-btn" id="todayBtn">Today</button>
+                    <button class="nav-btn" id="nextBtn">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <div class="view-buttons">
+                        <button class="view-btn active" data-view="month">Month</button>
+                        <button class="view-btn" data-view="week">Week</button>
+                        <button class="view-btn" data-view="day">Day</button>
+                    </div>
+                    <button class="add-event-btn" id="addEventBtn">
+                        <i class="fas fa-plus me-2"></i>
+                        New event
+                    </button>
+                </div>
+            </div>
+
+            <div id="calendar"></div>
+        </div>
     </div>
 
-    <div id="calendar" style="height: 800px;"></div>
-
-    <!-- Modal -->
+    <!-- Event Form Modal -->
     <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <form id="eventForm" class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="eventModalLabel">Ново събитие</h5>
+                    <h5 class="modal-title" id="eventModalLabel">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        Ново събитие
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="eventId" />
-                    <div class="mb-3">
-                        <label for="eventTitle" class="form-label">Заглавие</label>
-                        <input type="text" class="form-control" id="eventTitle" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="eventStart" class="form-label">Начало</label>
-                        <input type="datetime-local" class="form-control" id="eventStart" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="eventEnd" class="form-label">Край</label>
-                        <input type="datetime-local" class="form-control" id="eventEnd" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="eventDescription" class="form-label">Описание</label>
-                        <textarea class="form-control" id="eventDescription" rows="2"></textarea>
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="eventAllDay">
-                        <label class="form-check-label" for="eventAllDay">Целодневно събитие</label>
-                    </div>
-                    <div class="mb-3">
-                        <label for="eventLocation" class="form-label">Местоположение</label>
-                        <input type="text" class="form-control" id="eventLocation">
-                    </div>
-                    <div class="mb-3">
-                        <label for="eventMeetingLink" class="form-label">Линк за среща</label>
-                        <input type="text" class="form-control" id="eventMeetingLink">
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="eventIsInPerson">
-                        <label class="form-check-label" for="eventIsInPerson">Присъствено събитие</label>
-                    </div>
-                    <div class="mb-3">
-                        <label for="eventColor" class="form-label">Цвят на събитието</label>
-                        <input type="color" class="form-control form-control-color" id="eventColor" value="#007bff">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="eventTitle" class="form-label">
+                                    <i class="fas fa-heading me-2"></i>Заглавие
+                                </label>
+                                <input type="text" class="form-control" id="eventTitle" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="eventColor" class="form-label">
+                                    <i class="fas fa-palette me-2"></i>Цвят
+                                </label>
+                                <div class="color-picker-container">
+                                    <div class="color-option" data-color="#007bff" style="background-color: #007bff;"></div>
+                                    <div class="color-option" data-color="#28a745" style="background-color: #28a745;"></div>
+                                    <div class="color-option" data-color="#dc3545" style="background-color: #dc3545;"></div>
+                                    <div class="color-option" data-color="#ffc107" style="background-color: #ffc107;"></div>
+                                    <div class="color-option" data-color="#17a2b8" style="background-color: #17a2b8;"></div>
+                                    <div class="color-option" data-color="#6f42c1" style="background-color: #6f42c1;"></div>
+                                    <div class="color-option" data-color="#fd7e14" style="background-color: #fd7e14;"></div>
+                                    <div class="color-option" data-color="#e83e8c" style="background-color: #e83e8c;"></div>
+                                    <input type="color" class="form-control form-control-color" id="eventColor" value="#007bff">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="eventStart" class="form-label">
+                                    <i class="fas fa-play me-2"></i>Начало
+                                </label>
+                                <input type="datetime-local" class="form-control" id="eventStart" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="eventEnd" class="form-label">
+                                    <i class="fas fa-stop me-2"></i>Край
+                                </label>
+                                <input type="datetime-local" class="form-control" id="eventEnd" required>
+                            </div>
+                        </div>
+                    </div>
 
+                    <div class="mb-3">
+                        <label for="eventDescription" class="form-label">
+                            <i class="fas fa-align-left me-2"></i>Описание
+                        </label>
+                        <textarea class="form-control" id="eventDescription" rows="3"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="eventLocation" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Местоположение
+                                </label>
+                                <input type="text" class="form-control" id="eventLocation">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="eventMeetingLink" class="form-label">
+                                    <i class="fas fa-link me-2"></i>Линк за среща
+                                </label>
+                                <input type="url" class="form-control" id="eventMeetingLink">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="eventAllDay">
+                                <label class="form-check-label" for="eventAllDay">
+                                    <i class="fas fa-calendar-day me-2"></i>Целодневно
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="eventIsInPerson">
+                                <label class="form-check-label" for="eventIsInPerson">
+                                    <i class="fas fa-users me-2"></i>Присъствено
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
-                    <button type="submit" class="btn btn-primary">Запази</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Отказ
+                    </button>
+                    <button type="button" class="btn btn-danger" id="deleteEventBtn" style="display: none;">
+                        <i class="fas fa-trash me-2"></i>Изтрий
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Запази
+                    </button>
                 </div>
             </form>
         </div>
     </div>
-</div>
 
-<!-- Toast UI Calendar JS -->
-<script src="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.js"></script>
+    <!-- Event Details Modal -->
+    <div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventDetailsModalLabel">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Детайли за събитието
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+                </div>
+                <div class="modal-body" id="eventDetailsContent">
+                    <!-- Event details will be populated here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Затвори
+                    </button>
+                    <button type="button" class="btn btn-primary" id="editEventBtn">
+                        <i class="fas fa-edit me-2"></i>Редактирай
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- Bootstrap JS Bundle (includes Popper) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const calendar = new tui.Calendar('#calendar', {
-            defaultView: 'month',
-            useFormPopup: false,
-            useDetailPopup: false,
-            template: {
-                monthDayname: function(dayname) {
-                    return `<span class="calendar-day">${dayname.label}</span>`;
-                }
+    <!-- Toast UI Calendar JS -->
+    <script src="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.js"></script>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let calendar;
+            let currentEvents = [];
+            let selectedEvent = null;
+
+            // Initialize Calendar
+            function initializeCalendar() {
+                calendar = new tui.Calendar('#calendar', {
+                    defaultView: 'month',
+                    useFormPopup: false,
+                    useDetailPopup: false,
+                    isReadOnly: false,
+                    usageStatistics: false,
+                    template: {
+                        monthDayname: function(dayname) {
+                            return `<span class="calendar-day">${dayname.label}</span>`;
+                        }
+                    }
+                });
+
+                // Calendar event handlers
+                calendar.on('clickEvent', function(e) {
+                    const event = e.event;
+                    showEventDetails(event);
+                });
+
+                calendar.on('beforeUpdateEvent', function(e) {
+                    const event = e.event;
+                    const changes = e.changes;
+                    updateEventOnServer(event, changes);
+                });
+
+                calendar.on('beforeDeleteEvent', function(e) {
+                    const event = e.event;
+                    if (confirm('Сигурни ли сте, че искате да изтриете това събитие?')) {
+                        deleteEventFromServer(event.id);
+                    }
+                });
+
+                // Enable drag and drop
+                calendar.on('beforeCreateEvent', function(e) {
+                    const event = e;
+                    // Auto-create event when dragging on calendar
+                    createQuickEvent(event);
+                });
             }
-        });
 
-        // Load events from API
-        fetch('/api/calendarapi/all')
-            .then(res => res.json())
-            .then(events => {
-                events.forEach(event => {
-                    calendar.createEvents([{
-                        id: String(event.id),
-                        calendarId: '1',
-                        title: event.title,
-                        category: 'time',
-                        start: event.start,
-                        end: event.end
-                    }]);
+            // Load events from server
+            function loadEvents() {
+                const calendarEl = document.getElementById('calendar');
+                calendarEl.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+                fetch('/api/calendarapi/all')
+                    .then(res => res.json())
+                    .then(events => {
+                        currentEvents = events;
+                        calendarEl.innerHTML = '';
+                        initializeCalendar();
+
+                        events.forEach(event => {
+                            calendar.createEvents([{
+                                id: String(event.id),
+                                calendarId: '1',
+                                title: event.title,
+                                category: event.isAllDay ? 'allday' : 'time',
+                                start: event.start,
+                                end: event.end,
+                                isAllDay: event.isAllDay,
+                                location: event.location,
+                                backgroundColor: event.color || '#007bff',
+                                borderColor: event.color || '#007bff',
+                                raw: event
+                            }]);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading events:', error);
+                        showToast('Грешка при зареждане на събитията', 'error');
+                    });
+            }
+
+            // Navigation controls
+            document.getElementById('prevBtn').addEventListener('click', () => {
+                calendar.prev();
+            });
+
+            document.getElementById('nextBtn').addEventListener('click', () => {
+                calendar.next();
+            });
+
+            document.getElementById('todayBtn').addEventListener('click', () => {
+                calendar.today();
+            });
+
+            // View switching
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const view = this.dataset.view;
+                    calendar.changeView(view);
+
+                    // Update active button
+                    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
                 });
             });
 
-        const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+            // Modal handlers
+            const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+            const eventDetailsModal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
 
-        document.getElementById('addEventBtn').addEventListener('click', () => {
-            document.getElementById('eventForm').reset();
-            document.getElementById('eventId').value = '';
-            eventModal.show();
-        });
+            document.getElementById('addEventBtn').addEventListener('click', () => {
+                openEventForm();
+            });
 
-        function localDatetimeToISOString(localDateTime) {
-            const dt = new Date(localDateTime);
-            return dt.toISOString();
-        }
+            // Color picker
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const color = this.dataset.color;
+                    document.getElementById('eventColor').value = color;
 
+                    // Update visual selection
+                    document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+
+            // Form submission
             document.getElementById('eventForm').addEventListener('submit', async function (e) {
-        e.preventDefault();
+                e.preventDefault();
+                await saveEvent();
+            });
 
-        // Declare eventIdValue here:
-        const eventIdValue = document.getElementById('eventId').value;
+            // Delete event
+            document.getElementById('deleteEventBtn').addEventListener('click', async function() {
+                if (selectedEvent && confirm('Сигурни ли сте, че искате да изтриете това събитие?')) {
+                    await deleteEventFromServer(selectedEvent.id);
+                }
+            });
 
-        const event = {
-            Id: eventIdValue ? parseInt(eventIdValue, 10) : 0,
-            Title: document.getElementById('eventTitle').value,
-            Description: document.getElementById('eventDescription').value,
-            Start: localDatetimeToISOString(document.getElementById('eventStart').value),
-            End: localDatetimeToISOString(document.getElementById('eventEnd').value),
-            IsAllDay: document.getElementById('eventAllDay').checked,
-            Location: document.getElementById('eventLocation').value,
-            MeetingLink: document.getElementById('eventMeetingLink').value,
-            IsInPerson: document.getElementById('eventIsInPerson').checked,
-            Color: document.getElementById('eventColor').value
-        };
+            // Edit event from details modal
+            document.getElementById('editEventBtn').addEventListener('click', function() {
+                eventDetailsModal.hide();
+                setTimeout(() => {
+                    openEventForm(selectedEvent);
+                }, 300);
+            });
 
-        const response = await fetch('/api/calendarapi/add', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(event)
+            // All-day checkbox handler
+            document.getElementById('eventAllDay').addEventListener('change', function() {
+                const startInput = document.getElementById('eventStart');
+                const endInput = document.getElementById('eventEnd');
+
+                if (this.checked) {
+                    // Convert to date inputs
+                    const startDate = startInput.value.split('T')[0];
+                    const endDate = endInput.value.split('T')[0];
+
+                    startInput.type = 'date';
+                    endInput.type = 'date';
+                    startInput.value = startDate;
+                    endInput.value = endDate;
+                } else {
+                    // Convert back to datetime inputs
+                    startInput.type = 'datetime-local';
+                    endInput.type = 'datetime-local';
+                }
+            });
+
+            // Helper functions
+            function openEventForm(event = null) {
+                selectedEvent = event;
+                document.getElementById('eventForm').reset();
+
+                if (event) {
+                    document.getElementById('eventModalLabel').innerHTML = '<i class="fas fa-edit me-2"></i>Редактирай събитие';
+                    document.getElementById('eventId').value = event.id;
+                    document.getElementById('eventTitle').value = event.title;
+                    document.getElementById('eventDescription').value = event.description || '';
+                    document.getElementById('eventLocation').value = event.location || '';
+                    document.getElementById('eventMeetingLink').value = event.meetingLink || '';
+                    document.getElementById('eventAllDay').checked = event.isAllDay;
+                    document.getElementById('eventIsInPerson').checked = event.isInPerson;
+                    document.getElementById('eventColor').value = event.color || '#007bff';
+
+                    // Set datetime values
+                    const start = new Date(event.start);
+                    const end = new Date(event.end);
+
+                    if (event.isAllDay) {
+                        document.getElementById('eventStart').type = 'date';
+                        document.getElementById('eventEnd').type = 'date';
+                        document.getElementById('eventStart').value = start.toISOString().split('T')[0];
+                        document.getElementById('eventEnd').value = end.toISOString().split('T')[0];
+                    } else {
+                        document.getElementById('eventStart').type = 'datetime-local';
+                        document.getElementById('eventEnd').type = 'datetime-local';
+                        document.getElementById('eventStart').value = formatDateTimeLocal(start);
+                        document.getElementById('eventEnd').value = formatDateTimeLocal(end);
+                    }
+
+                    // Show delete button
+                    document.getElementById('deleteEventBtn').style.display = 'block';
+                } else {
+                    document.getElementById('eventModalLabel').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Ново събитие';
+                    document.getElementById('eventId').value = '';
+                    document.getElementById('deleteEventBtn').style.display = 'none';
+
+                    // Set default dates
+                    const now = new Date();
+                    const endTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour later
+
+                    document.getElementById('eventStart').value = formatDateTimeLocal(now);
+                    document.getElementById('eventEnd').value = formatDateTimeLocal(endTime);
+                }
+
+                eventModal.show();
+            }
+
+            function showEventDetails(event) {
+                selectedEvent = event.raw;
+                const content = document.getElementById('eventDetailsContent');
+
+                content.innerHTML = `
+                    <div class="event-details">
+                        <div class="event-detail-item">
+                            <div class="event-color-indicator" style="background-color: ${event.backgroundColor}"></div>
+                            <strong>${event.title}</strong>
+                        </div>
+                        ${event.raw.description ? `
+                            <div class="event-detail-item">
+                                <i class="fas fa-align-left event-detail-icon"></i>
+                                <span>${event.raw.description}</span>
+                            </div>
+                        ` : ''}
+                        <div class="event-detail-item">
+                            <i class="fas fa-clock event-detail-icon"></i>
+                            <span>${formatEventTime(event)}</span>
+                        </div>
+                        ${event.location ? `
+                            <div class="event-detail-item">
+                                <i class="fas fa-map-marker-alt event-detail-icon"></i>
+                                <span>${event.location}</span>
+                            </div>
+                        ` : ''}
+                        ${event.raw.meetingLink ? `
+                            <div class="event-detail-item">
+                                <i class="fas fa-link event-detail-icon"></i>
+                                <a href="${event.raw.meetingLink}" target="_blank">${event.raw.meetingLink}</a>
+                            </div>
+                        ` : ''}
+                        ${event.raw.isInPerson ? `
+                            <div class="event-detail-item">
+                                <i class="fas fa-users event-detail-icon"></i>
+                                <span>Присъствено събитие</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                eventDetailsModal.show();
+            }
+
+            async function saveEvent() {
+                const eventIdValue = document.getElementById('eventId').value;
+                const isAllDay = document.getElementById('eventAllDay').checked;
+
+                const event = {
+                    Id: eventIdValue ? parseInt(eventIdValue, 10) : 0,
+                    Title: document.getElementById('eventTitle').value,
+                    Description: document.getElementById('eventDescription').value,
+                    Start: isAllDay ?
+                        new Date(document.getElementById('eventStart').value + 'T00:00:00').toISOString() :
+                        localDatetimeToISOString(document.getElementById('eventStart').value),
+                    End: isAllDay ?
+                        new Date(document.getElementById('eventEnd').value + 'T23:59:59').toISOString() :
+                        localDatetimeToISOString(document.getElementById('eventEnd').value),
+                    IsAllDay: isAllDay,
+                    Location: document.getElementById('eventLocation').value,
+                    MeetingLink: document.getElementById('eventMeetingLink').value,
+                    IsInPerson: document.getElementById('eventIsInPerson').checked,
+                    Color: document.getElementById('eventColor').value
+                };
+
+                try {
+                    const response = await fetch('/api/calendarapi/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(event)
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        const eventId = eventIdValue ? eventIdValue : result;
+
+                        // Update calendar
+                        if (eventIdValue) {
+                            // Update existing event
+                            calendar.updateEvent(eventId, eventId, {
+                                title: event.Title,
+                                start: event.Start,
+                                end: event.End,
+                                isAllDay: event.IsAllDay,
+                                location: event.Location,
+                                backgroundColor: event.Color,
+                                borderColor: event.Color,
+                                raw: event
+                            });
+                        } else {
+                            // Create new event
+                            calendar.createEvents([{
+                                id: String(eventId),
+                                calendarId: '1',
+                                title: event.Title,
+                                category: event.IsAllDay ? 'allday' : 'time',
+                                start: event.Start,
+                                end: event.End,
+                                isAllDay: event.IsAllDay,
+                                location: event.Location,
+                                backgroundColor: event.Color,
+                                borderColor: event.Color,
+                                raw: event
+                            }]);
+                        }
+
+                        eventModal.hide();
+                        showToast(eventIdValue ? 'Събитието е обновено успешно!' : 'Събитието е създадено успешно!', 'success');
+                    } else {
+                        const errorText = await response.text();
+                        showToast(`Грешка при запазване: ${errorText}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error saving event:', error);
+                    showToast('Грешка при запазване на събитието', 'error');
+                }
+            }
+
+            async function updateEventOnServer(event, changes) {
+                try {
+                    const updatedEvent = {
+                        Id: parseInt(event.id),
+                        Title: changes.title || event.title,
+                        Description: event.raw.description || '',
+                        Start: changes.start ? changes.start.toISOString() : event.start.toISOString(),
+                        End: changes.end ? changes.end.toISOString() : event.end.toISOString(),
+                        IsAllDay: event.isAllDay,
+                        Location: event.location || '',
+                        MeetingLink: event.raw.meetingLink || '',
+                        IsInPerson: event.raw.isInPerson || false,
+                        Color: event.backgroundColor || '#007bff'
+                    };
+
+                    const response = await fetch('/api/calendarapi/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedEvent)
+                    });
+
+                    if (response.ok) {
+                        showToast('Събитието е обновено успешно!', 'success');
+                    } else {
+                        const errorText = await response.text();
+                        showToast(`Грешка при обновяване: ${errorText}`, 'error');
+                        // Revert changes if update failed
+                        calendar.render();
+                    }
+                } catch (error) {
+                    console.error('Error updating event:', error);
+                    showToast('Грешка при обновяване на събитието', 'error');
+                    calendar.render();
+                }
+            }
+
+            async function deleteEventFromServer(eventId) {
+                try {
+                    const response = await fetch(`/api/calendarapi/delete/${eventId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        calendar.deleteEvent(eventId, '1');
+                        eventModal.hide();
+                        eventDetailsModal.hide();
+                        showToast('Събитието е изтрито успешно!', 'success');
+                    } else {
+                        const errorText = await response.text();
+                        showToast(`Грешка при изтриване: ${errorText}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting event:', error);
+                    showToast('Грешка при изтриване на събитието', 'error');
+                }
+            }
+
+            function createQuickEvent(eventData) {
+                const title = prompt('Въведете заглавие на събитието:');
+                if (title) {
+                    const quickEvent = {
+                        Id: 0,
+                        Title: title,
+                        Description: '',
+                        Start: eventData.start.toISOString(),
+                        End: eventData.end.toISOString(),
+                        IsAllDay: eventData.isAllDay || false,
+                        Location: '',
+                        MeetingLink: '',
+                        IsInPerson: false,
+                        Color: '#007bff'
+                    };
+
+                    // Save to server
+                    fetch('/api/calendarapi/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(quickEvent)
+                    })
+                    .then(response => response.json())
+                    .then(eventId => {
+                        calendar.createEvents([{
+                            id: String(eventId),
+                            calendarId: '1',
+                            title: quickEvent.Title,
+                            category: quickEvent.IsAllDay ? 'allday' : 'time',
+                            start: quickEvent.Start,
+                            end: quickEvent.End,
+                            isAllDay: quickEvent.IsAllDay,
+                            backgroundColor: quickEvent.Color,
+                            borderColor: quickEvent.Color,
+                            raw: quickEvent
+                        }]);
+                        showToast('Събитието е създадено успешно!', 'success');
+                    })
+                    .catch(error => {
+                        console.error('Error creating quick event:', error);
+                        showToast('Грешка при създаване на събитието', 'error');
+                    });
+                }
+            }
+
+            function showToast(message, type = 'success') {
+                const toastContainer = document.querySelector('.toast-container');
+                const toastId = 'toast-' + Date.now();
+
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type} show`;
+                toast.id = toastId;
+                toast.setAttribute('role', 'alert');
+                toast.innerHTML = `
+                    <div class="toast-header">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                        <strong class="me-auto">${type === 'success' ? 'Успех' : 'Грешка'}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                `;
+
+                toastContainer.appendChild(toast);
+
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    const toastElement = document.getElementById(toastId);
+                    if (toastElement) {
+                        toastElement.remove();
+                    }
+                }, 5000);
+            }
+
+            function formatDateTimeLocal(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+
+            function formatEventTime(event) {
+                const start = new Date(event.start);
+                const end = new Date(event.end);
+
+                if (event.isAllDay) {
+                    return `${start.toLocaleDateString('bg-BG')} - Целодневно`;
+                } else {
+                    return `${start.toLocaleDateString('bg-BG')} ${start.toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' })}`;
+                }
+            }
+
+            function localDatetimeToISOString(localDateTime) {
+                const dt = new Date(localDateTime);
+                return dt.toISOString();
+            }
+
+            // Initialize the calendar
+            loadEvents();
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey || e.metaKey) {
+                    switch(e.key) {
+                        case 'n':
+                            e.preventDefault();
+                            openEventForm();
+                            break;
+                        case 'ArrowLeft':
+                            e.preventDefault();
+                            calendar.prev();
+                            break;
+                        case 'ArrowRight':
+                            e.preventDefault();
+                            calendar.next();
+                            break;
+                        case 't':
+                            e.preventDefault();
+                            calendar.today();
+                            break;
+                    }
+                }
+            });
+
+            // Auto-refresh events periodically
+            setInterval(function() {
+                if (!document.hidden) {
+                    // Refresh events every 5 minutes if page is visible
+                    loadEvents();
+                }
+            }, 300000); // 5 minutes
+
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (calendar) {
+                    calendar.render();
+                }
+            });
         });
-
-        if (response.ok) {
-            const newEventId = await response.json();
-
-            calendar.createEvents([{
-                id: String(newEventId),         // id as string
-                calendarId: '1',
-                title: event.Title,
-                category: 'time',
-                start: event.Start,
-                end: event.End,
-                isAllDay: event.IsAllDay,
-                location: event.Location,
-                color: event.Color
-            }]);
-
-            eventModal.hide();
-        } else {
-            const errorText = await response.text();
-            alert(`Error adding event: ${errorText}`);
-        }
-    });
-    });
-</script>
-
-<style>
-    #calendar {
-        max-width: 100%;
-        border: 1px solid #dee2e6;
-        background-color: #fff;
-        border-radius: 0.5rem;
-        overflow: hidden;
-    }
-
-    .tui-full-calendar-weekday-grid-line {
-        background-color: #f8f9fa;
-    }
-
-    .tui-full-calendar-timegrid-time {
-        color: #6c757d;
-    }
-
-    .calendar-day {
-        font-weight: 600;
-        color: #0d6efd;
-    }
-
-    .tui-full-calendar-popup {
-        z-index: 1055; /* Boost over modal backdrop */
-    }
-</style>
+    </script>
+</body>
+</html>
