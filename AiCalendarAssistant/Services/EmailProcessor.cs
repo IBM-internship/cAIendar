@@ -1,11 +1,12 @@
 using System.Text.Json;
 using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Models;
+using AiCalendarAssistant.Services.Contracts;
 using Message = AiCalendarAssistant.Models.Message;
 
 namespace AiCalendarAssistant.Services;
 
-public class EmailProcessor(PromptRouter router, EventProcessor eventProcessor)
+public class EmailProcessor(PromptRouter router, EventProcessor eventProcessor) : IEmailProcessor
 {
     private static readonly JsonDocument IsRelevantEventSchema = JsonDocument.Parse(
         """

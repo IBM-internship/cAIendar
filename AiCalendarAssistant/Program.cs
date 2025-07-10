@@ -97,7 +97,6 @@ builder.Services.AddAuthentication()
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<GmailEmailService>();
 builder.Services.AddScoped<TokenRefreshService>(provider =>
     new TokenRefreshService(
         provider.GetRequiredService<IHttpContextAccessor>(),
@@ -108,7 +107,16 @@ builder.Services.AddScoped<TokenRefreshService>(provider =>
         googleClientSecret
     ));
 builder.Services.AddScoped<ICalendarService, CalendarService>();
+builder.Services.AddScoped<IEmailProcessor, EmailProcessor>();
+builder.Services.AddScoped<IGmailEmailService, GmailEmailService>();
 builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddHttpClient<TokenProvider>();
+builder.Services.AddHttpClient<WatsonxClient>();
+builder.Services.AddHttpClient<OllamaClient>();
+builder.Services.AddSingleton<PromptRouter>();
+builder.Services.AddScoped<ChatMessenger>();
+builder.Services.AddSingleton<EmailComposer>();
+builder.Services.AddScoped<EventProcessor>();
 
 var watsonxUrl        = Environment.GetEnvironmentVariable("Llm__Url");
 var watsonxProjectId  = Environment.GetEnvironmentVariable("Llm__ProjectId");
@@ -118,6 +126,7 @@ var watsonxVersion    = Environment.GetEnvironmentVariable("Llm__Version");
 var ollamaUse         = Environment.GetEnvironmentVariable("Llm__UseOllama");
 var ollamaUrl         = Environment.GetEnvironmentVariable("Llm__OllamaUrl");
 var ollamaModel       = Environment.GetEnvironmentVariable("Llm__OllamaModel");
+
 Console.WriteLine($"Ollama model: {ollamaModel}");
 // Create LlmSettings from environment variables
 var llmSettings = new LlmSettings
@@ -133,14 +142,6 @@ var llmSettings = new LlmSettings
 };
 
 builder.Services.AddSingleton(llmSettings);
-builder.Services.AddHttpClient<TokenProvider>();
-builder.Services.AddHttpClient<WatsonxClient>();
-builder.Services.AddHttpClient<OllamaClient>();
-builder.Services.AddSingleton<PromptRouter>();
-builder.Services.AddSingleton<EmailProcessor>();
-builder.Services.AddScoped<ChatMessenger>();
-builder.Services.AddSingleton<EventProcessor>();
-builder.Services.AddSingleton<EmailComposer>();
 
 
 var app = builder.Build();

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Text;
+using AiCalendarAssistant.Services.Contracts;
 using Email = AiCalendarAssistant.Data.Models.Email;
 using Message = Google.Apis.Gmail.v1.Data.Message;
 
@@ -22,7 +23,7 @@ public class GmailEmailService(
     IHttpContextAccessor ctx,
     TokenRefreshService tokenService,
     ILogger<GmailEmailService> logger,
-    EmailProcessor emailProcessor)
+    EmailProcessor emailProcessor) : IGmailEmailService
 {
     public async Task<List<Email>> GetLastEmailsAsync()
     {
@@ -40,7 +41,7 @@ public class GmailEmailService(
 
         var listReq = service.Users.Messages.List("me");
         listReq.MaxResults = 10;
-        listReq.Q = "in:inbox -in:sent";
+        listReq.Q = "in:inbox in:important -in:sent";
         var listRes = await listReq.ExecuteAsync();
 
         var emails = new List<Email>();

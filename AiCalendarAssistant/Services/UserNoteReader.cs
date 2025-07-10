@@ -1,5 +1,5 @@
 using AiCalendarAssistant.Data.Models;
-using AiCalendarAssistant.Interfaces;
+using AiCalendarAssistant.Services.Contracts;
 
 namespace AiCalendarAssistant.Services;
 

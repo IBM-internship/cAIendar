@@ -1,7 +1,7 @@
 using System.Text.Json;
 using AiCalendarAssistant.Data.Models;
-using AiCalendarAssistant.Interfaces;
 using AiCalendarAssistant.Models;
+using AiCalendarAssistant.Services.Contracts;
 
 namespace AiCalendarAssistant.Services;
 

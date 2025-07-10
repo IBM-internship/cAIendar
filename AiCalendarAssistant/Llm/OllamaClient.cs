@@ -1,6 +1,5 @@
 using System.Text.Json;
 using AiCalendarAssistant.Config;
-using AiCalendarAssistant.Interfaces;
 using AiCalendarAssistant.Models;
 
 namespace AiCalendarAssistant.Llm;

@@ -1,5 +1,4 @@
 using AiCalendarAssistant.Config;
-using AiCalendarAssistant.Interfaces;
 using AiCalendarAssistant.Llm;
 using AiCalendarAssistant.Models;
 using Microsoft.Extensions.Options;

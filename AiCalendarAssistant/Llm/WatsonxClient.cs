@@ -2,7 +2,6 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using AiCalendarAssistant.Config;
 using AiCalendarAssistant.Infrastructure;
-using AiCalendarAssistant.Interfaces;
 using AiCalendarAssistant.Models;
 
 namespace AiCalendarAssistant.Llm;

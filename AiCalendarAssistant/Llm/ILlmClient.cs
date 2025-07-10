@@ -1,6 +1,6 @@
 using AiCalendarAssistant.Models;
 
-namespace AiCalendarAssistant.Interfaces;
+namespace AiCalendarAssistant.Llm;
 
 public interface ILlmClient
 {

@@ -1,6 +1,6 @@
 using AiCalendarAssistant.Data.Models;
 
-namespace AiCalendarAssistant.Interfaces;
+namespace AiCalendarAssistant.Services.Contracts;
 
 public interface IUserNoteReader
 {
