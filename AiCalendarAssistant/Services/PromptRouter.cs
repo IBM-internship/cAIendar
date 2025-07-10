@@ -3,11 +3,10 @@ using AiCalendarAssistant.Interfaces;
 using AiCalendarAssistant.Llm;
 using AiCalendarAssistant.Models;
 using Microsoft.Extensions.Options;
-// using PromptingPipeline.Interfaces;
 
 namespace AiCalendarAssistant.Services;
 
-public class PromptRouter(WatsonxClient w, OllamaClient o, IOptions<LlmSettings> cfg)
+internal sealed class PromptRouter(WatsonxClient w, OllamaClient o, IOptions<LlmSettings> cfg)
 {
     private readonly ILlmClient  _watsonx = w;
     private readonly ILlmClient  _ollama = o;

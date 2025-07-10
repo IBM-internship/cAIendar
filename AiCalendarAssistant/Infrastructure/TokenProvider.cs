@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
-using AiCalendarAssistant.Config;
 using Microsoft.Extensions.Options;
+using AiCalendarAssistant.Config;
 
 namespace AiCalendarAssistant.Infrastructure;
 
@@ -21,10 +21,8 @@ public class TokenProvider(HttpClient http, IOptions<LlmSettings> cfg)
             ["apikey"]     = _cfg.ApiKey
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://iam.cloud.ibm.com/identity/token")
-        {
-            Content = new FormUrlEncodedContent(form)
-        };
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://iam.cloud.ibm.com/identity/token");
+        req.Content = new FormUrlEncodedContent(form);
         req.Headers.Accept.ParseAdd("application/json");
 
         var resp = await http.SendAsync(req, ct);

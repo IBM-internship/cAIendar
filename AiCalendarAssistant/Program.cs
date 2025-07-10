@@ -1,18 +1,13 @@
-﻿using AiCalendarAssistant.Data;
+﻿using AiCalendarAssistant.Config;
+using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Llm;
+using AiCalendarAssistant.Models;
 using AiCalendarAssistant.Services;
 using Microsoft.EntityFrameworkCore;
 using AiCalendarAssistant.Services.Contracts;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using System.Text.Json;
-using System;
-using AiCalendarAssistant.Config;
 using AiCalendarAssistant.Infrastructure;
-using AiCalendarAssistant.Llm;
-using AiCalendarAssistant.Models;
 using DotNetEnv;
 using Microsoft.AspNetCore.Identity;
 
@@ -144,6 +139,7 @@ builder.Services.AddHttpClient<WatsonxClient>();
 builder.Services.AddHttpClient<OllamaClient>();
 builder.Services.AddSingleton<PromptRouter>();
 builder.Services.AddSingleton<EmailProcessor>();
+builder.Services.AddScoped<ChatMessager>();
 builder.Services.AddSingleton<EventProcessor>();
 builder.Services.AddSingleton<EmailComposer>();
 

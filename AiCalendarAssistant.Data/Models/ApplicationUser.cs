@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using AiCalendarAssistant.Data.Models.AiCalendarAssistant.Data.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace AiCalendarAssistant.Data.Models;
 
@@ -8,4 +9,5 @@ public class ApplicationUser : IdentityUser
     public IEnumerable<Email>? Emails { get; set; }
     public IEnumerable<UserNote>? UserNotes { get; set; }
     public IEnumerable<Chat>? Chats { get; set; }
+    public IEnumerable<UserTask>? Tasks{ get; set; }
 }
