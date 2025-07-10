@@ -2,6 +2,7 @@ using AiCalendarAssistant.Data.Models;
 using PromptingPipeline.Interfaces;
 using PromptingPipeline.Models;
 using System;
+namespace PromptingPipeline.Services;
 
 
 internal sealed class EmailReader : IEmailReader
