@@ -4,7 +4,6 @@ using PromptingPipeline.Models;
 using System;
 namespace PromptingPipeline.Services;
 
-
 internal sealed class EmailReader : IEmailReader
 {
 	public Task<Email> GetNextEmailAsync(CancellationToken ct = default)
