@@ -61,7 +61,7 @@ namespace YourApp.Controllers
             await _db.SaveChangesAsync(ct);
 
             // ── 2) let the assistant respond via ChatMessager ──────────────────
-            var assistantMessage =
+			var assistantMessage =
                 await _chatMessager.GenerateAssistantMessageAsync(chat, ct);
 
             // ── 3) return both IDs & the assistant text ────────────────────────

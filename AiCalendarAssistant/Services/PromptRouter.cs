@@ -11,8 +11,8 @@ public class PromptRouter
     private readonly ILlmClient  _ollama;
     private readonly LlmSettings _cfg;
 
-    public PromptRouter(WatsonxClient w, OllamaClient o, IOptions<LlmSettings> cfg)
-        => (_watsonx, _ollama, _cfg) = (w, o, cfg.Value);
+    public PromptRouter(WatsonxClient w, OllamaClient o, LlmSettings cfg)
+        => (_watsonx, _ollama, _cfg) = (w, o, cfg);
 
     public Task<PromptResponse> SendAsync(PromptRequest req, CancellationToken ct = default)
         => (_cfg.UseOllama ? _ollama : _watsonx).SendAsync(req, ct);

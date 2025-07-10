@@ -53,12 +53,12 @@ namespace AiCalendarAssistant.Services
         {
             return await Task.Run(() => _context.Events.AsNoTracking().Where(predicate).ToList());
         }
-        public async Task<List<Event>> GetEventsInTimeRangeAsync(DateTime start, DateTime end)
-        {
-            return await _context.Events
-                .AsNoTracking()
-                .Where(e => e.Start <= end && e.End >= start)
-                .ToListAsync();
-        }
+        public async Task<List<Event>> GetEventsInTimeRangeAsync(DateTime start, DateTime end, string userId)
+		{
+			return await _context.Events
+				.AsNoTracking()
+				.Where(e => e.UserId == userId && e.Start <= end && e.End >= start)
+				.ToListAsync();
+		}
     }
 }

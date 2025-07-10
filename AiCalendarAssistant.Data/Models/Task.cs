@@ -13,6 +13,8 @@ namespace AiCalendarAssistant.Data.Models
         public string? UserId { get; set; } 
         public ApplicationUser? User { get; set; } 
 		public Importance Importance { get; set; } = Importance.Medium; 
+
+		public bool IsCompleted { get; set; } = false;
     }
 }
 

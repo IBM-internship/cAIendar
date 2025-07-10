@@ -74,6 +74,8 @@ public class ChatMessager
         // 4-a) load prior conversation and prepend system message
         var history = new List<PromptMessage> { new("system", SystemPrompt) };
 
+		var userId = chat.UserId;
+
         var messages = await _context.Messages
             .Where(m => m.ChatId == chat.Id)
             .OrderBy(m => m.Pos)
@@ -116,18 +118,27 @@ public class ChatMessager
             //     argsDoc.RootElement.GetProperty("end").GetString()!,
             //     null, DateTimeStyles.RoundtripKind);
 			// ─── parse arguments ────────────────────────────────────────────────
-			JsonElement args = call.Arguments;                     // already a JsonElement
+			// // ─── parse arguments ──────────────────────────────────────────────
+JsonElement args = call.Arguments;          // could be { … }  OR  "{"start": … }"
 
-			var start = DateTime.Parse(
-				args.GetProperty("start").GetString()!,
-				null, DateTimeStyles.RoundtripKind);
+if (args.ValueKind == JsonValueKind.String)
+{
+    // LLM wrapped the JSON in quotes → unwrap it
+    using var tmpDoc = JsonDocument.Parse(args.GetString() ?? "{}");
+    args = tmpDoc.RootElement.Clone();      // clone keeps it alive after disposal
+}
 
-			var end   = DateTime.Parse(
-				args.GetProperty("end").GetString()!,
-				null, DateTimeStyles.RoundtripKind);
+var start = DateTime.Parse(
+    args.GetProperty("start").GetString()!,
+    null, DateTimeStyles.RoundtripKind);
+
+var end   = DateTime.Parse(
+    args.GetProperty("end").GetString()!,
+    null, DateTimeStyles.RoundtripKind);
+
 
             // Run the tool
-            var events = await _calendarService.GetEventsInTimeRangeAsync(start, end);
+            var events = await _calendarService.GetEventsInTimeRangeAsync(start, end, userId);
 
             var payload = JsonSerializer.Serialize(new
             {

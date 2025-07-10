@@ -12,8 +12,8 @@ public class TokenProvider
     private string?  _token;
     private DateTime _expiresUtc;
 
-    public TokenProvider(HttpClient http, IOptions<LlmSettings> cfg)
-        => (_http, _cfg) = (http, cfg.Value);
+    public TokenProvider(HttpClient http, LlmSettings cfg)
+        => (_http, _cfg) = (http, cfg);
 
     public async ValueTask<string> GetAsync(CancellationToken ct = default)
     {

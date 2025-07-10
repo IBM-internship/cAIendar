@@ -19,8 +19,8 @@ public class WatsonxClient : ILlmClient
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
-    public WatsonxClient(HttpClient http, TokenProvider tokens, IOptions<LlmSettings> cfg)
-        => (_http, _tokens, _cfg) = (http, tokens, cfg.Value);
+    public WatsonxClient(HttpClient http, TokenProvider tokens, LlmSettings cfg)
+        => (_http, _tokens, _cfg) = (http, tokens, cfg);
 
     public async Task<PromptResponse> SendAsync(PromptRequest p, CancellationToken ct = default)
     {

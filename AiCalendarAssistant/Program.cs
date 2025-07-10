@@ -159,8 +159,8 @@ var chat = new PromptRequest(new()
     new("user",   "What is the capital of France?")
 });
 
-//var chatResp = await router.SendAsync(chat);
-//Console.WriteLine($"Capital → {chatResp.Content}");
+var chatResp = await router.SendAsync(chat);
+Console.WriteLine($"Capital → {chatResp.Content}");
 
 if (app.Environment.IsDevelopment())
 {
