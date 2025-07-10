@@ -12,7 +12,7 @@ namespace AiCalendarAssistant.Data.Models
 
         public string? Description { get; set; } 
 
-		public DateOnly Date { get; set; } = DateTime.UtcNow;
+		public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
 
         public string? Color { get; set; } 
             

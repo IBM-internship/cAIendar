@@ -120,7 +120,7 @@ public class ChatMessager
         foreach (var call in firstResponse.ToolCalls!)
         {
 			Console.WriteLine("\n\n\n\n\nAssistant called tool: " + call.Name);
-            if (call.Name != "get_events_in_time_range" or call.Name != "get_tasks_in_day_range")
+            if (call.Name != "get_events_in_time_range" || call.Name != "get_tasks_in_day_range")
 				Console.WriteLine("\n\n\nIgnoring tool call: " + call.Name + "\n\n\n");
                 continue; // unknown tool – ignore
 

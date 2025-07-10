@@ -17,6 +17,7 @@ using System;
 using DotNetEnv;
 using PromptingPipeline.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Build.Framework;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -116,6 +117,7 @@ builder.Services.AddScoped<TokenRefreshService>(provider =>
         googleClientSecret
     ));
 builder.Services.AddScoped<ICalendarService, CalendarService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<INoteService, NoteService>();
 
 var watsonxUrl        = Environment.GetEnvironmentVariable("Llm__Url");
@@ -159,8 +161,8 @@ var chat = new PromptRequest(new()
     new("user",   "What is the capital of France?")
 });
 
-var chatResp = await router.SendAsync(chat);
-Console.WriteLine($"Capital → {chatResp.Content}");
+//var chatResp = await router.SendAsync(chat);
+//Console.WriteLine($"Capital → {chatResp.Content}");
 
 if (app.Environment.IsDevelopment())
 {
