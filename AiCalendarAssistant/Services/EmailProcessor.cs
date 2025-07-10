@@ -1,22 +1,27 @@
 using PromptingPipeline.Interfaces;
 using PromptingPipeline.Models;
-using PromptingPipeline.Services;
 using System.Text.Json;
-
+using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Services.Contracts;
+using PromptingPipeline.Services;
 namespace PromptingPipeline.Services;
 
 internal sealed class EmailProcessor
 {
     private readonly PromptRouter _router;
     private readonly IEmailReader _reader;
+    private readonly ICalendarService _calendar;     
 
-    public EmailProcessor(PromptRouter router, IEmailReader reader)
+    public EmailProcessor(
+        PromptRouter router,
+        IEmailReader reader,
+        ICalendarService calendar)                   
     {
-        _router = router;
-        _reader = reader;
+        _router   = router;
+        _reader   = reader;
+        _calendar = calendar;
     }
-
-    public async Task ProcessEmailAsync(CancellationToken ct = default)
+    public async Task<Event> ProcessEmailAsync(CancellationToken ct = default)
     {
         var email = await _reader.GetNextEmailAsync(ct);
 
@@ -36,7 +41,9 @@ internal sealed class EmailProcessor
                 "end_time": { "type": "string" },
                 "description": { "type": "string" },
                 "is_in_person": { "type": "boolean" },
-                "has_end_time": { "type": "boolean" }
+                "has_end_time": { "type": "boolean" },
+                "is_all_day": { "type": "boolean" },
+                "location": { "type": "string" }
               },
               "required": ["title_of_event", "date", "start_time", "end_time", "importance", "description", "has_end_time"],
               "additionalProperties": false
@@ -56,7 +63,46 @@ internal sealed class EmailProcessor
 
         var response = await _router.SendAsync(prompt, ct);
 
+        // Parse the response content into a JsonDocument
+        using var eventDoc = JsonDocument.Parse(response.Content);
+
+        var root = eventDoc.RootElement;
+
+        // Map the extracted fields to the Event model
+        var calendarEvent = new Event
+        {
+            Title = root.GetProperty("title_of_event").GetString() ?? "",
+            Description = root.TryGetProperty("description", out var desc) ? desc.GetString() : null,
+            Start = DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("start_time").GetString()}"),
+            End = root.GetProperty("has_end_time").GetBoolean()
+                ? DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("end_time").GetString()}")
+                : DateTime.Parse($"{root.GetProperty("date").GetString()} 23:59:59"),
+            IsAllDay = root.TryGetProperty("is_all_day", out var isAllDay) && isAllDay.GetBoolean(),
+            IsInPerson = root.TryGetProperty("is_in_person", out var inPerson) && inPerson.GetBoolean(),
+			Location = root.TryGetProperty("location", out var location) ? location.GetString() : null,
+			Importance = root.GetProperty("importance").GetString() switch
+			{
+				"high" => Importance.High,
+				"medium" => Importance.Medium,
+				"low" => Importance.Low,
+				_ => Importance.Medium 
+			},
+			Color = root.GetProperty("importance").GetString() switch
+			{
+				"high" => "red",
+				"medium" => "blue",
+				"low" => "green",
+				_ => "blue"
+			},
+			MeetingLink = null,
+			UserId = null, // FIX THIS!
+			User = null, // maybe this also idk what it does
+		};
+
         Console.WriteLine($"Extracted Email Info → {response.Content}");
-    }
+
+		return calendarEvent;
+
+	}
 }
 

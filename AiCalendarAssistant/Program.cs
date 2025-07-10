@@ -2,9 +2,20 @@
 using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Services;
 using Microsoft.EntityFrameworkCore;
-using DotNetEnv;
 using AiCalendarAssistant.Services.Contracts;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using PromptingPipeline.Config;
+using PromptingPipeline.Infrastructure;
+using PromptingPipeline.Interfaces;
+using PromptingPipeline.Llm;
+using PromptingPipeline.Models;
+using System.Text.Json;
+using System;
+using DotNetEnv;
+using PromptingPipeline.Services;
 using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -107,7 +118,39 @@ builder.Services.AddScoped<TokenRefreshService>(provider =>
 builder.Services.AddScoped<ICalendarService, CalendarService>();
 builder.Services.AddScoped<INoteService, NoteService>();
 
+var watsonxUrl        = Environment.GetEnvironmentVariable("Llm__Url");
+var watsonxProjectId  = Environment.GetEnvironmentVariable("Llm__ProjectId");
+var watsonxModelId    = Environment.GetEnvironmentVariable("Llm__ModelId");
+var watsonxApiKey     = Environment.GetEnvironmentVariable("Llm__ApiKey");
+var watsonxVersion    = Environment.GetEnvironmentVariable("Llm__Version");
+var ollamaUse         = Environment.GetEnvironmentVariable("Llm__UseOllama");
+var ollamaUrl         = Environment.GetEnvironmentVariable("Llm__OllamaUrl");
+var ollamaModel       = Environment.GetEnvironmentVariable("Llm__OllamaModel");
+Console.WriteLine($"Ollama model: {ollamaModel}");
+// Create LlmSettings from environment variables
+var llmSettings = new LlmSettings
+{
+    Url         = watsonxUrl        ?? throw new InvalidOperationException("Missing Llm__Url"),
+    ProjectId   = watsonxProjectId  ?? throw new InvalidOperationException("Missing Llm__ProjectId"),
+    ModelId     = watsonxModelId    ?? throw new InvalidOperationException("Missing Llm__ModelId"),
+    ApiKey      = watsonxApiKey     ?? throw new InvalidOperationException("Missing Llm__ApiKey"),
+    Version     = watsonxVersion    ?? "2023-10-25",
+    UseOllama   = bool.TryParse(ollamaUse, out var useOllama) && useOllama,
+    OllamaUrl   = ollamaUrl         ?? "http://host.docker.internal:11434",
+    OllamaModel = ollamaModel       ?? "granite3.3:latest"
+};
+
+// builder.Services.AddSingleton(llmSettings);
+// builder.Services.AddHttpClient<TokenProvider>();
+// builder.Services.AddHttpClient<WatsonxClient>();
+// builder.Services.AddHttpClient<OllamaClient>();
+// builder.Services.AddSingleton<PromptRouter>();
+// builder.Services.AddSingleton<IEmailReader, EmailReader>();
+// builder.Services.AddSingleton<EmailProcessor>();
+
+
 var app = builder.Build();
+//var router = app.Services.GetRequiredService<PromptRouter>();
 
 if (app.Environment.IsDevelopment())
 {
