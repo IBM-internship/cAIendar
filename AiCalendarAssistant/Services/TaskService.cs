@@ -16,29 +16,29 @@ namespace AiCalendarAssistant.Services
 
         public async Task AddTaskAsync(UserTask task)
         {
-            _context.Tasks.Add(task);
+            _context.UserTasks.Add(task);
             await _context.SaveChangesAsync();
         }
 
         public async Task<bool> DeleteTaskAsync(int taskId)
         {
-            var existingTask = await _context.Tasks.FindAsync(taskId);
+            var existingTask = await _context.UserTasks.FindAsync(taskId);
             if (existingTask == null)
                 return false;
 
-            _context.Tasks.Remove(existingTask);
+            _context.UserTasks.Remove(existingTask);
             await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<UserTask?> GetTaskByIdAsync(int taskId)
         {
-            return await _context.Tasks.FindAsync(taskId);
+            return await _context.UserTasks.FindAsync(taskId);
         }
 
         public async Task<bool> ReplaceTaskAsync(UserTask updatedTask)
         {
-            var existingTask = await _context.Tasks.FindAsync(updatedTask.Id);
+            var existingTask = await _context.UserTasks.FindAsync(updatedTask.Id);
             if (existingTask == null)
                 return false;
 
@@ -49,16 +49,16 @@ namespace AiCalendarAssistant.Services
 
         public async Task<List<UserTask>> GetAllTasksAsync()
         {
-            return await Task.Run(() => _context.Tasks.AsNoTracking().ToList());
+            return await Task.Run(() => _context.UserTasks.AsNoTracking().ToList());
         }
 
         public async Task<List<UserTask>> GetTasksAsync(Func<UserTask, bool> predicate)
         {
-            return await Task.Run(() => _context.Tasks.AsNoTracking().Where(predicate).ToList());
+            return await Task.Run(() => _context.UserTasks.AsNoTracking().Where(predicate).ToList());
         }
         public async Task<List<UserTask>> GetTasksInDateRangeAsync(DateOnly startDate, DateOnly endDate, string userId)
         {
-            return await _context.Tasks
+            return await _context.UserTasks
                 .AsNoTracking()
                 .Where(t => t.UserId == userId && t.Date >= startDate && t.Date <= endDate)
                 .ToListAsync();
