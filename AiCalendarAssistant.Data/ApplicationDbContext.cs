@@ -16,7 +16,7 @@ namespace AiCalendarAssistant.Data
         public DbSet<UserNote> UserNotes { get; set; }
         public DbSet<Chat> Chats { get; set; }
         public DbSet<Message> Messages { get; set; }
-        public DbSet<UserTask>Tasks{ get; set; }
+        public DbSet<UserTask> UserTasks{ get; set; }
        
 
         protected override void OnModelCreating(ModelBuilder builder)
