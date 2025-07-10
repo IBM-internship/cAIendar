@@ -3,7 +3,7 @@ using PromptingPipeline.Models;
 
 namespace PromptingPipeline.Interfaces;
 
-internal interface IEmailReader
+public interface IEmailReader
 {
     Task<Email> GetNextEmailAsync(CancellationToken ct = default);
 }

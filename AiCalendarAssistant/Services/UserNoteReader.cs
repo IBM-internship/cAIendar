@@ -3,7 +3,7 @@ using PromptingPipeline.Interfaces;
 using PromptingPipeline.Models;
 using System;
 
-internal sealed class UserNoteReader : IUserNoteReader
+public class UserNoteReader : IUserNoteReader
 {
 	public Task<UserNote> GetNextUserNoteAsync(CancellationToken ct = default)
 	{

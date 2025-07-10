@@ -5,7 +5,7 @@ using PromptingPipeline.Models;
 using PromptingPipeline.Llm;
 namespace PromptingPipeline.Services;
 
-internal sealed class PromptRouter
+public class PromptRouter
 {
     private readonly ILlmClient  _watsonx;
     private readonly ILlmClient  _ollama;

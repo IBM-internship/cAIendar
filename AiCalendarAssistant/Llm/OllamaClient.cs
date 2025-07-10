@@ -6,7 +6,7 @@ using PromptingPipeline.Models;
 
 namespace PromptingPipeline.Llm;
 
-internal sealed class OllamaClient : ILlmClient
+public class OllamaClient : ILlmClient
 {
     private readonly HttpClient  _http;
     private readonly LlmSettings _cfg;

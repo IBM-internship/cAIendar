@@ -8,7 +8,7 @@ using PromptingPipeline.Models;
 
 namespace PromptingPipeline.Llm;
 
-internal sealed class WatsonxClient : ILlmClient
+public class WatsonxClient : ILlmClient
 {
     private readonly HttpClient    _http;
     private readonly TokenProvider _tokens;

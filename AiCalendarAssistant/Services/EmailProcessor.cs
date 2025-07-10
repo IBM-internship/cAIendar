@@ -6,7 +6,7 @@ using AiCalendarAssistant.Services.Contracts;
 using PromptingPipeline.Services;
 namespace PromptingPipeline.Services;
 
-internal sealed class EmailProcessor
+public class EmailProcessor
 {
     private readonly PromptRouter _router;
     private readonly IEmailReader _reader;

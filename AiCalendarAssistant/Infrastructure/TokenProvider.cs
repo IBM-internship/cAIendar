@@ -5,7 +5,7 @@ using PromptingPipeline.Config;
 
 namespace PromptingPipeline.Infrastructure;
 
-internal sealed class TokenProvider
+public class TokenProvider
 {
     private readonly HttpClient  _http;
     private readonly LlmSettings _cfg;

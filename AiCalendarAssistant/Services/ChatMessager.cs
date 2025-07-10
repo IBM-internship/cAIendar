@@ -17,7 +17,7 @@ namespace PromptingPipeline.Services;
 ///   • get_events_in_time_range – returns all events whose <see cref="Event.Start"/>
 ///     is inside the inclusive window [start, end].
 /// </summary>
-internal sealed class ChatMessager
+public class ChatMessager
 {
     private readonly ApplicationDbContext _context;
     private readonly PromptRouter         _router;

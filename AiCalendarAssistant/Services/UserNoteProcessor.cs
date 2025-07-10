@@ -6,7 +6,7 @@ using AiCalendarAssistant.Services.Contracts;
 using PromptingPipeline.Services;
 namespace PromptingPipeline.Services;
 
-internal sealed class UserNoteProcessor
+public class UserNoteProcessor
 {
     private readonly PromptRouter _router;
     private readonly IUserNoteReader _reader;
