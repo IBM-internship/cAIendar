@@ -160,7 +160,7 @@ public sealed class ChatMessager
             null, DateTimeStyles.RoundtripKind);
 
         // Fetch events via service, then enforce per-user filter (if any)
-        var events = await _calendarService.GetEventsInTimeRangeAsync(start, end);
+        var events = await _calendarService.GetEventsInTimeRangeAsync(start, end, userId);
         if (!string.IsNullOrEmpty(userId))
             events = events.Where(e => e.UserId == userId).ToList();
 

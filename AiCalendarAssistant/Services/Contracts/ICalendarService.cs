@@ -10,6 +10,6 @@ namespace AiCalendarAssistant.Services.Contracts
         Task<bool> ReplaceEventAsync(Event updatedEvent);
         Task<List<Event>> GetAllEventsAsync();
         Task<List<Event>> GetEventsAsync(Func<Event, bool> predicate);
-        Task<List<Event>> GetEventsInTimeRangeAsync(DateTime start, DateTime end);
+        Task<List<Event>> GetEventsInTimeRangeAsync(DateTime start, DateTime end, string userId);
     }
 }
