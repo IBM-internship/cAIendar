@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace AiCalendarAssistant.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/events")]
     [Authorize]
     public class CalendarApiController : ControllerBase
     {
