@@ -960,42 +960,47 @@
                     showToast('Грешка при запазване на събитието', 'error');
                 }
             }
-
-            async function updateEventOnServer(event, changes) {
+            function toISO(dateValue) {
                 try {
-                    const updatedEvent = {
-                        Id: parseInt(event.id),
-                        Title: changes.title || event.title,
-                        Description: event.raw.description || '',
-                        Start: changes.start ? changes.start.toISOString() : event.start.toISOString(),
-                        End: changes.end ? changes.end.toISOString() : event.end.toISOString(),
-                        IsAllDay: event.isAllDay,
-                        Location: event.location || '',
-                        MeetingLink: event.raw.meetingLink || '',
-                        IsInPerson: event.raw.isInPerson || false,
-                        Color: event.backgroundColor || '#007bff'
-                    };
-
-                    const response = await fetch('/api/calendarapi/add', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updatedEvent)
-                    });
-
-                    if (response.ok) {
-                        showToast('Събитието е обновено успешно!', 'success');
-                    } else {
-                        const errorText = await response.text();
-                        showToast(`Грешка при обновяване: ${errorText}`, 'error');
-                        // Revert changes if update failed
-                        calendar.render();
-                    }
-                } catch (error) {
-                    console.error('Error updating event:', error);
-                    showToast('Грешка при обновяване на събитието', 'error');
-                    calendar.render();
-                }
+                    return new Date(dateValue).toISOString();
+                } catch {
+                    console.warn("Invalid date:", dateValue);
+                    return null;
             }
+        }
+
+
+                    async function updateEventOnServer(event, changes) {
+            try {
+                const updatePayload = {
+                    id: parseInt(event.id),
+                    start: changes.start ? new Date(changes.start).toISOString() : new Date(event.start).toISOString(),
+                    end: changes.end ? new Date(changes.end).toISOString() : new Date(event.end).toISOString()
+                };
+
+                const response = await fetch('/api/calendarapi/move', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatePayload)
+                });
+
+                if (response.ok) {
+                    calendar.updateEvent(event.id, event.calendarId, {
+                        start: updatePayload.start,
+                        end: updatePayload.end
+                    });
+                    showToast('Събитието е преместено успешно!', 'success');
+                } else {
+                    const errorText = await response.text();
+                    showToast(`Грешка при преместване: ${errorText}`, 'error');
+                    calendar.render(); // връщане назад ако не успее
+                }
+            } catch (error) {
+                console.error('Error updating event:', error);
+                showToast('Грешка при преместване на събитието', 'error');
+                calendar.render();
+            }
+        }
 
             async function deleteEventFromServer(eventId) {
                 try {
