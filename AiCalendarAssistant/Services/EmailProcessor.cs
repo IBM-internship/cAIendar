@@ -19,7 +19,7 @@ internal sealed class EmailProcessor
         _reader   = reader;
         _calendar = calendar;
     }
-    public async Task<Email> ProcessEmailAsync(CancellationToken ct = default)
+    public async Task<Event> ProcessEmailAsync(CancellationToken ct = default)
     {
         var email = await _reader.GetNextEmailAsync(ct);
 

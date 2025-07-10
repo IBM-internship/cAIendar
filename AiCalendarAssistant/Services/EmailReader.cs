@@ -3,7 +3,6 @@ using PromptingPipeline.Interfaces;
 using PromptingPipeline.Models;
 using System;
 
-
 internal sealed class EmailReader : IEmailReader
 {
 	public Task<Email> GetNextEmailAsync(CancellationToken ct = default)
@@ -20,10 +19,4 @@ internal sealed class EmailReader : IEmailReader
 
         return Task.FromResult(email);
     }
-
-	chete ne procesnat imejal
-	dava go na email processor
-
-	gleda rezultata dali emaila se kolajdva s existing nesta v bazata
-	sledvasta stupka e ot snimkata
 }

@@ -16,8 +16,8 @@ internal sealed class OllamaClient : ILlmClient
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
-    public OllamaClient(HttpClient http, IOptions<LlmSettings> cfg)
-        => (_http, _cfg) = (http, cfg.Value);
+    public OllamaClient(HttpClient http, LlmSettings cfg)
+        => (_http, _cfg) = (http, cfg);
 
     public async Task<PromptResponse> SendAsync(PromptRequest p, CancellationToken ct = default)
     {
