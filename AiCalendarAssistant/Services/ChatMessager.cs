@@ -11,29 +11,20 @@ using PromptMessage = PromptingPipeline.Models.Message;
 
 namespace PromptingPipeline.Services;
 
-/// <summary>
-/// Handles the message round-trip with the LLM, including tool calls.
-/// The assistant now has one built-in tool:
-///   • get_events_in_time_range – returns all events whose <see cref="Event.Start"/>
-///     is inside the inclusive window [start, end].
-/// </summary>
 public class ChatMessager
 {
     private readonly ApplicationDbContext _context;
     private readonly PromptRouter         _router;
     private readonly ICalendarService     _calendarService;
 
-    // ── 1) system prompt ──────────────────────────────────────────────────────────
     private const string SystemPrompt =
         """
         You are the user's personal calendar manager. You help them organise events,
-        meetings, notes and tasks.  
+        meetings, notes and tasks.
         When the user asks for information that requires external data, call one of
-        the available tools with a JSON tool_call.  
+        the available tools with a JSON tool_call.
         """;
 
-    // ── 2) tool definition (JSON) ────────────────────────────────────────────────
-    //   The LLM receives this every turn so it knows the tool exists.
     private static readonly JsonDocument EventToolDoc = JsonDocument.Parse(
         """
         [
@@ -70,7 +61,6 @@ public class ChatMessager
         ]
         """);
 
-    // ── 3) ctor ──────────────────────────────────────────────────────────────────
     public ChatMessager(
         ApplicationDbContext context,
         PromptRouter         router,
@@ -81,12 +71,10 @@ public class ChatMessager
         _calendarService  = calendarService;
     }
 
-    // ── 4) public entry-point ────────────────────────────────────────────────────
     public async Task<DataMessage> GenerateAssistantMessageAsync(
         Chat               chat,
         CancellationToken  ct = default)
     {
-        // 4-a) load prior conversation and prepend system message
         var history = new List<PromptMessage> { new("system", SystemPrompt) };
 
 		var userId = chat.UserId;
@@ -99,16 +87,14 @@ public class ChatMessager
         foreach (var m in messages)
             history.Add(new(m.Role.ToString().ToLowerInvariant(), m.Text));
 
-        // 4-b) ── FIRST PASS ─ assistant decides whether to call the tool
         var firstRequest = new PromptRequest(
             history,
             Tools      : EventToolDoc.RootElement,
-            ToolChoice : "auto"          // let the model decide
+            ToolChoice : "auto"
         );
 
         var firstResponse = await _router.SendAsync(firstRequest, ct);
 
-        // 4-c) If the assistant did NOT request a tool, we can return immediately.
         if (!firstResponse.HasToolCalls)
             return await PersistAssistantReplyAsync(
                 chat,
@@ -116,21 +102,19 @@ public class ChatMessager
                 messages.Count,
                 ct);
 
-        // 4-d) ── TOOL EXECUTION & SECOND PASS ─────────────────────────────────
         foreach (var call in firstResponse.ToolCalls!)
         {
 			Console.WriteLine("\n\n\n\n\nAssistant called tool: " + call.Name);
             if (call.Name != "get_events_in_time_range" or call.Name != "get_tasks_in_day_range")
 				Console.WriteLine("\n\n\nIgnoring tool call: " + call.Name + "\n\n\n");
-                continue; // unknown tool – ignore
+                continue;
 
-			JsonElement args = call.Arguments;          // could be { … }  OR  "{"start": … }"
+			JsonElement args = call.Arguments;
 
 			if (args.ValueKind == JsonValueKind.String)
 			{
-				// LLM wrapped the JSON in quotes → unwrap it
 				using var tmpDoc = JsonDocument.Parse(args.GetString() ?? "{}");
-				args = tmpDoc.RootElement.Clone();      // clone keeps it alive after disposal
+				args = tmpDoc.RootElement.Clone();
 			}
 
 			var start = DateTime.Parse(
@@ -142,7 +126,6 @@ public class ChatMessager
 				null, DateTimeStyles.RoundtripKind);
 
 
-            // Run the tool
             var events = await _calendarService.GetEventsInTimeRangeAsync(start, end, userId);
 
             var payload = JsonSerializer.Serialize(new
@@ -162,11 +145,9 @@ public class ChatMessager
                 })
             });
 
-            // Append the tool result so the LLM sees it in the *next* round
             history.Add(new("tool", payload, call.Id));
         }
 
-        // Second (and final) round: the model now has the tool output
         var followUpRequest  = new PromptRequest(history);
 		var finalResponse    = await _router.SendAsync(followUpRequest, ct);
 
@@ -177,7 +158,6 @@ public class ChatMessager
             ct);
     }
 
-    // ── 5) helpers ───────────────────────────────────────────────────────────────
     private async Task<DataMessage> PersistAssistantReplyAsync(
         Chat              chat,
         string            replyText,
