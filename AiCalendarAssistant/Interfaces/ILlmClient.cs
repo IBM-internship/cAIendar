@@ -1,8 +1,8 @@
-namespace PromptingPipeline.Llm;
+using AiCalendarAssistant.Models;
 
-using PromptingPipeline.Models;
+namespace AiCalendarAssistant.Interfaces;
 
-internal interface ILlmClient
+public interface ILlmClient
 {
     Task<PromptResponse> SendAsync(PromptRequest request, CancellationToken ct = default);
 }

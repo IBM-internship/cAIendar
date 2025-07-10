@@ -1,26 +1,14 @@
-using PromptingPipeline.Interfaces;
-using PromptingPipeline.Models;
-using PromptingPipeline.Services;
 using System.Text.Json;
+using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Models;
+using Message = AiCalendarAssistant.Models.Message;
 
-namespace PromptingPipeline.Services;
+namespace AiCalendarAssistant.Services;
 
-internal sealed class EmailProcessor
+public class EmailProcessor(PromptRouter router, EventProcessor eventProcessor)
 {
-    private readonly PromptRouter _router;
-    private readonly IEmailReader _reader;
-
-    public EmailProcessor(PromptRouter router, IEmailReader reader)
-    {
-        _router = router;
-        _reader = reader;
-    }
-
-    public async Task ProcessEmailAsync(CancellationToken ct = default)
-    {
-        var email = await _reader.GetNextEmailAsync(ct);
-
-        using var schemaDoc = JsonDocument.Parse("""
+    private static readonly JsonDocument SchemaDoc = JsonDocument.Parse(
+        """
         {
           "type": "json_schema",
           "json_schema": {
@@ -36,7 +24,9 @@ internal sealed class EmailProcessor
                 "end_time": { "type": "string" },
                 "description": { "type": "string" },
                 "is_in_person": { "type": "boolean" },
-                "has_end_time": { "type": "boolean" }
+                "has_end_time": { "type": "boolean" },
+                "is_all_day": { "type": "boolean" },
+                "location": { "type": "string" }
               },
               "required": ["title_of_event", "date", "start_time", "end_time", "importance", "description", "has_end_time"],
               "additionalProperties": false
@@ -44,19 +34,66 @@ internal sealed class EmailProcessor
           }
         }
         """);
-		// Granite ignores the "description" field, so put any format in the system prompt.
 
-        var prompt = new PromptRequest(new()
+    public async Task ProcessEmailAsync(ApplicationUser user, Email email, CancellationToken ct = default)
+    {
+        var prompt = new PromptRequest([
+                new Message("system",
+                    """
+                    You are an assistant that extracts information from emails and helps organise the user's calendar events. 
+                    Pay attention to the format required for the response - hours must be in 24 hour format.
+                    You must list the importance of the event, and the date must be in YYYY-MM-DD format.
+                    """),
+                new Message("user",
+                    $"""
+                     Extract the important parts of the email and format them in the corresponding json so the event can be added into my calendar
+                     
+                     From: {email.SendingUserEmail}
+                     Subject: {email.Title}
+                     Body:
+                     {email.Body}
+                     """)
+            ],
+            ResponseFormat: SchemaDoc.RootElement);
+
+        var response = await router.SendAsync(prompt, ct);
+
+        using var eventDoc = JsonDocument.Parse(response.Content!);
+
+        var root = eventDoc.RootElement;
+
+        var calendarEvent = new Event
         {
-            new("system", "You are an assistant that extracts information from emails and helps organise the user's calendar events. Pay attention to the format required for the response - hours must be in 24 hour format., you must list the importance of the event, and the date must be in YYYY-MM-DD format."),
-            new("user",
-                $"Extract the imporant parts of the email and format them in the coresponding json so the event can be added into my calendar\n\nFrom: {email.SendingUserEmail}\nSubject: {email.Title}\nBody:\n{email.Body}")
-        },
-        ResponseFormat: schemaDoc.RootElement);
-
-        var response = await _router.SendAsync(prompt, ct);
+            Title = root.GetProperty("title_of_event").GetString() ?? "",
+            Description = root.TryGetProperty("description", out var desc) ? desc.GetString() : null,
+            Start = DateTime.Parse(
+                $"{root.GetProperty("date").GetString()} {root.GetProperty("start_time").GetString()}"),
+            End = root.GetProperty("has_end_time").GetBoolean()
+                ? DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("end_time").GetString()}")
+                : DateTime.Parse($"{root.GetProperty("date").GetString()} 23:59:59"),
+            IsAllDay = root.TryGetProperty("is_all_day", out var isAllDay) && isAllDay.GetBoolean(),
+            IsInPerson = root.TryGetProperty("is_in_person", out var inPerson) && inPerson.GetBoolean(),
+            Location = root.TryGetProperty("location", out var location) ? location.GetString() : null,
+            Importance = root.GetProperty("importance").GetString() switch
+            {
+                "high" => Importance.High,
+                "medium" => Importance.Medium,
+                "low" => Importance.Low,
+                _ => Importance.Medium
+            },
+            Color = root.GetProperty("importance").GetString() switch
+            {
+                "high" => "red",
+                "medium" => "blue",
+                "low" => "green",
+                _ => "blue"
+            },
+            MeetingLink = null,
+            UserId = user.Id,
+            User = user,
+        };
 
         Console.WriteLine($"Extracted Email Info → {response.Content}");
+        await eventProcessor.ProcessEventAsync(calendarEvent, ct);
     }
 }
-

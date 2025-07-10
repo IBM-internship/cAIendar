@@ -2,11 +2,32 @@ services:
   dotnet-dev:
     build: .
     image: my/dotnet9-dev
+    working_dir: /workspace
     volumes:
       - ./:/workspace
-    working_dir: /workspace
     ports:
       - "2223:22"
+      - "5032:5032"
+      - "7194:7194"
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
+    networks:
+      - app-network
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      - SA_PASSWORD=Your_password123
+      - ACCEPT_EULA=Y
+    ports:
+      - '1433:1433'
+    volumes:
+      - ./sqlserver_data:/var/opt/mssql/data
+    user: "0:0"
+    networks:
+      - app-network
+volumes:
+  sqlserver_data:
+networks:
+  app-network:
+    driver: bridge

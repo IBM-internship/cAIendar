@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace AiCalendarAssistant.Controllers
+namespace AiCalendarAssistant.Controllers;
+
+public class EventsController : BaseController
 {
-	public class EventsController : BaseController
+	public IActionResult Index()
 	{
-		public IActionResult Index()
-		{
-			return View();
-		}
+		return View();
 	}
 }

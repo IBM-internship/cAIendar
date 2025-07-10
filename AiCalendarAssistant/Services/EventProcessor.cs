@@ -1,0 +1,146 @@
+﻿using System.Text;
+using System.Text.Json;
+using AiCalendarAssistant.Data;
+using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Models;
+using Microsoft.EntityFrameworkCore;
+using Message = AiCalendarAssistant.Models.Message;
+
+namespace AiCalendarAssistant.Services;
+
+public class EventProcessor(
+    ApplicationDbContext db,
+    EmailComposer emailComposer,
+    GmailEmailService gmailEmailService,
+    PromptRouter router)
+{
+    public async Task ProcessEventAsync(Event newEvent, CancellationToken ct = default)
+    {
+        var collidingEvents = await GetCollidingEventsAsync(newEvent, ct);
+
+        if (collidingEvents.Count == 0)
+        {
+            db.Events.Add(newEvent);
+            await db.SaveChangesAsync(ct);
+            return;
+        }
+
+        var mostImportantEvent = collidingEvents
+            .OrderByDescending(e => e.Importance)
+            .FirstOrDefault();
+
+        if (mostImportantEvent == null)
+        {
+            throw new Exception("This should never happen, there should always be at least one colliding event.");
+        }
+
+        var sameCategory = mostImportantEvent.Importance == newEvent.Importance;
+        var shouldReplace = sameCategory && ShouldReplaceEvent(collidingEvents, newEvent);
+
+        if ((sameCategory && !shouldReplace) || mostImportantEvent.Importance > newEvent.Importance)
+        {
+            // If the most important event is more important than the new event, skip adding the new event
+            // TODO: remove dummy parameters after adding Email to the Event model
+            SendCancellationEmailAsync("rosenlepilkov@gmail.com", mostImportantEvent, new Email());
+        }
+        else if ((sameCategory && shouldReplace) || mostImportantEvent.Importance < newEvent.Importance)
+        {
+            foreach (var collidingEvent in collidingEvents)
+            {
+                db.Events.Remove(collidingEvent);
+                // TODO: remove dummy parameters after adding Email to the Event model
+                SendCancellationEmailAsync("rosenlepilkov@gmail.com", newEvent, new Email());
+            }
+
+            db.Events.Add(newEvent);
+            await db.SaveChangesAsync(ct);
+        }
+    }
+
+    private async Task<List<Event>> GetCollidingEventsAsync(Event newEvent, CancellationToken ct = default)
+    {
+        var existingEvents = await db.Events
+            .Where(e => e.Start < newEvent.End && e.End > newEvent.Start)
+            .ToListAsync(ct);
+
+        return existingEvents;
+    }
+
+    private async Task SendCancellationEmailAsync(string recipient, Event cancelledEvent, Email reasonForCancellation)
+    {
+        var body = emailComposer.ComposeCancellationEmail(recipient, cancelledEvent, reasonForCancellation);
+        await gmailEmailService.ReplyToEmailAsync(
+            reasonForCancellation.MessageId,
+            reasonForCancellation.ThreadId,
+            cancelledEvent.Title,
+            recipient,
+            body);
+    }
+
+    private static readonly JsonDocument ShouldReplaceEventSchema = JsonDocument.Parse(
+        """
+        {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "email_info",
+            "strict": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "should-change-event": { "type": "boolean" }
+              },
+              "required": ["choice"],
+              "additionalProperties": false
+            }
+          }
+        }
+        """);
+    
+    private bool ShouldReplaceEvent(List<Event> existingEvents, Event newEvent)
+    {
+        // TODO: remove dummy email
+        Email eventEmail = new Email();
+        
+        Func<Event, string> eventToString = e => 
+            $"""
+            Title: {e.Title}
+            Date: {e.Start:yyyy-MM-dd}
+            Start Time: {e.Start:HH:mm}
+            End Time: {e.End:HH:mm}
+            Importance: {e.Importance}
+            Email Sender: {eventEmail.SendingUserEmail}
+            Email Subject: {eventEmail.Title}
+            Description: {e.Description ?? "No description provided."}
+            """;
+        
+        StringBuilder eventsInfo = new();
+        eventsInfo.AppendLine("Existing events:");
+        foreach (var existingEvent in existingEvents)
+        {
+            eventsInfo.AppendLine(eventToString(existingEvent));
+            eventsInfo.AppendLine("---------------------------------");
+        }
+        eventsInfo.AppendLine("New event:");
+        eventsInfo.AppendLine(eventToString(newEvent));
+        
+        var prompt = new PromptRequest(
+            [
+                new Message("system",
+                    """
+                    You are an assistant that helps the user decide whether to replace an existing events with a new one, which overlap.
+                    The decision should be based on the importance of the events and their categories, who had send them and how crucial they are.
+                    """),
+                new Message("user",
+                    $"""
+                    {eventsInfo}
+                    Should I replace the existing events with the new one?
+                    """)
+            ],
+            ResponseFormat: ShouldReplaceEventSchema.RootElement);
+        
+        var response = router.SendAsync(prompt).Result;
+        using var doc = JsonDocument.Parse(response.Content!);
+
+        return doc.RootElement.GetProperty("should-change-event").GetBoolean();
+    }
+}
