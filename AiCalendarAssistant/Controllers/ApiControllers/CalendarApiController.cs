@@ -1,6 +1,4 @@
-using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Models.DTOs;
-using AiCalendarAssistant.Services;
 using AiCalendarAssistant.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

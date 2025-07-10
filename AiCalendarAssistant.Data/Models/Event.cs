@@ -21,6 +21,11 @@
 
         // Ако има потребители в системата
         public string? UserId { get; set; } // За връзка с потребител            
-        public ApplicationUser? User { get; set; } 
+        public ApplicationUser? User { get; set; }
+
+        // Ако има имейли в системата
+        public int? EventCreatedFromEmailId { get; set; } // За връзка с имейл
+        public Email? EventCreatedFromEmail { get; set; } // Because on which email was the event created
+        public bool IsDeleted { get; set; } = false; // Flag to mark user as deleted without removing from database
     }
 }

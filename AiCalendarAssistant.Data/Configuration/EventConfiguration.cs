@@ -13,6 +13,12 @@ namespace AiCalendarAssistant.Data.Configuration
                 .WithMany(u => u.Events)
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder
+                .HasOne(e => e.EventCreatedFromEmail)
+                .WithOne(e => e.EmailCreatedEvent)
+                .HasForeignKey<Event>(e => e.EventCreatedFromEmailId) // FK is in Event
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

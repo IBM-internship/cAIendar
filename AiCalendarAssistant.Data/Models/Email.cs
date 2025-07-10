@@ -23,5 +23,8 @@ namespace AiCalendarAssistant.Data.Models
         public string RecievingUserId { get; set; }
 		public ApplicationUser RecievingUser { get; set; }
 		public bool IsProcessed { get; set; }
-	}
+		public Event? EmailCreatedEvent { get; set; } // The event created from this email
+                                                      // Optional: If you want to track the event that was created when this email was processed
+        public bool IsDeleted { get; set; } = false; // Flag to mark user as deleted without removing from database
+    }
 }
