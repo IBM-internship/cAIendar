@@ -14,7 +14,7 @@ namespace AiCalendarAssistant.Controllers.ApiControllers;
 [Authorize]
 public class ChatApiController(
     ApplicationDbContext db,
-    ChatMessager chatMessager)
+    ChatMessenger chatMessenger)
     : ControllerBase
 {
     public record MessageModel(int ChatId, string Text);
@@ -56,7 +56,7 @@ public class ChatApiController(
 
         // ── 2) let the assistant respond via ChatMessager ──────────────────
         var assistantMessage =
-            await chatMessager.GenerateAssistantMessageAsync(chat, ct);
+            await chatMessenger.GenerateAssistantMessageAsync(chat, ct);
 
         // ── 3) return both IDs & the assistant text ────────────────────────
         return Ok(new

@@ -10,9 +10,9 @@ internal static class CommonJson
     internal static PromptResponse ParseResponse(JsonElement root)
     {
         var msg = root.GetProperty("choices")
-                      .EnumerateArray()
-                      .First()
-                      .GetProperty("message");
+            .EnumerateArray()
+            .First()
+            .GetProperty("message");
 
         // Watsonx omits "content" when the assistant exclusively returns tool calls.
         string? txt = null;
@@ -25,21 +25,16 @@ internal static class CommonJson
 
         // Collect any tool calls.
         List<ToolCall>? calls = null;
-        if (msg.TryGetProperty("tool_calls", out var tc) &&
-            tc.ValueKind == JsonValueKind.Array)
-        {
-            calls = new();
-            foreach (var e in tc.EnumerateArray())
-            {
-                var fn   = e.GetProperty("function");
-                var id   = e.GetProperty("id").GetString()!;
-                var name = fn.GetProperty("name").GetString()!;
-                var args = fn.GetProperty("arguments");
-                calls.Add(new ToolCall(id, name, args));
-            }
-        }
+        if (!msg.TryGetProperty("tool_calls", out var tc) ||
+            tc.ValueKind != JsonValueKind.Array) return new PromptResponse(txt, calls);
+        calls = [];
+        calls.AddRange(from e in tc.EnumerateArray()
+            let fn = e.GetProperty("function")
+            let id = e.GetProperty("id").GetString()!
+            let name = fn.GetProperty("name").GetString()!
+            let args = fn.GetProperty("arguments")
+            select new ToolCall(id, name, args));
 
         return new PromptResponse(txt, calls);
     }
 }
-

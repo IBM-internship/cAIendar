@@ -138,7 +138,7 @@ builder.Services.AddHttpClient<WatsonxClient>();
 builder.Services.AddHttpClient<OllamaClient>();
 builder.Services.AddSingleton<PromptRouter>();
 builder.Services.AddSingleton<EmailProcessor>();
-builder.Services.AddScoped<ChatMessager>();
+builder.Services.AddScoped<ChatMessenger>();
 builder.Services.AddSingleton<EventProcessor>();
 builder.Services.AddSingleton<EmailComposer>();
 

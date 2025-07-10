@@ -23,6 +23,7 @@ public class CalendarService(ApplicationDbContext context) : ICalendarService
         await context.SaveChangesAsync();
         return true;
     }
+
     public async Task<Event?> GetEventByIdAsync(int eventId)
     {
         return await context.Events.FindAsync(eventId);
@@ -38,15 +39,17 @@ public class CalendarService(ApplicationDbContext context) : ICalendarService
         await context.SaveChangesAsync();
         return true;
     }
+
     public async Task<List<Event>> GetAllEventsAsync()
     {
         return await Task.Run(() => context.Events.AsNoTracking().ToList());
     }
+
     public async Task<List<Event>> GetEventsAsync(Func<Event, bool> predicate)
     {
         return await Task.Run(() => context.Events.AsNoTracking().AsEnumerable().Where(predicate).ToList());
     }
-    
+
     public async Task<List<Event>> GetEventsInTimeRangeAsync(DateTime start, DateTime end, string userId)
     {
         return await context.Events
