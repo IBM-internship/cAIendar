@@ -475,9 +475,9 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="eventModalLabel">
                         <i class="fas fa-plus-circle me-2"></i>
-                        Ново събитие
+                        Create new
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="eventId" />
@@ -485,7 +485,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="eventTitle" class="form-label">
-                                    <i class="fas fa-heading me-2"></i>Заглавие
+                                    <i class="fas fa-heading me-2"></i>Title
                                 </label>
                                 <input type="text" class="form-control" id="eventTitle" required>
                             </div>
@@ -493,7 +493,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="eventColor" class="form-label">
-                                    <i class="fas fa-palette me-2"></i>Цвят
+                                    <i class="fas fa-palette me-2"></i>Color
                                 </label>
                                 <div class="color-picker-container">
                                     <div class="color-option" data-color="#007bff" style="background-color: #007bff;"></div>
@@ -514,7 +514,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="eventStart" class="form-label">
-                                    <i class="fas fa-play me-2"></i>Начало
+                                    <i class="fas fa-play me-2"></i>Start time
                                 </label>
                                 <input type="datetime-local" class="form-control" id="eventStart" required>
                             </div>
@@ -522,7 +522,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="eventEnd" class="form-label">
-                                    <i class="fas fa-stop me-2"></i>Край
+                                    <i class="fas fa-stop me-2"></i>Finish time
                                 </label>
                                 <input type="datetime-local" class="form-control" id="eventEnd" required>
                             </div>
@@ -531,7 +531,7 @@
 
                     <div class="mb-3">
                         <label for="eventDescription" class="form-label">
-                            <i class="fas fa-align-left me-2"></i>Описание
+                            <i class="fas fa-align-left me-2"></i>Description
                         </label>
                         <textarea class="form-control" id="eventDescription" rows="3"></textarea>
                     </div>
@@ -540,7 +540,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="eventLocation" class="form-label">
-                                    <i class="fas fa-map-marker-alt me-2"></i>Местоположение
+                                    <i class="fas fa-map-marker-alt me-2"></i>Location
                                 </label>
                                 <input type="text" class="form-control" id="eventLocation">
                             </div>
@@ -548,7 +548,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="eventMeetingLink" class="form-label">
-                                    <i class="fas fa-link me-2"></i>Линк за среща
+                                    <i class="fas fa-link me-2"></i>Link for meeting
                                 </label>
                                 <input type="url" class="form-control" id="eventMeetingLink">
                             </div>
@@ -560,7 +560,7 @@
                             <div class="mb-3 form-check">
                                 <input type="checkbox" class="form-check-input" id="eventAllDay">
                                 <label class="form-check-label" for="eventAllDay">
-                                    <i class="fas fa-calendar-day me-2"></i>Целодневно
+                                    <i class="fas fa-calendar-day me-2"></i>All day
                                 </label>
                             </div>
                         </div>
@@ -568,7 +568,7 @@
                             <div class="mb-3 form-check">
                                 <input type="checkbox" class="form-check-input" id="eventIsInPerson">
                                 <label class="form-check-label" for="eventIsInPerson">
-                                    <i class="fas fa-users me-2"></i>Присъствено
+                                    <i class="fas fa-users me-2"></i>In-person
                                 </label>
                             </div>
                         </div>
@@ -576,13 +576,13 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Отказ
+                        <i class="fas fa-times me-2"></i>Cancel
                     </button>
                     <button type="button" class="btn btn-danger" id="deleteEventBtn" style="display: none;">
-                        <i class="fas fa-trash me-2"></i>Изтрий
+                        <i class="fas fa-trash me-2"></i>Delete
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Запази
+                        <i class="fas fa-save me-2"></i>Save
                     </button>
                 </div>
             </form>
@@ -596,19 +596,19 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="eventDetailsModalLabel">
                         <i class="fas fa-info-circle me-2"></i>
-                        Детайли за събитието
+                        Event details
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="eventDetailsContent">
                     <!-- Event details will be populated here -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Затвори
+                        <i class="fas fa-times me-2"></i>Close
                     </button>
                     <button type="button" class="btn btn-primary" id="editEventBtn">
-                        <i class="fas fa-edit me-2"></i>Редактирай
+                        <i class="fas fa-edit me-2"></i>Edit
                     </button>
                 </div>
             </div>
@@ -659,7 +659,7 @@
 
                 calendar.on('beforeDeleteEvent', function(e) {
                     const event = e.event;
-                    if (confirm('Сигурни ли сте, че искате да изтриете това събитие?')) {
+                    if (confirm('Are you sure you want to delete this event?')) {
                         deleteEventFromServer(event.id);
                     }
                 });
@@ -702,7 +702,7 @@
                     })
                     .catch(error => {
                         console.error('Error loading events:', error);
-                        showToast('Грешка при зареждане на събитията', 'error');
+                        showToast('Error while loading events', 'error');
                     });
             }
 
@@ -759,7 +759,7 @@
 
             // Delete event
             document.getElementById('deleteEventBtn').addEventListener('click', async function() {
-                if (selectedEvent && confirm('Сигурни ли сте, че искате да изтриете това събитие?')) {
+                if (selectedEvent && confirm('Are you sure you want to delete this event?')) {
                     await deleteEventFromServer(selectedEvent.id);
                 }
             });
@@ -799,7 +799,7 @@
                 document.getElementById('eventForm').reset();
 
                 if (event) {
-                    document.getElementById('eventModalLabel').innerHTML = '<i class="fas fa-edit me-2"></i>Редактирай събитие';
+                    document.getElementById('eventModalLabel').innerHTML = '<i class="fas fa-edit me-2"></i>Edit event';
                     document.getElementById('eventId').value = event.id;
                     document.getElementById('eventTitle').value = event.title;
                     document.getElementById('eventDescription').value = event.description || '';
@@ -828,7 +828,7 @@
                     // Show delete button
                     document.getElementById('deleteEventBtn').style.display = 'block';
                 } else {
-                    document.getElementById('eventModalLabel').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Ново събитие';
+                    document.getElementById('eventModalLabel').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Create new';
                     document.getElementById('eventId').value = '';
                     document.getElementById('deleteEventBtn').style.display = 'none';
 
@@ -844,7 +844,19 @@
             }
 
             function showEventDetails(event) {
-                selectedEvent = event.raw;
+                selectedEvent = {
+                    id: event.id,
+                    title: event.title,
+                    description: event.raw.description || '',
+                    start: event.start,
+                    end: event.end,
+                    isAllDay: event.isAllDay,
+                    location: event.location || '',
+                    meetingLink: event.raw.meetingLink || '',
+                    isInPerson: event.raw.isInPerson || false,
+                    color: event.backgroundColor || '#007bff'
+                };
+
                 const content = document.getElementById('eventDetailsContent');
 
                 content.innerHTML = `
@@ -878,7 +890,7 @@
                         ${event.raw.isInPerson ? `
                             <div class="event-detail-item">
                                 <i class="fas fa-users event-detail-icon"></i>
-                                <span>Присъствено събитие</span>
+                                <span>In-person event</span>
                             </div>
                         ` : ''}
                     </div>
@@ -887,79 +899,79 @@
                 eventDetailsModal.show();
             }
 
-            async function saveEvent() {
-                const eventIdValue = document.getElementById('eventId').value;
-                const isAllDay = document.getElementById('eventAllDay').checked;
+                    async function saveEvent() {
+            const eventIdValue = document.getElementById('eventId').value;
+            const isNew = !eventIdValue || eventIdValue === '0';
+            const isAllDay = document.getElementById('eventAllDay').checked;
 
-                const event = {
-                    Id: eventIdValue ? parseInt(eventIdValue, 10) : 0,
-                    Title: document.getElementById('eventTitle').value,
-                    Description: document.getElementById('eventDescription').value,
-                    Start: isAllDay ?
-                        new Date(document.getElementById('eventStart').value + 'T00:00:00').toISOString() :
-                        localDatetimeToISOString(document.getElementById('eventStart').value),
-                    End: isAllDay ?
-                        new Date(document.getElementById('eventEnd').value + 'T23:59:59').toISOString() :
-                        localDatetimeToISOString(document.getElementById('eventEnd').value),
-                    IsAllDay: isAllDay,
-                    Location: document.getElementById('eventLocation').value,
-                    MeetingLink: document.getElementById('eventMeetingLink').value,
-                    IsInPerson: document.getElementById('eventIsInPerson').checked,
-                    Color: document.getElementById('eventColor').value
-                };
+            const event = {
+                Id: isNew ? 0 : parseInt(eventIdValue, 10),
+                Title: document.getElementById('eventTitle').value,
+                Description: document.getElementById('eventDescription').value,
+                Start: isAllDay
+                    ? new Date(document.getElementById('eventStart').value + 'T00:00:00').toISOString()
+                    : localDatetimeToISOString(document.getElementById('eventStart').value),
+                End: isAllDay
+                    ? new Date(document.getElementById('eventEnd').value + 'T23:59:59').toISOString()
+                    : localDatetimeToISOString(document.getElementById('eventEnd').value),
+                IsAllDay: isAllDay,
+                Location: document.getElementById('eventLocation').value,
+                MeetingLink: document.getElementById('eventMeetingLink').value,
+                IsInPerson: document.getElementById('eventIsInPerson').checked,
+                Color: document.getElementById('eventColor').value
+            };
 
-                try {
-                    const response = await fetch('/api/calendarapi/add', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(event)
-                    });
+            const endpoint = isNew ? '/api/calendarapi/add' : '/api/calendarapi/replace';
+            const method = isNew ? 'POST' : 'PUT';
 
-                    if (response.ok) {
-                        const result = await response.json();
-                        const eventId = eventIdValue ? eventIdValue : result;
+            try {
+                const response = await fetch(endpoint, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(event)
+                });
 
-                        // Update calendar
-                        if (eventIdValue) {
-                            // Update existing event
-                            calendar.updateEvent(eventId, eventId, {
-                                title: event.Title,
-                                start: event.Start,
-                                end: event.End,
-                                isAllDay: event.IsAllDay,
-                                location: event.Location,
-                                backgroundColor: event.Color,
-                                borderColor: event.Color,
-                                raw: event
-                            });
-                        } else {
-                            // Create new event
-                            calendar.createEvents([{
-                                id: String(eventId),
-                                calendarId: '1',
-                                title: event.Title,
-                                category: event.IsAllDay ? 'allday' : 'time',
-                                start: event.Start,
-                                end: event.End,
-                                isAllDay: event.IsAllDay,
-                                location: event.Location,
-                                backgroundColor: event.Color,
-                                borderColor: event.Color,
-                                raw: event
-                            }]);
-                        }
+                if (response.ok) {
+                    const result = isNew ? await response.json() : event.Id;
 
-                        eventModal.hide();
-                        showToast(eventIdValue ? 'Събитието е обновено успешно!' : 'Събитието е създадено успешно!', 'success');
+                    if (isNew) {
+                        calendar.createEvents([{
+                            id: String(result),
+                            calendarId: '1',
+                            title: event.Title,
+                            category: event.IsAllDay ? 'allday' : 'time',
+                            start: event.Start,
+                            end: event.End,
+                            isAllDay: event.IsAllDay,
+                            location: event.Location,
+                            backgroundColor: event.Color,
+                            borderColor: event.Color,
+                            raw: event
+                        }]);
                     } else {
-                        const errorText = await response.text();
-                        showToast(`Грешка при запазване: ${errorText}`, 'error');
+                        calendar.updateEvent(String(event.Id), '1', {
+                            title: event.Title,
+                            start: event.Start,
+                            end: event.End,
+                            isAllDay: event.IsAllDay,
+                            location: event.Location,
+                            backgroundColor: event.Color,
+                            borderColor: event.Color,
+                            raw: event
+                        });
                     }
-                } catch (error) {
-                    console.error('Error saving event:', error);
-                    showToast('Грешка при запазване на събитието', 'error');
+
+                    eventModal.hide();
+                    showToast(isNew ? 'Събитието е създадено успешно!' : 'Събитието е обновено успешно!', 'success');
+                } else {
+                    const errorText = await response.text();
+                    showToast(`Грешка при запазване: ${errorText}`, 'error');
                 }
+            } catch (error) {
+                console.error('Error saving event:', error);
+                showToast('Грешка при запазване на събитието', 'error');
             }
+        }
             function toISO(dateValue) {
                 try {
                     return new Date(dateValue).toISOString();
@@ -989,15 +1001,15 @@
                         start: updatePayload.start,
                         end: updatePayload.end
                     });
-                    showToast('Събитието е преместено успешно!', 'success');
+                    showToast('Event was moved successfully!', 'success');
                 } else {
                     const errorText = await response.text();
-                    showToast(`Грешка при преместване: ${errorText}`, 'error');
+                    showToast(`Error while moving event: ${errorText}`, 'error');
                     calendar.render(); // връщане назад ако не успее
                 }
             } catch (error) {
                 console.error('Error updating event:', error);
-                showToast('Грешка при преместване на събитието', 'error');
+                showToast('Error while moving event', 'error');
                 calendar.render();
             }
         }
@@ -1012,19 +1024,19 @@
                         calendar.deleteEvent(eventId, '1');
                         eventModal.hide();
                         eventDetailsModal.hide();
-                        showToast('Събитието е изтрито успешно!', 'success');
+                        showToast('Event was deleted successfully!', 'success');
                     } else {
                         const errorText = await response.text();
-                        showToast(`Грешка при изтриване: ${errorText}`, 'error');
+                        showToast(`Error while deleting event: ${errorText}`, 'error');
                     }
                 } catch (error) {
                     console.error('Error deleting event:', error);
-                    showToast('Грешка при изтриване на събитието', 'error');
+                    showToast('Error while deleting event', 'error');
                 }
             }
 
             function createQuickEvent(eventData) {
-                const title = prompt('Въведете заглавие на събитието:');
+                const title = prompt('Insert event title:');    
                 if (title) {
                     const quickEvent = {
                         Id: 0,
@@ -1059,11 +1071,11 @@
                             borderColor: quickEvent.Color,
                             raw: quickEvent
                         }]);
-                        showToast('Събитието е създадено успешно!', 'success');
+                        showToast('Event was created successfully!', 'success');
                     })
                     .catch(error => {
                         console.error('Error creating quick event:', error);
-                        showToast('Грешка при създаване на събитието', 'error');
+                        showToast('Error while creating event', 'error');
                     });
                 }
             }
@@ -1079,7 +1091,7 @@
                 toast.innerHTML = `
                     <div class="toast-header">
                         <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
-                        <strong class="me-auto">${type === 'success' ? 'Успех' : 'Грешка'}</strong>
+                        <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
                         <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
                     </div>
                     <div class="toast-body">${message}</div>
@@ -1110,7 +1122,7 @@
                 const end = new Date(event.end);
 
                 if (event.isAllDay) {
-                    return `${start.toLocaleDateString('bg-BG')} - Целодневно`;
+                    return `${start.toLocaleDateString('bg-BG')} - All day`;
                 } else {
                     return `${start.toLocaleDateString('bg-BG')} ${start.toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' })}`;
                 }
