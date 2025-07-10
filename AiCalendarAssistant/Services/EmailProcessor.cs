@@ -10,16 +10,13 @@ internal sealed class EmailProcessor
 {
     private readonly PromptRouter _router;
     private readonly IEmailReader _reader;
-    private readonly ICalendarService _calendar;     
 
     public EmailProcessor(
         PromptRouter router,
-        IEmailReader reader,
-        ICalendarService calendar)                   
+        IEmailReader reader)
     {
         _router   = router;
         _reader   = reader;
-        _calendar = calendar;
     }
     public async Task<Event> ProcessEmailAsync(CancellationToken ct = default)
     {

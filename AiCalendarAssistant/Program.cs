@@ -140,17 +140,26 @@ var llmSettings = new LlmSettings
     OllamaModel = ollamaModel       ?? "granite3.3:latest"
 };*/
 
-// builder.Services.AddSingleton(llmSettings);
-// builder.Services.AddHttpClient<TokenProvider>();
-// builder.Services.AddHttpClient<WatsonxClient>();
-// builder.Services.AddHttpClient<OllamaClient>();
-// builder.Services.AddSingleton<PromptRouter>();
-// builder.Services.AddSingleton<IEmailReader, EmailReader>();
-// builder.Services.AddSingleton<EmailProcessor>();
+builder.Services.AddSingleton(llmSettings);
+builder.Services.AddHttpClient<TokenProvider>();
+builder.Services.AddHttpClient<WatsonxClient>();
+builder.Services.AddHttpClient<OllamaClient>();
+builder.Services.AddSingleton<PromptRouter>();
+builder.Services.AddSingleton<IEmailReader, EmailReader>();
+builder.Services.AddSingleton<EmailProcessor>();
 
 
 var app = builder.Build();
-//var router = app.Services.GetRequiredService<PromptRouter>();
+var router = app.Services.GetRequiredService<PromptRouter>();
+
+var chat = new PromptRequest(new()
+{
+    new("system", "You are a helpful assistant."),
+    new("user",   "What is the capital of France?")
+});
+
+var chatResp = await router.SendAsync(chat);
+Console.WriteLine($"Capital → {chatResp.Content}");
 
 if (app.Environment.IsDevelopment())
 {
