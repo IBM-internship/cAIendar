@@ -118,7 +118,7 @@ builder.Services.AddScoped<TokenRefreshService>(provider =>
 builder.Services.AddScoped<ICalendarService, CalendarService>();
 builder.Services.AddScoped<INoteService, NoteService>();
 
-var watsonxUrl        = Environment.GetEnvironmentVariable("Llm__Url");
+/*var watsonxUrl        = Environment.GetEnvironmentVariable("Llm__Url");
 var watsonxProjectId  = Environment.GetEnvironmentVariable("Llm__ProjectId");
 var watsonxModelId    = Environment.GetEnvironmentVariable("Llm__ModelId");
 var watsonxApiKey     = Environment.GetEnvironmentVariable("Llm__ApiKey");
@@ -138,7 +138,7 @@ var llmSettings = new LlmSettings
     UseOllama   = bool.TryParse(ollamaUse, out var useOllama) && useOllama,
     OllamaUrl   = ollamaUrl         ?? "http://host.docker.internal:11434",
     OllamaModel = ollamaModel       ?? "granite3.3:latest"
-};
+};*/
 
 // builder.Services.AddSingleton(llmSettings);
 // builder.Services.AddHttpClient<TokenProvider>();

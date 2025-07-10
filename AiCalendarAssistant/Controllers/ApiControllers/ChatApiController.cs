@@ -16,8 +16,8 @@ namespace YourApp.Controllers
         {
             if (model == null || string.IsNullOrWhiteSpace(model.Text))
                 return BadRequest("Text is required.");
-
-            // Do something with model.Text later
+            
+            
             return Ok("Message received.");
         }
     }
