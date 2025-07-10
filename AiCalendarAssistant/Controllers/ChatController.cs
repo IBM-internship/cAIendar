@@ -1,11 +1,11 @@
+using System.Security.Claims;
 using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
-namespace YourApp.Controllers
+namespace AiCalendarAssistant.Controllers
 {
     [Authorize]
     public class ChatController : Controller

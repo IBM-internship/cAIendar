@@ -1,5 +1,6 @@
 using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Services.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace AiCalendarAssistant.Services;
@@ -43,8 +44,9 @@ public class CalendarService(ApplicationDbContext context) : ICalendarService
     }
     public async Task<List<Event>> GetEventsAsync(Func<Event, bool> predicate)
     {
-        return await Task.Run(() => context.Events.AsNoTracking().Where(predicate).ToList());
+        return await Task.Run(() => context.Events.AsNoTracking().AsEnumerable().Where(predicate).ToList());
     }
+    
     public async Task<List<Event>> GetEventsInTimeRangeAsync(DateTime start, DateTime end, string userId)
     {
         return await context.Events

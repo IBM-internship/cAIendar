@@ -3,6 +3,7 @@ using System.Text.Json;
 using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Models;
+using AiCalendarAssistant.Services.Contracts;
 using Microsoft.EntityFrameworkCore;
 using DataMessage = AiCalendarAssistant.Data.Models.Message;
 using PromptMessage = AiCalendarAssistant.Models.Message;

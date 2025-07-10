@@ -1,5 +1,4 @@
-﻿using AiCalendarAssistant.Data.Models.AiCalendarAssistant.Data.Models;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 
 namespace AiCalendarAssistant.Data.Models;
 

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace AiCalendarAssistant.Services;
 
-internal sealed class PromptRouter(WatsonxClient w, OllamaClient o, IOptions<LlmSettings> cfg)
+public sealed class PromptRouter(WatsonxClient w, OllamaClient o, IOptions<LlmSettings> cfg)
 {
     private readonly ILlmClient  _watsonx = w;
     private readonly ILlmClient  _ollama = o;
