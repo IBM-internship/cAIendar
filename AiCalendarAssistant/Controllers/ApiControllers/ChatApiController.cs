@@ -1,5 +1,6 @@
 using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
+using PromptingPipeline.Services;            // ChatMessager
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,20 +13,25 @@ namespace YourApp.Controllers
     [Authorize]
     public class ChatApiController : ControllerBase
     {
-        public class MessageModel
+        public record MessageModel(int ChatId, string Text);
+
+        private readonly ApplicationDbContext _db;
+        private readonly ChatMessager         _chatMessager;
+
+        public ChatApiController(
+            ApplicationDbContext db,
+            ChatMessager         chatMessager)      // injected
         {
-            public int ChatId { get; set; }
-            public string Text { get; set; } = string.Empty;
+            _db           = db;
+            _chatMessager = chatMessager;
         }
-        ApplicationDbContext _db;
-        public ChatApiController(ApplicationDbContext db)
-        {
-            _db = db;
-        }
+
         [HttpPost]
-        public async Task<IActionResult> ReceiveMessage([FromBody] MessageModel model)
+        public async Task<IActionResult> ReceiveMessage(
+            [FromBody] MessageModel model,
+            CancellationToken       ct)
         {
-            if (model == null || string.IsNullOrWhiteSpace(model.Text))
+            if (model is null || string.IsNullOrWhiteSpace(model.Text))
                 return BadRequest("Text is required.");
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -34,26 +40,39 @@ namespace YourApp.Controllers
 
             var chat = await _db.Chats
                 .Include(c => c.Messages)
-                .FirstOrDefaultAsync(c => c.Id == model.ChatId && c.UserId == userId);
+                .FirstOrDefaultAsync(
+                    c => c.Id == model.ChatId && c.UserId == userId,
+                    ct);
 
-            if (chat == null)
+            if (chat is null)
                 return NotFound("Chat not found or doesn't belong to the user.");
 
-            var newMessage = new Message
+            // ── 1) save the user message ───────────────────────────────────────
+            var userMessage = new Message
             {
                 ChatId = chat.Id,
-                Role = MessageRole.User,
-                Text = model.Text,
-                SentOn = DateTime.Now,
-                Pos = chat.Messages?.Count() ?? 0
+                Role   = MessageRole.User,
+                Text   = model.Text,
+                SentOn = DateTime.UtcNow,
+                Pos    = chat.Messages?.Count() ?? 0
             };
 
-            _db.Messages.Add(newMessage);
-            await _db.SaveChangesAsync();
-            
+            _db.Messages.Add(userMessage);
+            await _db.SaveChangesAsync(ct);
 
-            return Ok($"Message saved to chat {chat.Id}.");
+            // ── 2) let the assistant respond via ChatMessager ──────────────────
+            var assistantMessage =
+                await _chatMessager.GenerateAssistantMessageAsync(chat, ct);
+
+            // ── 3) return both IDs & the assistant text ────────────────────────
+            return Ok(new
+            {
+                chatId            = chat.Id,
+                userMessageId     = userMessage.Id,
+                assistantMessageId = assistantMessage.Id,
+                assistantText     = assistantMessage.Text
+            });
         }
-
     }
 }
+

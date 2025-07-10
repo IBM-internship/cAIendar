@@ -147,6 +147,7 @@ builder.Services.AddHttpClient<OllamaClient>();
 builder.Services.AddSingleton<PromptRouter>();
 builder.Services.AddSingleton<IEmailReader, EmailReader>();
 builder.Services.AddSingleton<EmailProcessor>();
+builder.Services.AddScoped<ChatMessager>();
 
 
 var app = builder.Build();

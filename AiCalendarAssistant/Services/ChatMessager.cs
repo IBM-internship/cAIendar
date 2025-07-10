@@ -102,18 +102,29 @@ public class ChatMessager
         // 4-d) ── TOOL EXECUTION & SECOND PASS ─────────────────────────────────
         foreach (var call in firstResponse.ToolCalls!)
         {
+			Console.WriteLine("\n\n\n\n\nAssistant called tool: " + call.Name);
             if (call.Name != "get_events_in_time_range")
                 continue; // unknown tool – ignore
 
             // Parse arguments
-            var argsDoc = JsonDocument.Parse(call.Arguments);
-            var start   = DateTime.Parse(
-                argsDoc.RootElement.GetProperty("start").GetString()!,
-                null, DateTimeStyles.RoundtripKind);
+            // var argsDoc = JsonDocument.Parse(call.Arguments);
+            // var start   = DateTime.Parse(
+            //     argsDoc.RootElement.GetProperty("start").GetString()!,
+            //     null, DateTimeStyles.RoundtripKind);
+            //
+            // var end     = DateTime.Parse(
+            //     argsDoc.RootElement.GetProperty("end").GetString()!,
+            //     null, DateTimeStyles.RoundtripKind);
+			// ─── parse arguments ────────────────────────────────────────────────
+			JsonElement args = call.Arguments;                     // already a JsonElement
 
-            var end     = DateTime.Parse(
-                argsDoc.RootElement.GetProperty("end").GetString()!,
-                null, DateTimeStyles.RoundtripKind);
+			var start = DateTime.Parse(
+				args.GetProperty("start").GetString()!,
+				null, DateTimeStyles.RoundtripKind);
+
+			var end   = DateTime.Parse(
+				args.GetProperty("end").GetString()!,
+				null, DateTimeStyles.RoundtripKind);
 
             // Run the tool
             var events = await _calendarService.GetEventsInTimeRangeAsync(start, end);
@@ -141,7 +152,7 @@ public class ChatMessager
 
         // Second (and final) round: the model now has the tool output
         var followUpRequest  = new PromptRequest(history);
-        var finalResponse    = await _router.SendAsync(followUpRequest, ct);
+		var finalResponse    = await _router.SendAsync(followUpRequest, ct);
 
         return await PersistAssistantReplyAsync(
             chat,

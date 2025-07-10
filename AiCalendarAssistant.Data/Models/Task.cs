@@ -14,11 +14,5 @@ namespace AiCalendarAssistant.Data.Models
         public ApplicationUser? User { get; set; } 
 		public Importance Importance { get; set; } = Importance.Medium; 
     }
-public enum Importance
-	{
-		High,
-		Medium,
-		Low
-	}
 }
 
