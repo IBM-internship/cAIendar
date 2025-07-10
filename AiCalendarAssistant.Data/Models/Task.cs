@@ -12,12 +12,14 @@ namespace AiCalendarAssistant.Data.Models
 
         public string? Description { get; set; } 
 
+		public DateOnly Date { get; set; } = DateTime.UtcNow;
+
         public string? Color { get; set; } 
             
         [ForeignKey(nameof(User))]
         public string? UserId { get; set; } 
         public ApplicationUser? User { get; set; } 
-		public Importance Importance { get; set; } = Importance.Medium; 
+		public Importance Importance { get; set; } = Importance.Low;
 
 		public bool IsCompleted { get; set; } = false;
     }

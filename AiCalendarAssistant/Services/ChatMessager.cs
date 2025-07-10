@@ -51,6 +51,21 @@ public class ChatMessager
                 "required": ["start", "end"]
               }
             }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_tasks_in_day_range",
+              "description": "Fetch all calendar tasks that the user has between two timestamps days, if you use only for one day, use the same date for start and end",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "start_day": { "type": "string", "description": "Start Day" },
+                  "end_day":   { "type": "string", "description": "End Day" }
+                },
+                "required": ["start_day", "end_day"]
+              }
+            }
           }
         ]
         """);
@@ -105,36 +120,26 @@ public class ChatMessager
         foreach (var call in firstResponse.ToolCalls!)
         {
 			Console.WriteLine("\n\n\n\n\nAssistant called tool: " + call.Name);
-            if (call.Name != "get_events_in_time_range")
+            if (call.Name != "get_events_in_time_range" or call.Name != "get_tasks_in_day_range")
+				Console.WriteLine("\n\n\nIgnoring tool call: " + call.Name + "\n\n\n");
                 continue; // unknown tool – ignore
 
-            // Parse arguments
-            // var argsDoc = JsonDocument.Parse(call.Arguments);
-            // var start   = DateTime.Parse(
-            //     argsDoc.RootElement.GetProperty("start").GetString()!,
-            //     null, DateTimeStyles.RoundtripKind);
-            //
-            // var end     = DateTime.Parse(
-            //     argsDoc.RootElement.GetProperty("end").GetString()!,
-            //     null, DateTimeStyles.RoundtripKind);
-			// ─── parse arguments ────────────────────────────────────────────────
-			// // ─── parse arguments ──────────────────────────────────────────────
-JsonElement args = call.Arguments;          // could be { … }  OR  "{"start": … }"
+			JsonElement args = call.Arguments;          // could be { … }  OR  "{"start": … }"
 
-if (args.ValueKind == JsonValueKind.String)
-{
-    // LLM wrapped the JSON in quotes → unwrap it
-    using var tmpDoc = JsonDocument.Parse(args.GetString() ?? "{}");
-    args = tmpDoc.RootElement.Clone();      // clone keeps it alive after disposal
-}
+			if (args.ValueKind == JsonValueKind.String)
+			{
+				// LLM wrapped the JSON in quotes → unwrap it
+				using var tmpDoc = JsonDocument.Parse(args.GetString() ?? "{}");
+				args = tmpDoc.RootElement.Clone();      // clone keeps it alive after disposal
+			}
 
-var start = DateTime.Parse(
-    args.GetProperty("start").GetString()!,
-    null, DateTimeStyles.RoundtripKind);
+			var start = DateTime.Parse(
+				args.GetProperty("start").GetString()!,
+				null, DateTimeStyles.RoundtripKind);
 
-var end   = DateTime.Parse(
-    args.GetProperty("end").GetString()!,
-    null, DateTimeStyles.RoundtripKind);
+			var end   = DateTime.Parse(
+				args.GetProperty("end").GetString()!,
+				null, DateTimeStyles.RoundtripKind);
 
 
             // Run the tool
