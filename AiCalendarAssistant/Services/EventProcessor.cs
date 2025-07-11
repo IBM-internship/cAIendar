@@ -22,7 +22,7 @@ public class EventProcessor(
           "type": "json_schema",
           "json_schema": {
             "name": "email_info",
-            "strict": true,
+            "strict": false,
             "schema": {
               "type": "object",
               "properties": {

@@ -16,7 +16,7 @@ public class EmailProcessor(
           "type": "json_schema",
           "json_schema": {
             "name": "is_event",
-            "strict": true,
+            "strict": false,
             "schema": {
               "type": "object",
               "properties": {
@@ -35,7 +35,7 @@ public class EmailProcessor(
           "type": "json_schema",
           "json_schema": {
             "name": "email_info",
-            "strict": true,
+            "strict": false,
             "schema": {
               "type": "object",
               "properties": {

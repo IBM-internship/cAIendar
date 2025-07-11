@@ -33,15 +33,25 @@ namespace AiCalendarAssistant.Llm
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _cfg.OllamaApiKey);
         }
 
-        public async Task<PromptResponse> SendAsync(PromptRequest p, CancellationToken ct = default)
+        public async Task<PromptResponse> SendAsync(PromptRequest p, CancellationToken ct = default, string? additionalInstructions = null)
         {
             var url = $"{_cfg.OllamaUrl.TrimEnd('/')}/v1/chat/completions";
 
             var payload = new Dictionary<string, object?>
             {
                 ["model"]    = _cfg.OllamaModel,
-                ["messages"] = p.Messages.Select(m => new { role = m.Role, content = m.Content, tool_call_id = m.ToolCallId }).ToArray()
+                ["messages"] = p.Messages.Select(m =>
+                {
+                    // If this is the system message and additionalInstructions is provided, append it
+                    if (m.Role == "system" && !string.IsNullOrWhiteSpace(additionalInstructions))
+                    {
+                        return new { role = m.Role, content = m.Content + additionalInstructions };
+                    }
+                    return new { role = m.Role, content = m.Content };
+                }).ToArray()
             };
+            Console.WriteLine($"Payload messages: {JsonSerializer.Serialize(payload["messages"], Opts)}");
+			// here can we add the additionalInstructions string to the system message. Just append it
             if (p.ResponseFormat.HasValue) payload["response_format"] = p.ResponseFormat.Value;
             if (p.Tools.HasValue)
             {

@@ -14,7 +14,7 @@ public class EmailComposer(PromptRouter router)
           "type": "json_schema",
           "json_schema": {
             "name": "reason_for_cancellation_summary",
-            "strict": true,
+            "strict": false,
             "schema": {
               "type": "object",
               "properties": {
@@ -33,7 +33,7 @@ public class EmailComposer(PromptRouter router)
           "type": "json_schema",
           "json_schema": {
             "name": "cancellation_email",
-            "strict": true,
+            "strict": false,
             "schema": {
               "type": "object",
               "properties": {
