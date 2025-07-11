@@ -136,12 +136,14 @@ public class EventProcessor(
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine("Beginning sending cancellation email for event: " + cancelledEvent.Title);
         Console.ResetColor();
+        
         using var scope = serviceScopeFactory.CreateScope();
         var scopedEmailComposer = scope.ServiceProvider.GetRequiredService<EmailComposer>();
         var scopedGmailService = scope.ServiceProvider.GetRequiredService<IGmailEmailService>();
 
+        // Pass the user ID to the email service
         await SendCancellationEmailAsync(scopedEmailComposer, scopedGmailService, recipient, cancelledEvent,
-            reasonForCancellation);
+            reasonForCancellation, cancelledEvent.UserId); // Add user ID parameter
     }
 
     
@@ -160,7 +162,8 @@ public class EventProcessor(
         IGmailEmailService gmailEmailService,
         string recipient,
         Event cancelledEvent,
-        Email reasonForCancellation)
+        Email reasonForCancellation,
+        string userId) // Add user ID parameter
     {
         if (reasonForCancellation == null)
         {
@@ -175,12 +178,14 @@ public class EventProcessor(
         Console.WriteLine($"Sending the cancellation email to {recipient} for event: {cancelledEvent.Title}");
         Console.ResetColor();
     
+        // Use the new method that accepts userId
         await gmailEmailService.ReplyToEmailAsync(
             reasonForCancellation.MessageId,
             reasonForCancellation.ThreadId,
             cancelledEvent.Title,
             recipient,
-            body);
+            body,
+            userId);
     }
 
     private bool ShouldReplaceEvent(List<Event> existingEvents, Event newEvent)

@@ -10,5 +10,6 @@ public interface IGmailEmailService
         string threadId,
         string originalSubject,
         string fromEmail,
-        string body);
+        string body,
+        string userId);
 }

@@ -13,14 +13,13 @@ public class TokenRefreshService(
     string googleClientId,
     string googleClientSecret)
 {
-    public async Task<string?> GetValidAccessTokenAsync()
+    public async Task<string?> GetValidAccessTokenAsync(string userId)
     {
-        var context = httpContextAccessor.HttpContext!;
-        var user = await userManager.GetUserAsync(context.User);
+        var user = await userManager.FindByIdAsync(userId);
 
         if (user == null)
         {
-            logger.LogWarning("User not found");
+            logger.LogWarning("User not found with ID: {UserId}", userId);
             return null;
         }
 
@@ -124,17 +123,18 @@ public class TokenRefreshService(
             logger.LogError(ex, "Error updating stored tokens");
         }
     }
+    
 
-    public async Task<bool> IsTokenValidAsync()
+    public async Task<bool> IsTokenValidAsync(string userId)
     {
-        var token = await GetValidAccessTokenAsync();
+        var token = await GetValidAccessTokenAsync(userId);
         return !string.IsNullOrEmpty(token);
     }
+    
 
-    public async Task<TokenInfo?> GetTokenInfoAsync()
+    public async Task<TokenInfo?> GetTokenInfoAsync(string userId)
     {
-        var context = httpContextAccessor.HttpContext!;
-        var user = await userManager.GetUserAsync(context.User);
+        var user = await userManager.FindByIdAsync(userId);
 
         if (user == null)
             return null;

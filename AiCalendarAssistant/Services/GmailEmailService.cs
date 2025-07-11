@@ -3,8 +3,6 @@ using AiCalendarAssistant.Data.Models;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Gmail.v1;
 using Google.Apis.Services;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -35,7 +33,7 @@ public class GmailEmailService(
 
         var userId = user.Id;
 
-        var service = await GetGmailServiceAsync();
+        var service = await GetGmailServiceAsync(userId);
         if (service == null)
             throw new UnauthorizedAccessException("Valid access token not available");
 
@@ -87,7 +85,6 @@ public class GmailEmailService(
             db.Emails.Add(email);
             emails.Add(email);
             
-            var emailProcessor = serviceProvider.GetRequiredService<IEmailProcessor>();
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Processing email {email.GmailMessageId}");
             Console.ResetColor();
@@ -104,11 +101,11 @@ public class GmailEmailService(
     }
 
     public async Task<bool> ReplyToEmailAsync(string messageId, string threadId, string originalSubject,
-        string fromEmail, string body)
+        string fromEmail, string body, string userId)
     {
         try
         {
-            var service = await GetGmailServiceAsync();
+            var service = await GetGmailServiceAsync(userId);
             if (service == null)
                 return false;
 
@@ -179,15 +176,9 @@ public class GmailEmailService(
         return Encoding.UTF8.GetString(bytes);
     }
 
-    private async Task<GmailService?> GetGmailServiceAsync()
+    private async Task<GmailService?> GetGmailServiceAsync(string userId)
     {
-        var token = await tokenService.GetValidAccessTokenAsync();
-
-        if (string.IsNullOrEmpty(token))
-        {
-            var http = ctx.HttpContext!;
-            token = await http.GetTokenAsync(GoogleDefaults.AuthenticationScheme, "access_token");
-        }
+        var token = await tokenService.GetValidAccessTokenAsync(userId);
 
         if (string.IsNullOrEmpty(token))
             return null;

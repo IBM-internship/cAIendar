@@ -1,18 +1,30 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
 using AiCalendarAssistant.Services;
 using AiCalendarAssistant.Services.Contracts;
+using AiCalendarAssistant.Data.Models;
 
 namespace AiCalendarAssistant.Controllers;
 
 [Authorize]
-public class EmailsController(IGmailEmailService gmail, TokenRefreshService tokenService) : BaseController
+public class EmailsController(
+    IGmailEmailService gmail, 
+    TokenRefreshService tokenService,
+    UserManager<ApplicationUser> userManager) : BaseController
 {
     public async Task<IActionResult> Last()
     {
         try
         {
-            var hasValidToken = await tokenService.IsTokenValidAsync();
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found. Please log in again.";
+                return RedirectToAction("Logout", "Account");
+            }
+
+            var hasValidToken = await tokenService.IsTokenValidAsync(user.Id);
         
             if (!hasValidToken)
             {
@@ -41,7 +53,14 @@ public class EmailsController(IGmailEmailService gmail, TokenRefreshService toke
     {
         try
         {
-            var hasValidToken = await tokenService.IsTokenValidAsync();
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found. Please log in again.";
+                return RedirectToAction("Logout", "Account");
+            }
+
+            var hasValidToken = await tokenService.IsTokenValidAsync(user.Id);
             
             if (!hasValidToken)
             {
@@ -49,7 +68,7 @@ public class EmailsController(IGmailEmailService gmail, TokenRefreshService toke
                 return RedirectToAction("Logout", "Account");
             }
 
-            var success = await gmail.ReplyToEmailAsync(messageId, threadId, originalSubject, fromEmail, "this is a test reply");
+            var success = await gmail.ReplyToEmailAsync(messageId, threadId, originalSubject, fromEmail, "this is a test reply", user.Id);
             
             if (success)
             {
