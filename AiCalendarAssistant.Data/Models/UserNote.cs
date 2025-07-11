@@ -20,7 +20,6 @@ public class UserNote
 	public string UserId { get; set; }
 	public ApplicationUser User { get; set; }
 		
-		public bool IsProcessed { get; set; }
-        public bool IsDeleted { get; set; } = false; // Flag to mark user as deleted without removing from database
-    }
+	public bool IsProcessed { get; set; }
+	public bool IsDeleted { get; set; } = false; // Flag to mark user as deleted without removing from database
 }

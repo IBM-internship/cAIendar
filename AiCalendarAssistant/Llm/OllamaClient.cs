@@ -39,7 +39,7 @@ public class OllamaClient(HttpClient http, LlmSettings cfg) : ILlmClient
         resp.EnsureSuccessStatusCode();
 
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(ct);
-        // Console.WriteLine($"Ollama response: {json}");
+        Console.WriteLine($"Ollama response: {json}");
         return CommonJson.ParseResponse(json);
     }
 }
