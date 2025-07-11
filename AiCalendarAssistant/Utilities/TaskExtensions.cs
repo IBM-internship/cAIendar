@@ -7,7 +7,7 @@ public static class TaskExtensions
         task.ContinueWith(t =>
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Unhandled exception: {t.Exception?.GetBaseException().Message}");
+            Console.WriteLine($"Unhandled exception: {t.Exception}");
             Console.ResetColor();
         }, TaskContinuationOptions.OnlyOnFaulted);
     }
@@ -21,7 +21,7 @@ public static class TaskExtensions
         }).ContinueWith(t =>
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Unhandled exception: {t.Exception?.GetBaseException().Message}");
+            Console.WriteLine($"Unhandled exception: {t.Exception}");
             Console.ResetColor();
         }, TaskContinuationOptions.OnlyOnFaulted);
     }

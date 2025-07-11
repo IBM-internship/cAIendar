@@ -17,7 +17,7 @@ public class TokenRefreshService(
     {
         var context = httpContextAccessor.HttpContext!;
         var user = await userManager.GetUserAsync(context.User);
-        
+
         if (user == null)
         {
             logger.LogWarning("User not found");
@@ -28,31 +28,34 @@ public class TokenRefreshService(
         var refreshToken = await userManager.GetAuthenticationTokenAsync(user, "Google", "refresh_token");
         var expiresAtString = await userManager.GetAuthenticationTokenAsync(user, "Google", "expires_at");
 
-        logger.LogInformation("Access token exists: {B}", !string.IsNullOrEmpty(accessToken));
-        logger.LogInformation("Refresh token exists: {B}", !string.IsNullOrEmpty(refreshToken));
-        logger.LogInformation("Expires at: {ExpiresAtString}", expiresAtString);
+        logger.LogInformation("Access token exists: {Exists}", !string.IsNullOrEmpty(accessToken));
+        logger.LogInformation("Refresh token exists: {Exists}", !string.IsNullOrEmpty(refreshToken));
+        logger.LogInformation("Expires at (raw): {ExpiresAtString}", expiresAtString);
 
         if (string.IsNullOrEmpty(accessToken))
         {
-            logger.LogWarning("No access token found - user needs to re-authenticate with Google for Gmail access");
+            logger.LogWarning("No access token found - user needs to re-authenticate with Google");
             return null;
         }
 
         if (string.IsNullOrEmpty(expiresAtString) ||
             !DateTimeOffset.TryParse(expiresAtString, out var expiresAt) ||
-            expiresAt > DateTimeOffset.UtcNow.AddMinutes(5)) return accessToken;
-        
-        logger.LogInformation("Access token is expired or expiring soon, attempting refresh");
-
-        if (string.IsNullOrEmpty(refreshToken))
+            expiresAt <= DateTimeOffset.UtcNow.AddMinutes(5))
         {
-            logger.LogWarning("No refresh token available");
-            return null;
+            logger.LogInformation("Access token is expired or expiring soon, attempting refresh");
+
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                logger.LogWarning("No refresh token available");
+                return null;
+            }
+
+            var newToken = await RefreshAccessTokenAsync(refreshToken, user);
+            return string.IsNullOrEmpty(newToken) ? accessToken : newToken;
         }
 
-        var newToken = await RefreshAccessTokenAsync(refreshToken, user);
-        return string.IsNullOrEmpty(newToken) ? accessToken : newToken;
-
+        logger.LogInformation("Access token is still valid until {ExpiresAt}", expiresAt);
+        return accessToken;
     }
 
     private async Task<string?> RefreshAccessTokenAsync(string refreshToken, ApplicationUser user)
@@ -82,7 +85,7 @@ public class TokenRefreshService(
 
             var tokenResponse = await flow.RefreshTokenAsync("user", refreshToken, CancellationToken.None);
 
-            if (tokenResponse?.AccessToken != null)
+            if (!string.IsNullOrEmpty(tokenResponse?.AccessToken))
             {
                 await UpdateStoredTokensAsync(tokenResponse, user);
                 logger.LogInformation("Successfully refreshed access token");
@@ -104,7 +107,7 @@ public class TokenRefreshService(
         try
         {
             await userManager.SetAuthenticationTokenAsync(user, "Google", "access_token", tokenResponse.AccessToken);
-            
+
             if (!string.IsNullOrEmpty(tokenResponse.RefreshToken))
             {
                 await userManager.SetAuthenticationTokenAsync(user, "Google", "refresh_token", tokenResponse.RefreshToken);
@@ -132,7 +135,7 @@ public class TokenRefreshService(
     {
         var context = httpContextAccessor.HttpContext!;
         var user = await userManager.GetUserAsync(context.User);
-        
+
         if (user == null)
             return null;
 

@@ -195,7 +195,9 @@ public class EmailProcessor(
             },
             MeetingLink = null,
             UserId = user.Id,
-            User = user
+            User = user,
+            EventCreatedFromEmailId = email.Id,
+            EventCreatedFromEmail = email
         };
 
         Console.ForegroundColor = ConsoleColor.Red;
