@@ -1,3 +1,5 @@
+namespace AiCalendarAssistant.Models;
+
 public class CreateNoteRequest
 {
     public string Title { get; set; } = string.Empty;

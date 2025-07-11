@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace PromptingPipeline.Models;
+namespace AiCalendarAssistant.Models;
 
 public sealed record Message(string Role, string Content, string? ToolCallId = null);
 

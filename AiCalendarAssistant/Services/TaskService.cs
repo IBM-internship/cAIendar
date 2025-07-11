@@ -3,65 +3,57 @@ using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Services.Contracts;
 using Microsoft.EntityFrameworkCore;
 
-namespace AiCalendarAssistant.Services
+namespace AiCalendarAssistant.Services;
+
+public class TaskService(ApplicationDbContext context) : ITaskService
 {
-    public class TaskService : ITaskService
+    public async Task AddTaskAsync(UserTask task)
     {
-        private readonly ApplicationDbContext _context;
+        context.UserTasks.Add(task);
+        await context.SaveChangesAsync();
+    }
 
-        public TaskService(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+    public async Task<bool> DeleteTaskAsync(int taskId)
+    {
+        var existingTask = await context.UserTasks.FindAsync(taskId);
+        if (existingTask == null)
+            return false;
 
-        public async Task AddTaskAsync(UserTask task)
-        {
-            _context.UserTasks.Add(task);
-            await _context.SaveChangesAsync();
-        }
+        context.UserTasks.Remove(existingTask);
+        await context.SaveChangesAsync();
+        return true;
+    }
 
-        public async Task<bool> DeleteTaskAsync(int taskId)
-        {
-            var existingTask = await _context.UserTasks.FindAsync(taskId);
-            if (existingTask == null)
-                return false;
+    public async Task<UserTask?> GetTaskByIdAsync(int taskId)
+    {
+        return await context.UserTasks.FindAsync(taskId);
+    }
 
-            _context.UserTasks.Remove(existingTask);
-            await _context.SaveChangesAsync();
-            return true;
-        }
+    public async Task<bool> ReplaceTaskAsync(UserTask updatedTask)
+    {
+        var existingTask = await context.UserTasks.FindAsync(updatedTask.Id);
+        if (existingTask == null)
+            return false;
 
-        public async Task<UserTask?> GetTaskByIdAsync(int taskId)
-        {
-            return await _context.UserTasks.FindAsync(taskId);
-        }
+        context.Entry(existingTask).CurrentValues.SetValues(updatedTask);
+        await context.SaveChangesAsync();
+        return true;
+    }
 
-        public async Task<bool> ReplaceTaskAsync(UserTask updatedTask)
-        {
-            var existingTask = await _context.UserTasks.FindAsync(updatedTask.Id);
-            if (existingTask == null)
-                return false;
+    public async Task<List<UserTask>> GetAllTasksAsync()
+    {
+        return await Task.Run(() => context.UserTasks.AsNoTracking().ToList());
+    }
 
-            _context.Entry(existingTask).CurrentValues.SetValues(updatedTask);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<List<UserTask>> GetAllTasksAsync()
-        {
-            return await Task.Run(() => _context.UserTasks.AsNoTracking().ToList());
-        }
-
-        public async Task<List<UserTask>> GetTasksAsync(Func<UserTask, bool> predicate)
-        {
-            return await Task.Run(() => _context.UserTasks.AsNoTracking().Where(predicate).ToList());
-        }
-        public async Task<List<UserTask>> GetTasksInDateRangeAsync(DateOnly startDate, DateOnly endDate, string userId)
-        {
-            return await _context.UserTasks
-                .AsNoTracking()
-                .Where(t => t.UserId == userId && t.Date >= startDate && t.Date <= endDate)
-                .ToListAsync();
-        }
+    public async Task<List<UserTask>> GetTasksAsync(Func<UserTask, bool> predicate)
+    {
+        return await Task.Run(() => context.UserTasks.AsNoTracking().Where(predicate).ToList());
+    }
+    public async Task<List<UserTask>> GetTasksInDateRangeAsync(DateOnly startDate, DateOnly endDate, string userId)
+    {
+        return await context.UserTasks
+            .AsNoTracking()
+            .Where(t => t.UserId == userId && t.Date >= startDate && t.Date <= endDate)
+            .ToListAsync();
     }
 }

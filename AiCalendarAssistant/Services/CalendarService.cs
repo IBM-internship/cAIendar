@@ -3,62 +3,58 @@ using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Services.Contracts;
 using Microsoft.EntityFrameworkCore;
 
-namespace AiCalendarAssistant.Services
+namespace AiCalendarAssistant.Services;
+
+public class CalendarService(ApplicationDbContext context) : ICalendarService
 {
-    public class CalendarService : ICalendarService
+    public async Task AddEventAsync(Event calendarEvent)
     {
-        private readonly ApplicationDbContext _context;
+        context.Events.Add(calendarEvent);
+        await context.SaveChangesAsync();
+    }
 
-        public CalendarService(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+    public async Task<bool> DeleteEventAsync(int eventId)
+    {
+        var existingEvent = await context.Events.FindAsync(eventId);
+        if (existingEvent == null)
+            return false;
 
-        public async Task AddEventAsync(Event calendarEvent)
-        {
-            _context.Events.Add(calendarEvent);
-            await _context.SaveChangesAsync();
-        }
+        context.Events.Remove(existingEvent);
+        await context.SaveChangesAsync();
+        return true;
+    }
 
-        public async Task<bool> DeleteEventAsync(int eventId)
-        {
-            var existingEvent = await _context.Events.FindAsync(eventId);
-            if (existingEvent == null)
-                return false;
+    public async Task<Event?> GetEventByIdAsync(int eventId)
+    {
+        return await context.Events.FindAsync(eventId);
+    }
 
-            _context.Events.Remove(existingEvent);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        public async Task<Event?> GetEventByIdAsync(int eventId)
-        {
-            return await _context.Events.FindAsync(eventId);
-        }
+    public async Task<bool> ReplaceEventAsync(Event updatedEvent) // returns whether event was replaced successfully
+    {
+        var existingEvent = await context.Events.FindAsync(updatedEvent.Id);
+        if (existingEvent == null)
+            return false;
 
-        public async Task<bool> ReplaceEventAsync(Event updatedEvent) // returns whether event was replaced successfully
-        {
-            var existingEvent = await _context.Events.FindAsync(updatedEvent.Id);
-            if (existingEvent == null)
-                return false;
+        context.Entry(existingEvent).CurrentValues.SetValues(updatedEvent);
+        await context.SaveChangesAsync();
+        return true;
+    }
 
-            _context.Entry(existingEvent).CurrentValues.SetValues(updatedEvent);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        public async Task<List<Event>> GetAllEventsAsync()
-        {
-            return await Task.Run(() => _context.Events.AsNoTracking().ToList());
-        }
-        public async Task<List<Event>> GetEventsAsync(Func<Event, bool> predicate)
-        {
-            return await Task.Run(() => _context.Events.AsNoTracking().Where(predicate).ToList());
-        }
-        public async Task<List<Event>> GetEventsInTimeRangeAsync(DateTime start, DateTime end, string userId)
-		{
-			return await _context.Events
-				.AsNoTracking()
-				.Where(e => e.UserId == userId && e.Start <= end && e.End >= start)
-				.ToListAsync();
-		}
+    public async Task<List<Event>> GetAllEventsAsync()
+    {
+        return await Task.Run(() => context.Events.AsNoTracking().ToList());
+    }
+
+    public async Task<List<Event>> GetEventsAsync(Func<Event, bool> predicate)
+    {
+        return await Task.Run(() => context.Events.AsNoTracking().AsEnumerable().Where(predicate).ToList());
+    }
+
+    public async Task<List<Event>> GetEventsInTimeRangeAsync(DateTime start, DateTime end, string userId)
+    {
+        return await context.Events
+            .AsNoTracking()
+            .Where(e => e.UserId == userId && e.Start <= end && e.End >= start)
+            .ToListAsync();
     }
 }

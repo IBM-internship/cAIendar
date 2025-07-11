@@ -1,6 +1,6 @@
-namespace PromptingPipeline.Llm;
+using AiCalendarAssistant.Models;
 
-using PromptingPipeline.Models;
+namespace AiCalendarAssistant.Interfaces;
 
 public interface ILlmClient
 {
