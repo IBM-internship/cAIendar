@@ -15,5 +15,21 @@ public sealed class PromptRouter(WatsonxClient w, OllamaClient o, LlmSettings cf
         + DateTime.Now.ToString("yyyy-MM-dd") 
         + " (" + DateTime.Now.DayOfWeek + ")";
     public Task<PromptResponse> SendAsync(PromptRequest req, CancellationToken ct = default)
-        => (_cfg.UseOllama ? _ollama : _watsonx).SendAsync(req, ct, additionalInstructions);
+    {
+        for (var i = 0; i < 3; i++)
+        {
+            try
+            {
+                var o = (_cfg.UseOllama ? _ollama : _watsonx).SendAsync(req, ct, additionalInstructions);
+                return o;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        return null;
+    }
 }
