@@ -26,7 +26,6 @@ public sealed class PromptRouter(WatsonxClient w, OllamaClient o, LlmSettings cf
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                throw;
             }
         }
 
