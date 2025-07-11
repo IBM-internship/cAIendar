@@ -59,7 +59,7 @@
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
 
 <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', async function () {
         const calendarEl = document.getElementById('calendar');
 
         const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -71,20 +71,23 @@
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
-            events: [
-                {
-                    title: 'Събитие пример',
-                    start: new Date().toISOString().split('T')[0]
-                }
-            ],
-            select: function (info) {
+            events: 
+                (await fetch('/api/events/all')
+                .then(res => res.json()).then(a=>a.map((e)=>({title:e.title, start:e.start, end:e.end, allDay:e.isAllDay})))),
+            select: async function (info) {
                 const title = prompt('Заглавие на събитието:');
                 if (title) {
-                    calendar.addEvent({
+                    let event={
                         title: title,
                         start: info.start,
                         end: info.end,
                         allDay: info.allDay
+                    }
+                    calendar.addEvent(event);
+                    await fetch('/api/events/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(event)
                     });
                 }
             }
