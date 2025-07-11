@@ -21,8 +21,18 @@ public class OllamaClient(HttpClient http, LlmSettings cfg) : ILlmClient
             ["messages"] = p.Messages.Select(m => new { role = m.Role, content = m.Content, tool_call_id = m.ToolCallId }).ToArray()
         };
         if (p.ResponseFormat.HasValue) payload["response_format"] = p.ResponseFormat.Value;
-        if (p.Tools.HasValue) { payload["tools"] = p.Tools.Value; payload["tool_choice"] = p.ToolChoice ?? "auto"; }
-        if (p.Extra is not null) foreach (var kv in p.Extra) payload[kv.Key] = kv.Value;
+        if (p.Tools.HasValue)
+        {
+            payload["tools"] = p.Tools.Value;
+            payload["tool_choice"] = p.ToolChoice ?? "auto";
+        }
+        if (p.Extra is not null)
+        {
+            foreach (var kv in p.Extra)
+            {
+                payload[kv.Key] = kv.Value;
+            }
+        }
 
         var resp = await http.PostAsJsonAsync(url, payload, Opts, ct);
         resp.EnsureSuccessStatusCode();
