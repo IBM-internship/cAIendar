@@ -96,7 +96,7 @@
 //   "type": "json_schema",
 //   "json_schema": {
 //     "name": "book_info",
-//     "strict": true,
+//     "strict": false,
 //     "schema": {
 //       "type": "object",
 //       "properties": {

@@ -16,7 +16,7 @@ public class UserNoteProcessor(PromptRouter router, IUserNoteReader reader)
           "type": "json_schema",
           "json_schema": {
             "name": "note_info",
-            "strict": true,
+            "strict": false,
             "schema": {
               "type": "object",
               "properties": {

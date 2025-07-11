@@ -130,7 +130,6 @@ var ollamaUrl         = Environment.GetEnvironmentVariable("Llm__OllamaUrl");
 var ollamaModel       = Environment.GetEnvironmentVariable("Llm__OllamaModel");
 var ollamaApiKey      = Environment.GetEnvironmentVariable("Llm__OllamaApiKey");
 
-Console.WriteLine($"Ollama model: {ollamaModel}");
 // Create LlmSettings from environment variables
 var llmSettings = new LlmSettings
 {
@@ -161,11 +160,12 @@ JsonDocument.Parse(
       "type": "json_schema",
       "json_schema": {
         "name": "email_info",
-        "strict": true,
+        "strict": false,
         "schema": {
           "type": "object",
           "properties": {
-            "capital": { "type": "string" }
+            "capital": { "type": "string" },
+            "date": { "type": "string", "format": "date" }
           },
           "required": ["capital"],
           "additionalProperties": false
@@ -175,8 +175,8 @@ JsonDocument.Parse(
     """).RootElement);
 
 
-var chatResp = await router.SendAsync(chat);
-Console.WriteLine($"Capital → {JsonDocument.Parse(chatResp.Content!).RootElement.GetProperty("capital").GetString()}");
+// var chatResp = await router.SendAsync(chat);
+// Console.WriteLine($"Response: {JsonSerializer.Serialize(chatResp, new JsonSerializerOptions { WriteIndented = true })}");
 
 if (app.Environment.IsDevelopment())
 {

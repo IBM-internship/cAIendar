@@ -4,9 +4,9 @@ using AiCalendarAssistant.Config;
 
 namespace AiCalendarAssistant.Infrastructure;
 
-public class TokenProvider(HttpClient http, IOptions<LlmSettings> cfg)
+public class TokenProvider(HttpClient http, LlmSettings cfg)
 {
-    private readonly LlmSettings _cfg = cfg.Value;
+    private readonly LlmSettings _cfg = cfg;
     private string?  _token;
     private DateTime _expiresUtc;
 
