@@ -87,16 +87,28 @@ public sealed class ChatMessenger(
             return await PersistAssistantReplyAsync(
                 chat, firstResp.Content ?? string.Empty, messages.Count, ct);
 
-        // 4) handle each tool-call, append results
+		// 4) add the assistant message that CONTAINS the tool_calls
+		 var assistantWithCalls = new PromptMessage(
+			 "assistant",
+			 firstResp.Content ?? string.Empty,
+			 firstResp.ToolCalls);           //  ←  the list we got back
+
+		 history.Add(assistantWithCalls);
+
+		 // 5) handle each tool-call, append the tool messages
         foreach (var call in firstResp.ToolCalls!)
         {
             var payload = await ExecuteToolCallAsync(call, chat.UserId, ct);
             if (payload is null) continue; // unknown tool → skip
 
-            history.Add(new PromptMessage("tool", payload, call.Id));
+			history.Add(new PromptMessage(
+				  "tool",
+				  payload,
+				  ToolCalls : null,
+				  ToolCallId : call.Id));
         }
 
-        // 5) second pass – assistant now has the data
+        // 6) second pass – assistant now has the data
         var followUp = new PromptRequest(history);
         var finalResp = await router.SendAsync(followUp, ct);
 
