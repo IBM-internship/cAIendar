@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AiCalendarAssistant.Services;
+using AiCalendarAssistant.Services.Contracts;
 
 namespace AiCalendarAssistant.Controllers;
 
 [Authorize]
-public class EmailsController(GmailEmailService gmail, TokenRefreshService tokenService) : BaseController
+public class EmailsController(IGmailEmailService gmail, TokenRefreshService tokenService) : BaseController
 {
     public async Task<IActionResult> Last()
     {
@@ -27,7 +28,7 @@ public class EmailsController(GmailEmailService gmail, TokenRefreshService token
             TempData["ErrorMessage"] = "Please log in again to access Gmail functionality.";
             return RedirectToAction("Logout", "Account");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             TempData["ErrorMessage"] = "Unable to fetch emails. Please try again.";
             return RedirectToAction("Index", "Home");
@@ -48,7 +49,7 @@ public class EmailsController(GmailEmailService gmail, TokenRefreshService token
                 return RedirectToAction("Logout", "Account");
             }
 
-            var success = await gmail.ReplyToEmailAsync(messageId, threadId, originalSubject, fromEmail);
+            var success = await gmail.ReplyToEmailAsync(messageId, threadId, originalSubject, fromEmail, "this is a test reply");
             
             if (success)
             {
@@ -64,7 +65,7 @@ public class EmailsController(GmailEmailService gmail, TokenRefreshService token
             TempData["ErrorMessage"] = "Please log in again to access Gmail functionality.";
             return RedirectToAction("Logout", "Account");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             TempData["ErrorMessage"] = "An error occurred while sending the reply.";
         }

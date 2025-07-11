@@ -18,6 +18,7 @@ namespace AiCalendarAssistant.Data.Configuration
 				.WithMany(u => u.Emails)
 				.HasForeignKey(e => e.RecievingUserId)
 				.OnDelete(DeleteBehavior.Cascade);
-		}
+
+        }
 	}
 }

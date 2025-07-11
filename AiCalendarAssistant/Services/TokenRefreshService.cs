@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Auth.OAuth2.Responses;
@@ -10,7 +8,6 @@ namespace AiCalendarAssistant.Services;
 
 public class TokenRefreshService(
     IHttpContextAccessor httpContextAccessor,
-    IConfiguration configuration,
     ILogger<TokenRefreshService> logger,
     UserManager<ApplicationUser> userManager,
     string googleClientId,
@@ -87,7 +84,7 @@ public class TokenRefreshService(
 
             if (tokenResponse?.AccessToken != null)
             {
-                await UpdateStoredTokensAsync(tokenResponse, refreshToken, user);
+                await UpdateStoredTokensAsync(tokenResponse, user);
                 logger.LogInformation("Successfully refreshed access token");
                 return tokenResponse.AccessToken;
             }
@@ -102,7 +99,7 @@ public class TokenRefreshService(
         }
     }
 
-    private async Task UpdateStoredTokensAsync(TokenResponse tokenResponse, string refreshToken, ApplicationUser user)
+    private async Task UpdateStoredTokensAsync(TokenResponse tokenResponse, ApplicationUser user)
     {
         try
         {

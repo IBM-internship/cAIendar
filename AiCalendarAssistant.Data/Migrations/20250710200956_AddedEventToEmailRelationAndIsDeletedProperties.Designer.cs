@@ -4,6 +4,7 @@ using AiCalendarAssistant.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AiCalendarAssistant.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250710200956_AddedEventToEmailRelationAndIsDeletedProperties")]
+    partial class AddedEventToEmailRelationAndIsDeletedProperties
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -98,10 +101,6 @@ namespace AiCalendarAssistant.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -140,19 +139,11 @@ namespace AiCalendarAssistant.Data.Migrations
                     b.Property<bool>("IsProcessed")
                         .HasColumnType("bit");
 
-                    b.Property<string>("MessageId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("RecievingUserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("SendingUserEmail")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ThreadId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
@@ -182,9 +173,6 @@ namespace AiCalendarAssistant.Data.Migrations
 
                     b.Property<DateTime>("End")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("Importance")
-                        .HasColumnType("int");
 
                     b.Property<int?>("EventCreatedFromEmailId")
                         .HasColumnType("int");
@@ -242,9 +230,6 @@ namespace AiCalendarAssistant.Data.Migrations
                     b.Property<int>("Pos")
                         .HasColumnType("int");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("SentOn")
                         .HasColumnType("datetime2");
 
@@ -293,43 +278,6 @@ namespace AiCalendarAssistant.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("UserNotes");
-                });
-
-            modelBuilder.Entity("AiCalendarAssistant.Data.Models.UserTask", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Color")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("date");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Importance")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserTasks");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -529,15 +477,6 @@ namespace AiCalendarAssistant.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AiCalendarAssistant.Data.Models.UserTask", b =>
-                {
-                    b.HasOne("AiCalendarAssistant.Data.Models.ApplicationUser", "User")
-                        .WithMany("Tasks")
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -596,8 +535,6 @@ namespace AiCalendarAssistant.Data.Migrations
                     b.Navigation("Emails");
 
                     b.Navigation("Events");
-
-                    b.Navigation("Tasks");
 
                     b.Navigation("UserNotes");
                 });

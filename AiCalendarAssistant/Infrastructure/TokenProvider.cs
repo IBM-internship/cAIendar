@@ -1,19 +1,14 @@
-using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
-using PromptingPipeline.Config;
+using AiCalendarAssistant.Config;
 
-namespace PromptingPipeline.Infrastructure;
+namespace AiCalendarAssistant.Infrastructure;
 
-public class TokenProvider
+public class TokenProvider(HttpClient http, LlmSettings cfg)
 {
-    private readonly HttpClient  _http;
-    private readonly LlmSettings _cfg;
+    private readonly LlmSettings _cfg = cfg;
     private string?  _token;
     private DateTime _expiresUtc;
-
-    public TokenProvider(HttpClient http, LlmSettings cfg)
-        => (_http, _cfg) = (http, cfg);
 
     public async ValueTask<string> GetAsync(CancellationToken ct = default)
     {
@@ -26,13 +21,11 @@ public class TokenProvider
             ["apikey"]     = _cfg.ApiKey
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://iam.cloud.ibm.com/identity/token")
-        {
-            Content = new FormUrlEncodedContent(form)
-        };
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://iam.cloud.ibm.com/identity/token");
+        req.Content = new FormUrlEncodedContent(form);
         req.Headers.Accept.ParseAdd("application/json");
 
-        var resp = await _http.SendAsync(req, ct);
+        var resp = await http.SendAsync(req, ct);
         resp.EnsureSuccessStatusCode();
 
         var body = await resp.Content.ReadFromJsonAsync<IamTokenResponse>(ct)
