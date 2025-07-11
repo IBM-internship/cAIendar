@@ -3,7 +3,9 @@ using System.Text.Json;
 using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Models;
+using AiCalendarAssistant.Services.Contracts;
 using Microsoft.EntityFrameworkCore;
+using static AiCalendarAssistant.Utilities.TaskExtensions;
 using Message = AiCalendarAssistant.Models.Message;
 
 namespace AiCalendarAssistant.Services;
@@ -11,19 +13,49 @@ namespace AiCalendarAssistant.Services;
 public class EventProcessor(
     ApplicationDbContext db,
     EmailComposer emailComposer,
-    GmailEmailService gmailEmailService,
+    IGmailEmailService gmailEmailService,
     PromptRouter router)
 {
+    private static readonly JsonDocument ShouldReplaceEventSchema = JsonDocument.Parse(
+        """
+        {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "email_info",
+            "strict": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "should-change-event": { "type": "boolean" }
+              },
+              "required": ["should-change-event"],
+              "additionalProperties": false
+            }
+          }
+        }
+        """);
+
     public async Task ProcessEventAsync(Event newEvent, CancellationToken ct = default)
     {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine($"Processing event {newEvent.Title}");
+        Console.ResetColor();
+        
         var collidingEvents = await GetCollidingEventsAsync(newEvent, ct);
 
         if (collidingEvents.Count == 0)
         {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("No colliding events found, adding new event.");
+            Console.ResetColor();
             db.Events.Add(newEvent);
             await db.SaveChangesAsync(ct);
             return;
         }
+        
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("There are colliding events, checking their importance and whether to replace them.");
+        Console.ResetColor();
 
         var mostImportantEvent = collidingEvents
             .OrderByDescending(e => e.Importance)
@@ -40,14 +72,14 @@ public class EventProcessor(
         if ((sameCategory && !shouldReplace) || mostImportantEvent.Importance > newEvent.Importance)
         {
             // If the most important event is more important than the new event, skip adding the new event
-            SendCancellationEmailAsync(newEvent.EventCreatedFromEmail!.SendingUserEmail, mostImportantEvent, newEvent.EventCreatedFromEmail!);
+            SendAsyncFunc(SendCancellationEmailAsync(newEvent.EventCreatedFromEmail!.SendingUserEmail, mostImportantEvent, newEvent.EventCreatedFromEmail!));
         }
         else if ((sameCategory && shouldReplace) || mostImportantEvent.Importance < newEvent.Importance)
         {
             foreach (var collidingEvent in collidingEvents)
             {
                 db.Events.Remove(collidingEvent);
-                SendCancellationEmailAsync(collidingEvent.EventCreatedFromEmail!.SendingUserEmail, newEvent, collidingEvent.EventCreatedFromEmail!);
+                SendAsyncFunc(SendCancellationEmailAsync(collidingEvent.EventCreatedFromEmail!.SendingUserEmail, newEvent, collidingEvent.EventCreatedFromEmail!));
             }
 
             db.Events.Add(newEvent);
@@ -75,24 +107,6 @@ public class EventProcessor(
             body);
     }
 
-    private static readonly JsonDocument ShouldReplaceEventSchema = JsonDocument.Parse(
-        """
-        {
-          "type": "json_schema",
-          "json_schema": {
-            "name": "email_info",
-            "strict": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "should-change-event": { "type": "boolean" }
-              },
-              "required": ["choice"],
-              "additionalProperties": false
-            }
-          }
-        }
-        """);
     
     private bool ShouldReplaceEvent(List<Event> existingEvents, Event newEvent)
     {

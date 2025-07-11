@@ -1,9 +1,7 @@
 ﻿using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
-using AiCalendarAssistant.Models;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Gmail.v1;
-using Google.Apis.Gmail.v1.Data;
 using Google.Apis.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -14,6 +12,7 @@ using System.Text;
 using AiCalendarAssistant.Services.Contracts;
 using Email = AiCalendarAssistant.Data.Models.Email;
 using Message = Google.Apis.Gmail.v1.Data.Message;
+using static AiCalendarAssistant.Utilities.TaskExtensions;
 
 namespace AiCalendarAssistant.Services;
 
@@ -23,7 +22,7 @@ public class GmailEmailService(
     IHttpContextAccessor ctx,
     TokenRefreshService tokenService,
     ILogger<GmailEmailService> logger,
-    EmailProcessor emailProcessor) : IGmailEmailService
+    IServiceProvider serviceProvider) : IGmailEmailService
 {
     public async Task<List<Email>> GetLastEmailsAsync()
     {
@@ -41,7 +40,7 @@ public class GmailEmailService(
 
         var listReq = service.Users.Messages.List("me");
         listReq.MaxResults = 10;
-        listReq.Q = "in:inbox in:important -in:sent";
+        listReq.Q = "in:inbox -in:sent";
         var listRes = await listReq.ExecuteAsync();
 
         var emails = new List<Email>();
@@ -70,19 +69,28 @@ public class GmailEmailService(
 
             var email = new Email
             {
-                GmailMessageId = msg.Id!, // Id of the Gmail message from Google API
-                CreatedOn = date, // Date from Google API
-                SendingUserEmail = headers.FirstOrDefault(h => h.Name == "From")?.Value ?? "", // Sender from Google API
-                Title = headers.FirstOrDefault(h => h.Name == "Subject")?.Value ?? "", // Subject from Google API
+                GmailMessageId = msg.Id!,
+                CreatedOn = date,
+                SendingUserEmail = headers.FirstOrDefault(h => h.Name == "From")?.Value ?? "",
+                Title = headers.FirstOrDefault(h => h.Name == "Subject")?.Value ?? "",
                 Body = body,
-                RecievingUserId = userId, // Id of the currently logged-in user
+                RecievingUserId = userId,
                 ThreadId = detail.ThreadId ?? "",
                 MessageId = headers.FirstOrDefault(h => h.Name == "Message-ID")?.Value ?? "",
             };
-
+            
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Adding email {email.GmailMessageId} to the database for user {userId}");
+            Console.ResetColor();
+            
             db.Emails.Add(email);
             emails.Add(email);
-            emailProcessor.ProcessEmailAsync(user, email);
+            
+            var emailProcessor = serviceProvider.GetRequiredService<IEmailProcessor>();
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Processing email {email.GmailMessageId}");
+            Console.ResetColor();
+            SendAsyncFunc(emailProcessor.ProcessEmailAsync(user, email));
         }
 
         await db.SaveChangesAsync();

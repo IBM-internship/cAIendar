@@ -51,7 +51,7 @@ public class TaskApiController(ITaskService taskService) : ControllerBase
         if (existing == null || existing.UserId != userId)
             return NotFound($"Task with ID {updatedDto.Id} not found or unauthorized.");
 
-        var updatedTask = updatedDto.ToTask(userId);
+        var updatedTask = updatedDto.ToTask(userId!);
         await taskService.ReplaceTaskAsync(updatedTask);
         return NoContent();
     }

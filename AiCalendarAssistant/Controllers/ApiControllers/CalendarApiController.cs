@@ -40,7 +40,7 @@ public class CalendarApiController(ICalendarService calendarService) : Controlle
     public async Task<ActionResult<int>> AddEvent([FromBody] EventDto newEventDto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var newEvent = newEventDto.ToEvent(userId);
+        var newEvent = newEventDto.ToEvent(userId!);
         await calendarService.AddEventAsync(newEvent);
         return Ok(newEvent.Id);
     }
@@ -67,7 +67,7 @@ public class CalendarApiController(ICalendarService calendarService) : Controlle
         if (existing == null || existing.UserId != userId)
             return NotFound($"Event with ID {updatedDto.Id} not found or unauthorized.");
 
-        var updatedEvent = updatedDto.ToEvent(userId);
+        var updatedEvent = updatedDto.ToEvent(userId!);
         await calendarService.ReplaceEventAsync(updatedEvent);
         return NoContent();
     }

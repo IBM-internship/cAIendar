@@ -49,8 +49,10 @@ public class UserNoteProcessor(PromptRouter router, IUserNoteReader reader)
 
         var response = await router.SendAsync(prompt, ct);
 
+        Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Extracted UserNote Info → {response.Content}");
-
+		Console.ResetColor();
+        
         using var eventDoc = JsonDocument.Parse(response.Content);
         var root = eventDoc.RootElement;
 
@@ -85,8 +87,10 @@ public class UserNoteProcessor(PromptRouter router, IUserNoteReader reader)
 			User = null, // maybe this also idk what it does
 		};
 
+        Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Extracted Email Info → {response.Content}");
-
+		Console.ResetColor();
+        
 		return calendarEvent;
 	}
 }
