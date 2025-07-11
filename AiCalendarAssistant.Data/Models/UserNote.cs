@@ -2,11 +2,11 @@
 
 public class UserNote
 {
-    //time created, date created, title, body, userId
-    public int Id { get; set; }
-    public string Title { get; set; }
-    public DateTime CreatedOn { get; set; }
-    public string Body { get; set; }
+	//time created, date created, title, body, userId
+	public int Id { get; set; }
+	public string Title { get; set; }
+	public DateTime CreatedOn { get; set; }
+	public string Body { get; set; }
 
 
     public string UserId { get; set; }
