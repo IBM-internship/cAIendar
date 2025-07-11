@@ -85,7 +85,7 @@ namespace AiCalendarAssistant.Controllers
 			return Ok(newEvent.Id);
 		}
 
-		[HttpDelete("delete")]
+		[HttpDelete("delete/{id}")]
 		public async Task<ActionResult> DeleteEvent([FromBody] DeleteEventRequest request)
 		{
 			var success = await _calendarService.DeleteEventAsync(request.Id);
