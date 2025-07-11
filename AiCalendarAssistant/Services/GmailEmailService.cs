@@ -22,7 +22,8 @@ public class GmailEmailService(
     IHttpContextAccessor ctx,
     TokenRefreshService tokenService,
     ILogger<GmailEmailService> logger,
-    IServiceProvider serviceProvider) : IGmailEmailService
+    IServiceProvider serviceProvider,
+    IServiceScopeFactory serviceScopeFactory) : IGmailEmailService
 {
     public async Task<List<Email>> GetLastEmailsAsync()
     {
@@ -90,7 +91,12 @@ public class GmailEmailService(
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Processing email {email.GmailMessageId}");
             Console.ResetColor();
-            SendAsyncFunc(emailProcessor.ProcessEmailAsync(user, email));
+            SendAsyncFunc(async () =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var scopedEmailProcessor = scope.ServiceProvider.GetRequiredService<IEmailProcessor>();
+                await scopedEmailProcessor.ProcessEmailAsync(user, email);
+            }, serviceScopeFactory);
         }
 
         await db.SaveChangesAsync();

@@ -35,7 +35,7 @@ public class EmailProcessor(
           "type": "json_schema",
           "json_schema": {
             "name": "email_info",
-            "strict": true,
+            "strict": false,
             "schema": {
               "type": "object",
               "properties": {
@@ -50,7 +50,7 @@ public class EmailProcessor(
                 "is_all_day": { "type": "boolean" },
                 "location": { "type": "string" }
               },
-              "required": ["title_of_event", "date", "start_time", "end_time", "importance", "description", "has_end_time"],
+              "required": ["title_of_event", "date", "start_time", "end_time", "is_in_person", "importance", "description"],
               "additionalProperties": false
             }
           }
@@ -140,7 +140,6 @@ public class EmailProcessor(
                     You are an assistant that extracts information from emails and helps organise the user's calendar events. 
                     Pay attention to the format required for the response - hours must be in 24 hour format.
                     You must list the importance of the event, and the date must be in YYYY-MM-DD format.
-                    For the time use the ISO 8601 format
                     """),
                 new Message("user",
                     $"""

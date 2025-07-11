@@ -12,9 +12,8 @@ namespace AiCalendarAssistant.Services;
 
 public class EventProcessor(
     ApplicationDbContext db,
-    EmailComposer emailComposer,
-    IGmailEmailService gmailEmailService,
-    PromptRouter router)
+    PromptRouter router,
+    IServiceScopeFactory serviceScopeFactory)
 {
     private static readonly JsonDocument ShouldReplaceEventSchema = JsonDocument.Parse(
         """
@@ -40,7 +39,29 @@ public class EventProcessor(
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Processing event {newEvent.Title}");
         Console.ResetColor();
-        
+
+        if (newEvent.User != null)
+        {
+            var existingUser = await db.Users.FindAsync([newEvent.User.Id], cancellationToken: ct);
+            if (existingUser != null)
+            {
+                newEvent.User = existingUser;
+            }
+            else
+            {
+                db.Entry(newEvent.User).State = EntityState.Detached;
+            }
+        }
+
+        if (newEvent.EventCreatedFromEmailId.HasValue)
+        {
+            var existingEmail = await db.Emails.FindAsync([newEvent.EventCreatedFromEmailId.Value], cancellationToken: ct);
+            if (existingEmail != null)
+            {
+                newEvent.EventCreatedFromEmail = existingEmail;
+            }
+        }
+
         var collidingEvents = await GetCollidingEventsAsync(newEvent, ct);
 
         if (collidingEvents.Count == 0)
@@ -48,11 +69,12 @@ public class EventProcessor(
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("No colliding events found, adding new event.");
             Console.ResetColor();
+
             db.Events.Add(newEvent);
             await db.SaveChangesAsync(ct);
             return;
         }
-        
+
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine("There are colliding events, checking their importance and whether to replace them.");
         Console.ResetColor();
@@ -71,20 +93,37 @@ public class EventProcessor(
 
         if ((sameCategory && !shouldReplace) || mostImportantEvent.Importance > newEvent.Importance)
         {
-            // If the most important event is more important than the new event, skip adding the new event
-            SendAsyncFunc(SendCancellationEmailAsync(newEvent.EventCreatedFromEmail!.SendingUserEmail, mostImportantEvent, newEvent.EventCreatedFromEmail!));
+            SendAsyncFunc(SendCancellationEmailWithScopeAsync(
+                newEvent.EventCreatedFromEmail!.SendingUserEmail,
+                mostImportantEvent,
+                newEvent.EventCreatedFromEmail!));
         }
         else if ((sameCategory && shouldReplace) || mostImportantEvent.Importance < newEvent.Importance)
         {
             foreach (var collidingEvent in collidingEvents)
             {
                 db.Events.Remove(collidingEvent);
-                SendAsyncFunc(SendCancellationEmailAsync(collidingEvent.EventCreatedFromEmail!.SendingUserEmail, newEvent, collidingEvent.EventCreatedFromEmail!));
+
+                SendAsyncFunc(SendCancellationEmailWithScopeAsync(
+                    collidingEvent.EventCreatedFromEmail!.SendingUserEmail,
+                    newEvent,
+                    collidingEvent.EventCreatedFromEmail!));
             }
 
             db.Events.Add(newEvent);
             await db.SaveChangesAsync(ct);
         }
+    }
+
+    private async Task SendCancellationEmailWithScopeAsync(string recipient, Event cancelledEvent,
+        Email reasonForCancellation)
+    {
+        using var scope = serviceScopeFactory.CreateScope();
+        var scopedEmailComposer = scope.ServiceProvider.GetRequiredService<EmailComposer>();
+        var scopedGmailService = scope.ServiceProvider.GetRequiredService<IGmailEmailService>();
+
+        await SendCancellationEmailAsync(scopedEmailComposer, scopedGmailService, recipient, cancelledEvent,
+            reasonForCancellation);
     }
 
     private async Task<List<Event>> GetCollidingEventsAsync(Event newEvent, CancellationToken ct = default)
@@ -96,7 +135,12 @@ public class EventProcessor(
         return existingEvents;
     }
 
-    private async Task SendCancellationEmailAsync(string recipient, Event cancelledEvent, Email reasonForCancellation)
+    private async Task SendCancellationEmailAsync(
+        EmailComposer emailComposer,
+        IGmailEmailService gmailEmailService,
+        string recipient,
+        Event cancelledEvent,
+        Email reasonForCancellation)
     {
         var body = emailComposer.ComposeCancellationEmail(recipient, cancelledEvent, reasonForCancellation);
         await gmailEmailService.ReplyToEmailAsync(
@@ -107,7 +151,6 @@ public class EventProcessor(
             body);
     }
 
-    
     private bool ShouldReplaceEvent(List<Event> existingEvents, Event newEvent)
     {
         StringBuilder eventsInfo = new();
@@ -117,9 +160,10 @@ public class EventProcessor(
             eventsInfo.AppendLine(EventToString(existingEvent));
             eventsInfo.AppendLine("---------------------------------");
         }
+
         eventsInfo.AppendLine("New event:");
         eventsInfo.AppendLine(EventToString(newEvent));
-        
+
         var prompt = new PromptRequest(
             [
                 new Message("system",
@@ -129,13 +173,13 @@ public class EventProcessor(
                     """),
                 new Message("user",
                     $"""
-                    {eventsInfo}
-                    Should I replace the existing events with the new one?
-                    Write true if yes, false if no.
-                    """)
+                     {eventsInfo}
+                     Should I replace the existing events with the new one?
+                     Write true if yes, false if no.
+                     """)
             ],
             ResponseFormat: ShouldReplaceEventSchema.RootElement);
-        
+
         var response = router.SendAsync(prompt).Result;
         using var doc = JsonDocument.Parse(response.Content!);
 
