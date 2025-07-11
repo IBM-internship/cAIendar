@@ -72,7 +72,7 @@
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
             events: 
-                (await fetch('/api/CalendarApi/all')
+                (await fetch('/api/events/all')
                 .then(res => res.json()).then(a=>a.map((e)=>({title:e.title, start:e.start, end:e.end, allDay:e.isAllDay})))),
             select: async function (info) {
                 const title = prompt('Заглавие на събитието:');
@@ -84,7 +84,7 @@
                         allDay: info.allDay
                     }
                     calendar.addEvent(event);
-                    await fetch('/api/CalendarApi/add', {
+                    await fetch('/api/events/add', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(event)
