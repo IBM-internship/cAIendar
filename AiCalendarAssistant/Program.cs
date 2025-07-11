@@ -149,34 +149,34 @@ builder.Services.AddSingleton(llmSettings);
 
 
 var app = builder.Build();
-// var router = app.Services.GetRequiredService<PromptRouter>();
-//
-// var chat = new PromptRequest([
-//     new Message("system", "You are a helpful assistant."),
-//     new Message("user", "What is the capital of France?")
-// ],
-// JsonDocument.Parse(
-//     """
-//     {
-//       "type": "json_schema",
-//       "json_schema": {
-//         "name": "email_info",
-//         "strict": true,
-//         "schema": {
-//           "type": "object",
-//           "properties": {
-//             "capital": { "type": "string" }
-//           },
-//           "required": ["capital"],
-//           "additionalProperties": false
-//         }
-//       }
-//     }
-//     """).RootElement);
-//
+var router = app.Services.GetRequiredService<PromptRouter>();
 
-// var chatResp = await router.SendAsync(chat);
-// Console.WriteLine($"Capital → {JsonDocument.Parse(chatResp.Content!).RootElement.GetProperty("capital").GetString()}");
+var chat = new PromptRequest([
+    new Message("system", "You are a helpful assistant."),
+    new Message("user", "What is the capital of France?")
+],
+JsonDocument.Parse(
+    """
+    {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "email_info",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "capital": { "type": "string" }
+          },
+          "required": ["capital"],
+          "additionalProperties": false
+        }
+      }
+    }
+    """).RootElement);
+
+
+var chatResp = await router.SendAsync(chat);
+Console.WriteLine($"Capital → {JsonDocument.Parse(chatResp.Content!).RootElement.GetProperty("capital").GetString()}");
 
 if (app.Environment.IsDevelopment())
 {
