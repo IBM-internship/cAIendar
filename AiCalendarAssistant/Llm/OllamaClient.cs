@@ -34,15 +34,46 @@ public class OllamaClient : ILlmClient
         var payload = new Dictionary<string, object?>
         {
             ["model"]    = _cfg.OllamaModel,
-            ["messages"] = p.Messages.Select(m =>
+			["messages"] = p.Messages.Select(m =>
+{
+    // base fields
+    var obj = new Dictionary<string, object?>
+    {
+        ["role"]    = m.Role,
+        ["content"] = (m.Role == "system" && !string.IsNullOrWhiteSpace(additionalInstructions))
+                      ? m.Content + additionalInstructions
+                      : m.Content
+    };
+
+    // assistant message containing tool_calls
+    if (m.ToolCalls is { Count: > 0 })
+        obj["tool_calls"] = m.ToolCalls.Select(tc => new
+        {
+            id       = tc.Id,
+            type     = "function",
+            function = new
             {
-                // If this is the system message and additionalInstructions is provided, append it
-                if (m.Role == "system" && !string.IsNullOrWhiteSpace(additionalInstructions))
-                {
-                    return new { role = m.Role, content = m.Content + additionalInstructions };
-                }
-                return new { role = m.Role, content = m.Content };
-            }).ToArray()
+                name      = tc.Name,
+                arguments = tc.Arguments
+            }
+        });
+
+    // tool reply
+    if (!string.IsNullOrWhiteSpace(m.ToolCallId))
+        obj["tool_call_id"] = m.ToolCallId;
+
+    return obj;
+}).ToArray(),
+
+            // ["messages"] = p.Messages.Select(m =>
+            // {
+            //     // If this is the system message and additionalInstructions is provided, append it
+            //     if (m.Role == "system" && !string.IsNullOrWhiteSpace(additionalInstructions))
+            //     {
+            //         return new { role = m.Role, content = m.Content + additionalInstructions };
+            //     }
+            //     return new { role = m.Role, content = m.Content };
+            // }).ToArray()
         };
         Console.WriteLine($"Payload messages: {JsonSerializer.Serialize(payload["messages"], Opts)}");
         // here can we add the additionalInstructions string to the system message. Just append it

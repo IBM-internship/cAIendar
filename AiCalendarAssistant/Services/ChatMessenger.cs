@@ -101,29 +101,30 @@ public sealed class ChatMessenger
             return await PersistAssistantReplyAsync(
                 chat, firstResp.Content ?? string.Empty, messages.Count, ct);
 
-        // 4) handle tool-calls correctly  ────────────────────────────────────
-        // 4a) add ONE assistant message that contains the array of tool_calls
-        history.Add(new(
-            Role:       "assistant",
-            Content:    null,                      // content must be null/empty
-            ToolCalls:  firstResp.ToolCalls));     // the API-expected field
+		// 4) add the assistant message that CONTAINS the tool_calls
+		 var assistantWithCalls = new PromptMessage(
+			 "assistant",
+			 firstResp.Content ?? string.Empty,
+			 firstResp.ToolCalls);           //  ←  the list we got back
 
-        // 4b) execute each tool call and add its corresponding tool message
+		 history.Add(assistantWithCalls);
+
+		 // 5) handle each tool-call, append the tool messages
         foreach (var call in firstResp.ToolCalls!)
         {
             var payload = await ExecuteToolCallAsync(call, chat.UserId, ct);
             if (payload is null) continue;         // unknown tool → skip
 
-            history.Add(new(
-                Role:        "tool",
-                Content:     payload,              // JSON result for the model
-                ToolCallId:  call.Id,              // must match the assistant id
-                Name:        call.Name));          // required by the API
+			history.Add(new PromptMessage(
+				  "tool",
+				  payload,
+				  ToolCalls : null,
+				  ToolCallId : call.Id));
         }
 
-        // 5) second pass – assistant now has the data
-        var followUp      = new PromptRequest(history);
-        var finalResp     = await _router.SendAsync(followUp, ct);
+        // 6) second pass – assistant now has the data
+        var followUp = new PromptRequest(history);
+        var finalResp = await router.SendAsync(followUp, ct);
 
         return await PersistAssistantReplyAsync(
             chat, finalResp.Content ?? string.Empty, messages.Count, ct);
@@ -252,4 +253,3 @@ public sealed class ChatMessenger
         return msg;
     }
 }
-
