@@ -139,7 +139,8 @@ var llmSettings = new LlmSettings
     Version     = watsonxVersion    ?? "2023-10-25",
     UseOllama   = bool.TryParse(ollamaUse, out var useOllama) && useOllama,
     OllamaUrl   = ollamaUrl         ?? "http://host.docker.internal:11434",
-    OllamaModel = ollamaModel       ?? "granite3.3:latest"
+    OllamaModel = ollamaModel       ?? "granite3.3:latest",
+	OllamaApiKey = Environment.GetEnvironmentVariable("Llm__OllamaApiKey") 
 };
 
 builder.Services.AddSingleton(llmSettings);
@@ -161,8 +162,8 @@ var chat = new PromptRequest(new()
     new("user",   "What is the capital of France?")
 });
 
-//var chatResp = await router.SendAsync(chat);
-//Console.WriteLine($"Capital → {chatResp.Content}");
+// var chatResp = await router.SendAsync(chat);
+// Console.WriteLine($"Capital → {chatResp.Content}");
 
 if (app.Environment.IsDevelopment())
 {

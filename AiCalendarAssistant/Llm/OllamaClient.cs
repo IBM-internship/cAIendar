@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using PromptingPipeline.Config;
@@ -16,8 +17,18 @@ public class OllamaClient : ILlmClient
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
-    public OllamaClient(HttpClient http, LlmSettings cfg)
-        => (_http, _cfg) = (http, cfg);
+    public OllamaClient(HttpClient http, IOptions<LlmSettings> cfg)
+    {
+        _cfg = cfg.Value;
+        _http = http;
+
+        // Add the API key header for each request
+        if (!string.IsNullOrWhiteSpace(_cfg.OllamaApiKey))
+        {
+            _http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", _cfg.OllamaApiKey);
+        }
+    }
 
     public async Task<PromptResponse> SendAsync(PromptRequest p, CancellationToken ct = default)
     {
@@ -29,14 +40,24 @@ public class OllamaClient : ILlmClient
             ["messages"] = p.Messages.Select(m => new { role = m.Role, content = m.Content, tool_call_id = m.ToolCallId }).ToArray()
         };
         if (p.ResponseFormat.HasValue) payload["response_format"] = p.ResponseFormat.Value;
-        if (p.Tools.HasValue) { payload["tools"] = p.Tools.Value; payload["tool_choice"] = p.ToolChoice ?? "auto"; }
-        if (p.Extra is not null) foreach (var kv in p.Extra) payload[kv.Key] = kv.Value;
+        if (p.Tools.HasValue)
+        {
+            payload["tools"] = p.Tools.Value;
+            payload["tool_choice"] = p.ToolChoice ?? "auto";
+        }
+        if (p.Extra is not null)
+        {
+            foreach (var kv in p.Extra)
+            {
+                payload[kv.Key] = kv.Value;
+            }
+        }
 
         var resp = await _http.PostAsJsonAsync(url, payload, Opts, ct);
         resp.EnsureSuccessStatusCode();
 
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(ct);
-		// Console.WriteLine($"Ollama response: {json}");
         return CommonJson.ParseResponse(json);
     }
 }
+
