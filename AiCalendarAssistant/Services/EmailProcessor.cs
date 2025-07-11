@@ -41,9 +41,9 @@ public class EmailProcessor(
               "properties": {
                 "title_of_event": { "type": "string" },
                 "importance": { "type": "string", "enum": ["high", "medium", "low"]},
-                "date": { "type": "string" },
-                "start_time": { "type": "string" },
-                "end_time": { "type": "string" },
+                "date": { "type": "string", "format": "date" },
+                "start_time": { "type": "string", "format": "time" },
+                "end_time": { "type": "string", "format": "time" },
                 "description": { "type": "string" },
                 "is_in_person": { "type": "boolean" },
                 "has_end_time": { "type": "boolean" },
