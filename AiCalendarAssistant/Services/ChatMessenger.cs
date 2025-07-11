@@ -5,17 +5,16 @@ using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Models;
 using AiCalendarAssistant.Services.Contracts;
 using Microsoft.EntityFrameworkCore;
-using DataMessage  = AiCalendarAssistant.Data.Models.Message;
+using DataMessage = AiCalendarAssistant.Data.Models.Message;
 using PromptMessage = AiCalendarAssistant.Models.Message;
 
 namespace AiCalendarAssistant.Services;
 
-public sealed class ChatMessenger
+public sealed class ChatMessenger(
+    ApplicationDbContext context,
+    PromptRouter router,
+    ICalendarService calendarService)
 {
-    private readonly ApplicationDbContext _context;
-    private readonly PromptRouter         _router;
-    private readonly ICalendarService     _calendarService;
-
     // ──────────────────────────────────────────────────────────────────────────
     private const string SystemPrompt =
         """
@@ -61,40 +60,27 @@ public sealed class ChatMessenger
         ]
         """);
     // ──────────────────────────────────────────────────────────────────────────
-
-    public ChatMessenger(
-        ApplicationDbContext context,
-        PromptRouter         router,
-        ICalendarService     calendarService)
-    {
-        _context         = context;
-        _router          = router;
-        _calendarService = calendarService;
-    }
-
-    // ──────────────────────────────────────────────────────────────────────────
     public async Task<DataMessage> GenerateAssistantMessageAsync(
-        Chat              chat,
+        Chat chat,
         CancellationToken ct = default)
     {
         // 1) build conversation history
         var history = new List<PromptMessage> { new("system", SystemPrompt) };
 
-        var messages = await _context.Messages
+        var messages = await context.Messages
             .Where(m => m.ChatId == chat.Id)
             .OrderBy(m => m.Pos)
             .ToListAsync(ct);
 
-        foreach (var m in messages)
-            history.Add(new(m.Role.ToString().ToLowerInvariant(), m.Text));
+        history.AddRange(messages.Select(m => new PromptMessage(m.Role.ToString().ToLowerInvariant(), m.Text)));
 
         // 2) first pass – let the model decide whether to call a tool
         var firstReq = new PromptRequest(
             history,
-            Tools      : ToolDoc.RootElement,
-            ToolChoice : "auto");
+            Tools: ToolDoc.RootElement,
+            ToolChoice: "auto");
 
-        var firstResp = await _router.SendAsync(firstReq, ct);
+        var firstResp = await router.SendAsync(firstReq, ct);
 
         // 3) if no tool call, persist answer & return
         if (!firstResp.HasToolCalls)
@@ -113,7 +99,7 @@ public sealed class ChatMessenger
         foreach (var call in firstResp.ToolCalls!)
         {
             var payload = await ExecuteToolCallAsync(call, chat.UserId, ct);
-            if (payload is null) continue;         // unknown tool → skip
+            if (payload is null) continue; // unknown tool → skip
 
 			history.Add(new PromptMessage(
 				  "tool",
@@ -132,15 +118,15 @@ public sealed class ChatMessenger
     // ──────────────────────────────────────────────────────────────────────────
 
     private async Task<string?> ExecuteToolCallAsync(
-        ToolCall          call,
-        string?           userId,
+        ToolCall call,
+        string? userId,
         CancellationToken ct)
     {
         return call.Name switch
         {
             "get_events_in_time_range" => await HandleGetEventsInTimeRangeAsync(call, userId, ct),
-            "get_tasks_in_day_range"   => await HandleGetTasksInDayRangeAsync(call, userId, ct),
-            _                          => null   // unknown tool
+            "get_tasks_in_day_range" => await HandleGetTasksInDayRangeAsync(call, userId, ct),
+            _ => null // unknown tool
         };
     }
 
@@ -152,26 +138,26 @@ public sealed class ChatMessenger
         if (element.ValueKind != JsonValueKind.String) return element;
 
         using var tmp = JsonDocument.Parse(element.GetString() ?? "{}");
-        return tmp.RootElement.Clone();   // keep alive after tmp.Dispose()
+        return tmp.RootElement.Clone(); // keep alive after tmp.Dispose()
     }
 
     private async Task<string> HandleGetEventsInTimeRangeAsync(
-        ToolCall          call,
-        string?           userId,
+        ToolCall call,
+        string? userId,
         CancellationToken ct)
     {
-        var args  = NormalizeArguments(call.Arguments);
+        var args = NormalizeArguments(call.Arguments);
 
         var start = DateTime.Parse(
             args.GetProperty("start").GetString()!,
             null, DateTimeStyles.RoundtripKind);
 
-        var end   = DateTime.Parse(
+        var end = DateTime.Parse(
             args.GetProperty("end").GetString()!,
             null, DateTimeStyles.RoundtripKind);
 
         // Fetch events via service, then enforce per-user filter (if any)
-        var events = await _calendarService.GetEventsInTimeRangeAsync(start, end, userId);
+        var events = await calendarService.GetEventsInTimeRangeAsync(start, end, userId);
         if (!string.IsNullOrEmpty(userId))
             events = events.Where(e => e.UserId == userId).ToList();
 
@@ -182,8 +168,8 @@ public sealed class ChatMessenger
                 e.Id,
                 e.Title,
                 e.Description,
-                start  = e.Start,
-                end    = e.End,
+                start = e.Start,
+                end = e.End,
                 e.Location,
                 e.IsAllDay,
                 e.IsInPerson,
@@ -194,21 +180,21 @@ public sealed class ChatMessenger
     }
 
     private async Task<string> HandleGetTasksInDayRangeAsync(
-        ToolCall          call,
-        string?           userId,
+        ToolCall call,
+        string? userId,
         CancellationToken ct)
     {
         var args = NormalizeArguments(call.Arguments);
 
         var startDay = DateOnly.FromDateTime(
             DateTime.Parse(args.GetProperty("start_day").GetString()!,
-                           null, DateTimeStyles.RoundtripKind));
+                null, DateTimeStyles.RoundtripKind));
 
-        var endDay   = DateOnly.FromDateTime(
+        var endDay = DateOnly.FromDateTime(
             DateTime.Parse(args.GetProperty("end_day").GetString()!,
-                           null, DateTimeStyles.RoundtripKind));
+                null, DateTimeStyles.RoundtripKind));
 
-        var tasksQry = _context.UserTasks.AsQueryable();
+        var tasksQry = context.UserTasks.AsQueryable();
 
         if (!string.IsNullOrEmpty(userId))
             tasksQry = tasksQry.Where(t => t.UserId == userId);
@@ -225,7 +211,7 @@ public sealed class ChatMessenger
                 t.Id,
                 t.Title,
                 t.Description,
-                date       = t.Date,
+                date = t.Date,
                 importance = t.Importance.ToString(),
                 t.IsCompleted
             })
@@ -234,22 +220,22 @@ public sealed class ChatMessenger
     // ──────────────────────────────────────────────────────────────────────────
 
     private async Task<DataMessage> PersistAssistantReplyAsync(
-        Chat               chat,
-        string             replyText,
-        int                position,
-        CancellationToken  ct)
+        Chat chat,
+        string replyText,
+        int position,
+        CancellationToken ct)
     {
         var msg = new DataMessage
         {
             ChatId = chat.Id,
-            Role   = MessageRole.Assistant,
-            Text   = replyText,
-            Pos    = position,
+            Role = MessageRole.Assistant,
+            Text = replyText,
+            Pos = position,
             SentOn = DateTime.UtcNow
         };
 
-        _context.Messages.Add(msg);
-        await _context.SaveChangesAsync(ct);
+        context.Messages.Add(msg);
+        await context.SaveChangesAsync(ct);
         return msg;
     }
 }
