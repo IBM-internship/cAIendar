@@ -73,7 +73,7 @@ public class EmailProcessor(
 
         email.IsProcessed = true;
 
-        var isRelevant = await IsRelevantEventAsync(email, ct);
+        var isRelevant = await IsRelevantEventAsync(email, user, ct);
         if (!isRelevant)
         {
             Console.ForegroundColor = ConsoleColor.Red;
@@ -86,10 +86,10 @@ public class EmailProcessor(
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine(calendarEvent);
         Console.ResetColor();
-        await eventProcessor.ProcessEventAsync(calendarEvent, ct);
+        await eventProcessor.ProcessEventAsync(calendarEvent, user, ct);
     }
 
-    private async Task<bool> IsRelevantEventAsync(Email email, CancellationToken ct = default)
+    private async Task<bool> IsRelevantEventAsync(Email email, ApplicationUser user, CancellationToken ct = default)
     {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Determining if email is relevant for calendar event. {email.Body}");
@@ -117,7 +117,8 @@ public class EmailProcessor(
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Sending prompt to determine relevance...: {prompt}");
         Console.ResetColor();
-        var response = await router.SendAsync(prompt, ct);
+        // get receiving user with id from email
+        var response = await router.SendAsync(prompt, user, ct);
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Finished sending prompt to determine relevance: {response.Content}");
         Console.ResetColor();
@@ -157,7 +158,7 @@ public class EmailProcessor(
         Console.WriteLine($"Sending prompt to extract event: {prompt}");
         Console.ResetColor();
         
-        var response = await router.SendAsync(prompt, ct);
+        var response = await router.SendAsync(prompt, user, ct);
 
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Finished sending prompt to extract event: {response.Content}");

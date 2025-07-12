@@ -62,6 +62,7 @@ public sealed class ChatMessenger(
     // ──────────────────────────────────────────────────────────────────────────
     public async Task<DataMessage> GenerateAssistantMessageAsync(
         Chat chat,
+        ApplicationUser user,
         CancellationToken ct = default)
     {
         // 1) build conversation history
@@ -80,7 +81,7 @@ public sealed class ChatMessenger(
             Tools: ToolDoc.RootElement,
             ToolChoice: "auto");
 
-        var firstResp = await router.SendAsync(firstReq, ct);
+        var firstResp = await router.SendAsync(firstReq, user, ct);
 
         // 3) if no tool call, persist answer & return
         if (!firstResp.HasToolCalls)
@@ -110,7 +111,7 @@ public sealed class ChatMessenger(
 
         // 6) second pass – assistant now has the data
         var followUp = new PromptRequest(history);
-        var finalResp = await router.SendAsync(followUp, ct);
+        var finalResp = await router.SendAsync(followUp, user, ct);
 
         return await PersistAssistantReplyAsync(
             chat, finalResp.Content ?? string.Empty, messages.Count, ct);
