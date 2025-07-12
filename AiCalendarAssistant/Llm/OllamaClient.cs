@@ -22,9 +22,10 @@ public class OllamaClient : ILlmClient
         // Add API Key header
         if (string.IsNullOrWhiteSpace(_cfg.OllamaApiKey))
         {
-            throw new InvalidOperationException("Ollama API key is not configured.");
-        }
-        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _cfg.OllamaApiKey);
+            // throw new InvalidOperationException("Ollama API key is not configured.");
+        }else{
+			_http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _cfg.OllamaApiKey);
+		}
     }
 
     public async Task<PromptResponse> SendAsync(PromptRequest p, CancellationToken ct = default, string? additionalInstructions = null)
