@@ -62,10 +62,10 @@ public class OllamaClient : ILlmClient
         }
 
         var resp = await _http.PostAsJsonAsync(url, payload, Opts, ct);
+        var json = await resp.Content.ReadFromJsonAsync<JsonElement>(ct);
+        Console.WriteLine($"Ollama response: {json}");
         resp.EnsureSuccessStatusCode();
 
-        var json = await resp.Content.ReadFromJsonAsync<JsonElement>(ct);
-        // Console.WriteLine($"Ollama response: {json}");
         return CommonJson.ParseResponse(json);
     }
 }
