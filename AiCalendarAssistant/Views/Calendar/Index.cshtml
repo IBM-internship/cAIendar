@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
     <link rel="stylesheet" href="~/css/calendar.css" />
+
+    <link rel="stylesheet" href="~/css/chat.css" />
 </head>
 <body>
     <div class="container-fluid">
@@ -194,8 +196,55 @@
         </div>
     </div>
 
+    <!-- Chat Window Button -->
+    <button class="absolute-btn" id="chatToggle">
+        <i class="fas fa-comments me-2"></i>
+        Assistant
+    </button>
 
-    <button class="absolute-btn">chat window</button>
+    <!-- Chat Window Overlay -->
+    <div class="chat-overlay" id="chatOverlay">
+        <div class="chat-window">
+            <div class="chat-header">
+                <h3>
+                    <i class="fas fa-robot"></i>
+                </h3>
+                <button class="chat-close" id="chatClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chat-body">
+                <div class="chat-sidebar">
+                    <button class="new-chat-btn" id="newChatBtn">
+                        <i class="fas fa-plus me-2"></i>
+                        New Chat
+                    </button>
+                    <div class="chat-list" id="chatList">
+                        <!-- Chat items will be populated here -->
+                    </div>
+                    <button class="delete-chat-btn" id="deleteChatBtn" style="display: none;">
+                        <i class="fas fa-trash me-2"></i>
+                        Delete Chat
+                    </button>
+                </div>
+                <div class="chat-main">
+                    <div class="messages-container" id="messagesContainer">
+                        <div class="no-messages" id="noMessages">
+                            <i class="fas fa-comments fa-3x mb-3 text-muted"></i>
+                            <p>No chat selected. Create a new chat to start conversation.</p>
+                        </div>
+                    </div>
+                    <div class="message-input-container" id="messageInputContainer" style="display: none;">
+                        <input type="text" class="message-input" id="messageInput" placeholder="Type your message...">
+                        <button class="send-btn" id="sendBtn">
+                            <i class="fas fa-paper-plane"></i>
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Toast Container -->
     <div class="toast-container"></div>
@@ -207,5 +256,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script src="~/js/calendar.js"></script>
+
+    <script src="~/js/chat.js"></script>
 </body>
 </html>
