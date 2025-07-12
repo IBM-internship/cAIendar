@@ -109,7 +109,7 @@ public class EventProcessor(
                 newEvent.EventCreatedFromEmail!.SendingUserEmail,
                 newEvent,
                 mostImportantEvent.EventCreatedFromEmail!,
-                newEvent.User!));
+                user));
         }
         else if ((sameCategory && shouldReplace) || mostImportantEvent.Importance < newEvent.Importance)
         {
@@ -125,7 +125,7 @@ public class EventProcessor(
                     collidingEvent.EventCreatedFromEmail!.SendingUserEmail,
                     collidingEvent,
                     newEvent.EventCreatedFromEmail!,
-                    newEvent.User!));
+                    user));
             }
 
             db.Events.Add(newEvent);
@@ -144,9 +144,8 @@ public class EventProcessor(
         var scopedEmailComposer = scope.ServiceProvider.GetRequiredService<EmailComposer>();
         var scopedGmailService = scope.ServiceProvider.GetRequiredService<IGmailEmailService>();
 
-        // Pass the user ID to the email service
         await SendCancellationEmailAsync(scopedEmailComposer, scopedGmailService, recipient, cancelledEvent,
-            reasonForCancellation, user); // Add user ID parameter
+            reasonForCancellation, user);
     }
 
 
