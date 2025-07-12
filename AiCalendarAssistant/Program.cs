@@ -27,15 +27,15 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlSer
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
-    {
-        options.SignIn.RequireConfirmedAccount = false;
-        options.Password.RequireDigit = false;
-        options.Password.RequireLowercase = false;
-        options.Password.RequireUppercase = false;
-        options.Password.RequireNonAlphanumeric = false;
-        options.Password.RequiredLength = 4;
-    })
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+{
+    options.SignIn.RequireConfirmedAccount = false;
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 4;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>();
 
 var googleClientId = Environment.GetEnvironmentVariable("Authentication__Google__ClientId")
                      ?? throw new InvalidOperationException("Google ClientId not found in environment variables.");
