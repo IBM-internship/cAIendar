@@ -34,7 +34,7 @@ public class CalendarService(ApplicationDbContext context) : ICalendarService
 		var existingEvent = await context.Events.FindAsync(updatedEvent.Id);
 		if (existingEvent == null)
 			return false;
-		string userId = existingEvent.UserId;
+		var userId = existingEvent.UserId!;
 		context.Entry(existingEvent).CurrentValues.SetValues(updatedEvent);
 		existingEvent.UserId = userId;
 		await context.SaveChangesAsync();

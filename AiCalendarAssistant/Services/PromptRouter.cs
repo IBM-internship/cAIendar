@@ -24,14 +24,9 @@ public sealed class PromptRouter(
             .AppendLine($"- Today is {DateTime.Now:yyyy-MM-dd} ({DateTime.Now.DayOfWeek})");
 
         // ...and only include the user description if one was provided
-        // if (!string.IsNullOrWhiteSpace(user?.UserDiscription))
-        // {
-        //     sb.AppendLine($"- User description: {user.UserDiscription}");
-        // }
-
-        if (user != null)
+        if (!string.IsNullOrWhiteSpace(user?.UserDiscription))
         {
-            sb.AppendLine($"- User description: {user.UserDiscription ?? "Zelqsko from Stara Zagora, Bulgaria"}");
+            sb.AppendLine($"- User description: {user.UserDiscription}");
         }
 
         var additionalInstructions = sb.ToString();
