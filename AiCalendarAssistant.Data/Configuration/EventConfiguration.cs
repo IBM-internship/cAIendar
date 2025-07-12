@@ -1,4 +1,5 @@
 ﻿using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Data.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,5 +20,8 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
             .WithOne(e => e.EmailCreatedEvent)
             .HasForeignKey<Event>(e => e.EventCreatedFromEmailId) // FK is in Event
             .OnDelete(DeleteBehavior.Restrict);
+
+        IEnumerable<Event> events = EventSeeder.SeedEvents();
+        builder.HasData(EventSeeder.SeedEvents());
     }
 }

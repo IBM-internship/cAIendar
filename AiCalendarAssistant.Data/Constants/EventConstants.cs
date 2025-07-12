@@ -7,8 +7,7 @@ namespace AiCalendarAssistant.Data.Constants
         public const int Event1Id = -1;
         public const string Event1Title = "Event 1";
         public const string Event1Description = "This is the first event.";
-        public DateTime Event1Start = new DateTime(2025, 1, 1, 10, 0, 0); // January 1, 2025, 10:00 AM
-        public DateTime Event1End = new DateTime(2025, 1, 1, 12, 0, 0); // January 1, 2025, 12:00 AM
+        // Event start and end times are typed in the EventSeeder.cs file
         public const bool Event1IsAllDay = false;
         public const string Event1Color = "#FF5733"; // Hex color for the event
         public const string Event1Location = "Conference Room A";
