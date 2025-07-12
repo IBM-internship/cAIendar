@@ -1,7 +1,7 @@
 using System.Text.Json;
 using AiCalendarAssistant.Data.Models;
-using AiCalendarAssistant.Interfaces;
 using AiCalendarAssistant.Models;
+using AiCalendarAssistant.Services.Contracts;
 
 namespace AiCalendarAssistant.Services;
 
@@ -16,7 +16,7 @@ public class UserNoteProcessor(PromptRouter router, IUserNoteReader reader)
           "type": "json_schema",
           "json_schema": {
             "name": "note_info",
-            "strict": true,
+            "strict": false,
             "schema": {
               "type": "object",
               "properties": {
@@ -49,8 +49,10 @@ public class UserNoteProcessor(PromptRouter router, IUserNoteReader reader)
 
         var response = await router.SendAsync(prompt, ct);
 
+        Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Extracted UserNote Info → {response.Content}");
-
+		Console.ResetColor();
+        
         using var eventDoc = JsonDocument.Parse(response.Content);
         var root = eventDoc.RootElement;
 
@@ -85,8 +87,10 @@ public class UserNoteProcessor(PromptRouter router, IUserNoteReader reader)
 			User = null, // maybe this also idk what it does
 		};
 
+        Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Extracted Email Info → {response.Content}");
-
+		Console.ResetColor();
+        
 		return calendarEvent;
 	}
 }

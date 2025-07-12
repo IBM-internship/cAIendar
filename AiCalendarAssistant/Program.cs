@@ -1,4 +1,5 @@
-﻿using AiCalendarAssistant.Data;
+﻿using System.Text.Json;
+using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Services;
 using Microsoft.EntityFrameworkCore;
@@ -7,8 +8,10 @@ using Microsoft.AspNetCore.Authentication;
 using AiCalendarAssistant.Config;
 using AiCalendarAssistant.Infrastructure;
 using AiCalendarAssistant.Llm;
+using AiCalendarAssistant.Models;
 using DotNetEnv;
 using Microsoft.AspNetCore.Identity;
+using Message = AiCalendarAssistant.Models.Message;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -97,18 +100,25 @@ builder.Services.AddAuthentication()
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<GmailEmailService>();
 builder.Services.AddScoped<TokenRefreshService>(provider =>
     new TokenRefreshService(
         provider.GetRequiredService<IHttpContextAccessor>(),
-        provider.GetRequiredService<IConfiguration>(),
         provider.GetRequiredService<ILogger<TokenRefreshService>>(),
         provider.GetRequiredService<UserManager<ApplicationUser>>(),
         googleClientId,
         googleClientSecret
     ));
 builder.Services.AddScoped<ICalendarService, CalendarService>();
+builder.Services.AddScoped<IEmailProcessor, EmailProcessor>();
+builder.Services.AddScoped<IGmailEmailService, GmailEmailService>();
 builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddHttpClient<TokenProvider>();
+builder.Services.AddHttpClient<WatsonxClient>();
+builder.Services.AddHttpClient<OllamaClient>();
+builder.Services.AddSingleton<PromptRouter>();
+builder.Services.AddScoped<ChatMessenger>();
+builder.Services.AddSingleton<EmailComposer>();
+builder.Services.AddScoped<EventProcessor>();
 
 var watsonxUrl        = Environment.GetEnvironmentVariable("Llm__Url");
 var watsonxProjectId  = Environment.GetEnvironmentVariable("Llm__ProjectId");
@@ -118,7 +128,8 @@ var watsonxVersion    = Environment.GetEnvironmentVariable("Llm__Version");
 var ollamaUse         = Environment.GetEnvironmentVariable("Llm__UseOllama");
 var ollamaUrl         = Environment.GetEnvironmentVariable("Llm__OllamaUrl");
 var ollamaModel       = Environment.GetEnvironmentVariable("Llm__OllamaModel");
-Console.WriteLine($"Ollama model: {ollamaModel}");
+var ollamaApiKey      = Environment.GetEnvironmentVariable("Llm__OllamaApiKey");
+
 // Create LlmSettings from environment variables
 var llmSettings = new LlmSettings
 {
@@ -129,31 +140,43 @@ var llmSettings = new LlmSettings
     Version     = watsonxVersion    ?? "2023-10-25",
     UseOllama   = bool.TryParse(ollamaUse, out var useOllama) && useOllama,
     OllamaUrl   = ollamaUrl         ?? "http://host.docker.internal:11434",
-    OllamaModel = ollamaModel       ?? "granite3.3:latest"
+    OllamaModel = ollamaModel       ?? "granite3.3:latest",
+    OllamaApiKey =  ollamaApiKey
 };
 
 builder.Services.AddSingleton(llmSettings);
-builder.Services.AddHttpClient<TokenProvider>();
-builder.Services.AddHttpClient<WatsonxClient>();
-builder.Services.AddHttpClient<OllamaClient>();
-builder.Services.AddSingleton<PromptRouter>();
-builder.Services.AddSingleton<EmailProcessor>();
-builder.Services.AddScoped<ChatMessenger>();
-builder.Services.AddSingleton<EventProcessor>();
-builder.Services.AddSingleton<EmailComposer>();
 
 
 var app = builder.Build();
-// var router = app.Services.GetRequiredService<PromptRouter>();
+var router = app.Services.GetRequiredService<PromptRouter>();
 
-// var chat = new PromptRequest(new()
-// {
-//     new("system", "You are a helpful assistant."),
-//     new("user",   "What is the capital of France?")
-// });
-//
+var chat = new PromptRequest([
+    new Message("system", "You are a helpful assistant."),
+    new Message("user", "What is the capital of France?")
+],
+JsonDocument.Parse(
+    """
+    {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "email_info",
+        "strict": false,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "capital": { "type": "string" },
+            "date": { "type": "string", "format": "date" }
+          },
+          "required": ["capital"],
+          "additionalProperties": false
+        }
+      }
+    }
+    """).RootElement);
+
+
 // var chatResp = await router.SendAsync(chat);
-// Console.WriteLine($"Capital → {chatResp.Content}");
+// Console.WriteLine($"Response: {JsonSerializer.Serialize(chatResp, new JsonSerializerOptions { WriteIndented = true })}");
 
 if (app.Environment.IsDevelopment())
 {

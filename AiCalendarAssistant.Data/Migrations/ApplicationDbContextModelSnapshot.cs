@@ -73,6 +73,10 @@ namespace AiCalendarAssistant.Data.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
 
+                    b.Property<string>("UserDiscription")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -98,12 +102,12 @@ namespace AiCalendarAssistant.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
@@ -183,10 +187,10 @@ namespace AiCalendarAssistant.Data.Migrations
                     b.Property<DateTime>("End")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("Importance")
+                    b.Property<int?>("EventCreatedFromEmailId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("EventCreatedFromEmailId")
+                    b.Property<int>("Importance")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsAllDay")

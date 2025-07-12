@@ -1,18 +1,16 @@
 ﻿using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
-using AiCalendarAssistant.Models;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Gmail.v1;
-using Google.Apis.Gmail.v1.Data;
 using Google.Apis.Services;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Text;
+using AiCalendarAssistant.Services.Contracts;
 using Email = AiCalendarAssistant.Data.Models.Email;
 using Message = Google.Apis.Gmail.v1.Data.Message;
+using static AiCalendarAssistant.Utilities.TaskExtensions;
 
 namespace AiCalendarAssistant.Services;
 
@@ -22,7 +20,8 @@ public class GmailEmailService(
     IHttpContextAccessor ctx,
     TokenRefreshService tokenService,
     ILogger<GmailEmailService> logger,
-    EmailProcessor emailProcessor)
+    IServiceProvider serviceProvider,
+    IServiceScopeFactory serviceScopeFactory) : IGmailEmailService
 {
     public async Task<List<Email>> GetLastEmailsAsync()
     {
@@ -34,7 +33,7 @@ public class GmailEmailService(
 
         var userId = user.Id;
 
-        var service = await GetGmailServiceAsync();
+        var service = await GetGmailServiceAsync(userId);
         if (service == null)
             throw new UnauthorizedAccessException("Valid access token not available");
 
@@ -69,19 +68,32 @@ public class GmailEmailService(
 
             var email = new Email
             {
-                GmailMessageId = msg.Id!, // Id of the Gmail message from Google API
-                CreatedOn = date, // Date from Google API
-                SendingUserEmail = headers.FirstOrDefault(h => h.Name == "From")?.Value ?? "", // Sender from Google API
-                Title = headers.FirstOrDefault(h => h.Name == "Subject")?.Value ?? "", // Subject from Google API
+                GmailMessageId = msg.Id!,
+                CreatedOn = date,
+                SendingUserEmail = headers.FirstOrDefault(h => h.Name == "From")?.Value ?? "",
+                Title = headers.FirstOrDefault(h => h.Name == "Subject")?.Value ?? "",
                 Body = body,
-                RecievingUserId = userId, // Id of the currently logged-in user
+                RecievingUserId = userId,
                 ThreadId = detail.ThreadId ?? "",
                 MessageId = headers.FirstOrDefault(h => h.Name == "Message-ID")?.Value ?? "",
             };
-
+            
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Adding email {email.GmailMessageId} to the database for user {userId}");
+            Console.ResetColor();
+            
             db.Emails.Add(email);
             emails.Add(email);
-            emailProcessor.ProcessEmailAsync(user, email);
+            
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Processing email {email.GmailMessageId}");
+            Console.ResetColor();
+            SendAsyncFunc(async () =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var scopedEmailProcessor = scope.ServiceProvider.GetRequiredService<IEmailProcessor>();
+                await scopedEmailProcessor.ProcessEmailAsync(user, email);
+            }, serviceScopeFactory);
         }
 
         await db.SaveChangesAsync();
@@ -89,11 +101,11 @@ public class GmailEmailService(
     }
 
     public async Task<bool> ReplyToEmailAsync(string messageId, string threadId, string originalSubject,
-        string fromEmail, string body)
+        string fromEmail, string body, string userId)
     {
         try
         {
-            var service = await GetGmailServiceAsync();
+            var service = await GetGmailServiceAsync(userId);
             if (service == null)
                 return false;
 
@@ -164,15 +176,9 @@ public class GmailEmailService(
         return Encoding.UTF8.GetString(bytes);
     }
 
-    private async Task<GmailService?> GetGmailServiceAsync()
+    private async Task<GmailService?> GetGmailServiceAsync(string userId)
     {
-        var token = await tokenService.GetValidAccessTokenAsync();
-
-        if (string.IsNullOrEmpty(token))
-        {
-            var http = ctx.HttpContext!;
-            token = await http.GetTokenAsync(GoogleDefaults.AuthenticationScheme, "access_token");
-        }
+        var token = await tokenService.GetValidAccessTokenAsync(userId);
 
         if (string.IsNullOrEmpty(token))
             return null;

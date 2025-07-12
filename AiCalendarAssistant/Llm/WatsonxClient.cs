@@ -2,7 +2,6 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using AiCalendarAssistant.Config;
 using AiCalendarAssistant.Infrastructure;
-using AiCalendarAssistant.Interfaces;
 using AiCalendarAssistant.Models;
 
 namespace AiCalendarAssistant.Llm;
@@ -14,16 +13,31 @@ public class WatsonxClient(HttpClient http, TokenProvider tokens, LlmSettings cf
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
-    public async Task<PromptResponse> SendAsync(PromptRequest p, CancellationToken ct = default)
+    public async Task<PromptResponse> SendAsync(PromptRequest p, CancellationToken ct = default, string? additionalInstructions = null)
     {
         var url = $"{cfg.Url.TrimEnd('/')}/ml/v1/text/chat?version={cfg.Version}";
 
-        var payload = new Dictionary<string, object?>
-        {
-            ["model_id"]   = cfg.ModelId,
-            ["project_id"] = cfg.ProjectId,
-            ["messages"]   = p.Messages.Select(m => new { role = m.Role, content = m.Content, tool_call_id = m.ToolCallId }).ToArray()
-        };
+        // var payload = new Dictionary<string, object?>
+        // {
+        //     ["model_id"]   = cfg.ModelId,
+        //     ["project_id"] = cfg.ProjectId,
+        //     ["messages"]   = p.Messages.Select(m => new { role = m.Role, content = m.Content, tool_call_id = m.ToolCallId }).ToArray()
+        // };
+		var payload = new Dictionary<string, object?>
+		{
+			["model"]    = cfg.ModelId,
+			["project_id"]  = cfg.ProjectId,
+			["messages"] = p.Messages.Select(m =>
+			{
+				if (m.Role == "system" && !string.IsNullOrWhiteSpace(additionalInstructions))
+				{
+					return new { role = m.Role, content = m.Content + additionalInstructions };
+				}
+				return new { role = m.Role, content = m.Content };
+			}).ToArray()
+		};
+		Console.WriteLine($"Payload messages: {JsonSerializer.Serialize(payload["messages"], Opts)}");
+		//
         if (p.ResponseFormat.HasValue) payload["response_format"] = p.ResponseFormat.Value;
         if (p.Tools.HasValue) { payload["tools"] = p.Tools.Value; payload["tool_choice"] = p.ToolChoice ?? "auto"; }
         if (p.Extra is not null) foreach (var kv in p.Extra) payload[kv.Key] = kv.Value;
@@ -34,7 +48,7 @@ public class WatsonxClient(HttpClient http, TokenProvider tokens, LlmSettings cf
 
         var resp = await http.SendAsync(req, ct);
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(ct);
-		// Console.WriteLine($"Watsonx response: {json}");
+		Console.WriteLine($"Watsonx response: {json}");
         resp.EnsureSuccessStatusCode();
 
         return CommonJson.ParseResponse(json);

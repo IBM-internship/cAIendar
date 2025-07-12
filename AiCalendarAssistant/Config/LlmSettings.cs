@@ -13,4 +13,5 @@ public sealed record LlmSettings
     public bool   UseOllama   { get; init; } = true;
     public string OllamaUrl   { get; init; } = "http://host.docker.internal:11434";
     public string OllamaModel { get; init; } = "granite3.3:latest";
+	public string OllamaApiKey { get; init; } = "banana";
 }

@@ -13,6 +13,7 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - app-network
+
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sqlserver
@@ -26,6 +27,16 @@ services:
     user: "0:0"
     networks:
       - app-network
+
+  sqlclient:
+    image: mcr.microsoft.com/mssql-tools
+    depends_on:
+      - sqlserver
+    entrypoint: /bin/bash
+    tty: true
+    networks:
+      - app-network
+
 volumes:
   sqlserver_data:
 networks:

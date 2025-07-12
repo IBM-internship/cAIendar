@@ -32,7 +32,7 @@ public class Event
 
 public enum Importance
 {
-    High,
+    Low,
     Medium,
-    Low
+    High
 }

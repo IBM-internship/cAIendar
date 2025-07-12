@@ -57,14 +57,14 @@ public class ExternalLoginModel : PageModel
         
     public IActionResult OnGet() => RedirectToPage("./Login");
 
-    public IActionResult OnPost(string provider, string returnUrl = null)
+    public IActionResult OnPost(string provider, string? returnUrl = null)
     {
         var redirectUrl = Url.Page("./ExternalLogin", pageHandler: "Callback", values: new { returnUrl });
         var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
         return new ChallengeResult(provider, properties);
     }
 
-    public async Task<IActionResult> OnGetCallbackAsync(string returnUrl = null, string remoteError = null)
+    public async Task<IActionResult> OnGetCallbackAsync(string? returnUrl = null, string? remoteError = null)
     {
         returnUrl = returnUrl ?? Url.Content("~/");
         if (remoteError != null)
@@ -90,22 +90,20 @@ public class ExternalLoginModel : PageModel
         {
             return RedirectToPage("./Lockout");
         }
-        else
+
+        ReturnUrl = returnUrl;
+        ProviderDisplayName = info.ProviderDisplayName ?? string.Empty;
+        if (info.Principal.HasClaim(c => c.Type == ClaimTypes.Email))
         {
-            ReturnUrl = returnUrl;
-            ProviderDisplayName = info.ProviderDisplayName;
-            if (info.Principal.HasClaim(c => c.Type == ClaimTypes.Email))
+            Input = new InputModel
             {
-                Input = new InputModel
-                {
-                    Email = info.Principal.FindFirstValue(ClaimTypes.Email)
-                };
-            }
-            return Page();
+                Email = info.Principal.FindFirstValue(ClaimTypes.Email) ?? string.Empty
+            };
         }
+        return Page();
     }
 
-    public async Task<IActionResult> OnPostConfirmationAsync(string returnUrl = null)
+    public async Task<IActionResult> OnPostConfirmationAsync(string? returnUrl = null)
     {
         returnUrl = returnUrl ?? Url.Content("~/");
         var info = await _signInManager.GetExternalLoginInfoAsync();
