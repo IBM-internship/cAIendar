@@ -7,7 +7,7 @@ namespace AiCalendarAssistant.Data.Constants
         public const int Email1Id = -1;
         public const string Email1GmailMessageId = "1234567890abcdef";
         public const string Email1Title = "Test Email 1";
-        public DateTime Email1CreatedOn = new DateTime(2025, 1, 1, 9, 0, 0); // January 1, 2025, 9:00 AM
+        // Email creation date and time are typed in the EmailSeeder.cs file
         public const string Email1Body = "This is the body of the first test email.";
         public const string Email1SendingUserEmail = "sendinguser@email.com";
         public const string Email1RecievingUserId = "88bd4ce9-aece-4378-b9d5-1e5cff74b80c"; // User ID from UserConstants

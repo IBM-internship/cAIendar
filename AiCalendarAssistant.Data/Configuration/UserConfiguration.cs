@@ -1,4 +1,5 @@
 ﻿using AiCalendarAssistant.Data.Models;
+using AiCalendarAssistant.Data.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,6 +14,9 @@ namespace AiCalendarAssistant.Data.Configuration
                 .WithOne(u => u.User)
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            IEnumerable<ApplicationUser> users = UserSeeder.SeedUsers();
+            builder.HasData(UserSeeder.SeedUsers());
         }
     }
 }
