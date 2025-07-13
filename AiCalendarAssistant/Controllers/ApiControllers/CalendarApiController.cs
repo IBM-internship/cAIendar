@@ -93,12 +93,12 @@ namespace AiCalendarAssistant.Controllers
 		}
 
 		[HttpDelete("delete/{id}")]
-		public async Task<ActionResult> DeleteEvent([FromBody] DeleteEventRequest request)
+		public async Task<ActionResult> DeleteEvent(int id)
 		{
 			Console.WriteLine("event deleted");
-			var success = await _calendarService.DeleteEventAsync(request.Id);
+			var success = await _calendarService.DeleteEventAsync(id);
 			if (!success)
-				return NotFound($"Event with ID {request.Id} not found.");
+				return NotFound($"Event with ID {id} not found.");
 			return NoContent();
 		}
 
