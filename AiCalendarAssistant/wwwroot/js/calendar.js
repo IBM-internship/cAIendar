@@ -3,6 +3,30 @@
     let currentEvents = [];
     let selectedEvent = null;
 
+    // Navigation controls
+    document.getElementById('prevBtn').addEventListener('click', () => {
+        calendar.prev();
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+        calendar.next();
+    });
+
+    document.getElementById('todayBtn').addEventListener('click', () => {
+        calendar.today();
+    });
+
+    // View switching
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const view = this.dataset.view;
+            calendar.changeView(view);
+
+            // Update active button
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
     // Initialize Calendar
     function initializeCalendar() {
         calendar = new tui.Calendar('#calendar', {
@@ -81,38 +105,9 @@
             });
     }
 
-    // Navigation controls
-    document.getElementById('prevBtn').addEventListener('click', () => {
-        calendar.prev();
-    });
-
-    document.getElementById('nextBtn').addEventListener('click', () => {
-        calendar.next();
-    });
-
-    document.getElementById('todayBtn').addEventListener('click', () => {
-        calendar.today();
-    });
-
-    // View switching
-    document.querySelectorAll('.view-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const view = this.dataset.view;
-            calendar.changeView(view);
-
-            // Update active button
-            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-        });
-    });
-
     // Modal handlers
     const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
     const eventDetailsModal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
-
-    document.getElementById('addEventBtn').addEventListener('click', () => {
-        openEventForm();
-    });
 
     // Color picker
     document.querySelectorAll('.color-option').forEach(option => {
@@ -124,27 +119,6 @@
             document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
             this.classList.add('selected');
         });
-    });
-
-    // Form submission
-    document.getElementById('eventForm').addEventListener('submit', async function (e) {
-        e.preventDefault();
-        await saveEvent();
-    });
-
-    // Delete event
-    document.getElementById('deleteEventBtn').addEventListener('click', async function () {
-        if (selectedEvent && confirm('Are you sure you want to delete this event?')) {
-            await deleteEventFromServer(selectedEvent.id);
-        }
-    });
-
-    // Edit event from details modal
-    document.getElementById('editEventBtn').addEventListener('click', function () {
-        eventDetailsModal.hide();
-        setTimeout(() => {
-            openEventForm(selectedEvent);
-        }, 300);
     });
 
     // All-day checkbox handler
@@ -166,6 +140,18 @@
             startInput.type = 'datetime-local';
             endInput.type = 'datetime-local';
         }
+    });
+
+    // Edit event from details modal
+    document.getElementById('editEventBtn').addEventListener('click', function () {
+        eventDetailsModal.hide();
+        setTimeout(() => {
+            openEventForm(selectedEvent);
+        }, 300);
+    });
+
+    document.getElementById('addEventBtn').addEventListener('click', () => {
+        openEventForm();
     });
 
     // Helper functions
@@ -218,61 +204,11 @@
         eventModal.show();
     }
 
-    function showEventDetails(event) {
-        selectedEvent = {
-            id: event.id,
-            title: event.title,
-            description: event.raw.description || '',
-            start: event.start,
-            end: event.end,
-            isAllDay: event.isAllDay,
-            location: event.location || '',
-            meetingLink: event.raw.meetingLink || '',
-            isInPerson: event.raw.isInPerson || false,
-            color: event.backgroundColor || '#007bff'
-        };
-
-        const content = document.getElementById('eventDetailsContent');
-
-        content.innerHTML = `
-                    <div class="event-details">
-                        <div class="event-detail-item">
-                            <div class="event-color-indicator" style="background-color: ${event.backgroundColor}"></div>
-                            <strong>${event.title}</strong>
-                        </div>
-                        ${event.raw.description ? `
-                            <div class="event-detail-item">
-                                <i class="fas fa-align-left event-detail-icon"></i>
-                                <span>${event.raw.description}</span>
-                            </div>
-                        ` : ''}
-                        <div class="event-detail-item">
-                            <i class="fas fa-clock event-detail-icon"></i>
-                            <span>${formatEventTime(event)}</span>
-                        </div>
-                        ${event.location ? `
-                            <div class="event-detail-item">
-                                <i class="fas fa-map-marker-alt event-detail-icon"></i>
-                                <span>${event.location}</span>
-                            </div>
-                        ` : ''}
-                        ${event.raw.meetingLink ? `
-                            <div class="event-detail-item">
-                                <i class="fas fa-link event-detail-icon"></i>
-                                <a href="${event.raw.meetingLink}" target="_blank">${event.raw.meetingLink}</a>
-                            </div>
-                        ` : ''}
-                        ${event.raw.isInPerson ? `
-                            <div class="event-detail-item">
-                                <i class="fas fa-users event-detail-icon"></i>
-                                <span>In-person event</span>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-
-        eventDetailsModal.show();
-    }
+    // Form submission
+    document.getElementById('eventForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        await saveEvent();
+    });
 
     async function saveEvent() {
         const eventIdValue = document.getElementById('eventId').value;
@@ -347,15 +283,62 @@
             showToast('Грешка при запазване на събитието', 'error');
         }
     }
-    function toISO(dateValue) {
-        try {
-            return new Date(dateValue).toISOString();
-        } catch {
-            console.warn("Invalid date:", dateValue);
-            return null;
-        }
-    }
 
+    function showEventDetails(event) {
+        selectedEvent = {
+            id: event.id,
+            title: event.title,
+            description: event.raw.description || '',
+            start: event.start,
+            end: event.end,
+            isAllDay: event.isAllDay,
+            location: event.location || '',
+            meetingLink: event.raw.meetingLink || '',
+            isInPerson: event.raw.isInPerson || false,
+            color: event.backgroundColor || '#007bff'
+        };
+
+        const content = document.getElementById('eventDetailsContent');
+
+        content.innerHTML = `
+                    <div class="event-details">
+                        <div class="event-detail-item">
+                            <div class="event-color-indicator" style="background-color: ${event.backgroundColor}"></div>
+                            <strong>${event.title}</strong>
+                        </div>
+                        ${event.raw.description ? `
+                            <div class="event-detail-item">
+                                <i class="fas fa-align-left event-detail-icon"></i>
+                                <span>${event.raw.description}</span>
+                            </div>
+                        ` : ''}
+                        <div class="event-detail-item">
+                            <i class="fas fa-clock event-detail-icon"></i>
+                            <span>${formatEventTime(event)}</span>
+                        </div>
+                        ${event.location ? `
+                            <div class="event-detail-item">
+                                <i class="fas fa-map-marker-alt event-detail-icon"></i>
+                                <span>${event.location}</span>
+                            </div>
+                        ` : ''}
+                        ${event.raw.meetingLink ? `
+                            <div class="event-detail-item">
+                                <i class="fas fa-link event-detail-icon"></i>
+                                <a href="${event.raw.meetingLink}" target="_blank">${event.raw.meetingLink}</a>
+                            </div>
+                        ` : ''}
+                        ${event.raw.isInPerson ? `
+                            <div class="event-detail-item">
+                                <i class="fas fa-users event-detail-icon"></i>
+                                <span>In-person event</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+        eventDetailsModal.show();
+    }
 
     async function updateEventOnServer(event, changes) {
         try {
@@ -388,6 +371,13 @@
             calendar.render();
         }
     }
+
+    // Delete event
+    document.getElementById('deleteEventBtn').addEventListener('click', async function () {
+        if (selectedEvent && confirm('Are you sure you want to delete this event?')) {
+            await deleteEventFromServer(selectedEvent.id);
+        }
+    });
 
     async function deleteEventFromServer(eventId) {
         try {
@@ -483,13 +473,13 @@
         }, 5000);
     }
 
-    function formatDateTimeLocal(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    function toISO(dateValue) {
+        try {
+            return new Date(dateValue).toISOString();
+        } catch {
+            console.warn("Invalid date:", dateValue);
+            return null;
+        }
     }
 
     function formatEventTime(event) {
@@ -501,6 +491,15 @@
         } else {
             return `${start.toLocaleDateString('bg-BG')} ${start.toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' })}`;
         }
+    }
+
+    function formatDateTimeLocal(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
     function localDatetimeToISOString(localDateTime) {
@@ -546,6 +545,10 @@
                     break;
             }
         }
+    });
+
+    document.getElementById('toggleChatBtn').addEventListener('click', () => {
+        document.getElementById('chatSidebar').classList.toggle('hidden');
     });
 
     // Auto-refresh events periodically

@@ -1,0 +1,109 @@
+﻿@model AiCalendarAssistant.Controllers.ChatViewModel
+@{
+    ViewData["Title"] = "Chat";
+    var selectedChatId = (int?)ViewData["SelectedChatId"];
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<style>
+    .chat-message {
+        max-width: 75%;
+        padding: 0.5rem 1rem;
+        border-radius: 1rem;
+        margin-bottom: 0.5rem;
+        position: relative;
+        word-wrap: break-word;
+    }
+
+        .chat-message.user {
+            background-color: #e9ecef;
+            color: #212529;
+            margin-right: auto;
+            border-bottom-left-radius: 0;
+        }
+
+        .chat-message.assistant,
+        .chat-message.tool,
+        .chat-message.system {
+            background-color: #0d6efd;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
+        }
+
+    .timestamp {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.2rem;
+        text-align: right;
+    }
+
+    .chat-container {
+        max-height: 300px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+        padding-left: 0.5rem;
+    }
+</style>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">Chat Messages</h5>
+
+        @if (Model.SelectedChat != null && Model.SelectedChat.Messages != null)
+        {
+            <div class="chat-container" id="chatMessagesContainer">
+                @foreach (var msg in Model.SelectedChat.Messages)
+                {
+                    string messageClass = msg.Role switch
+                    {
+                        AiCalendarAssistant.Data.Models.MessageRole.User => "chat-message user",
+                        AiCalendarAssistant.Data.Models.MessageRole.Assistant => "chat-message assistant",
+                        AiCalendarAssistant.Data.Models.MessageRole.Tool => "chat-message tool",
+                        AiCalendarAssistant.Data.Models.MessageRole.System => "chat-message system",
+                        _ => "chat-message"
+                    };
+                    <div class="@messageClass">
+                        @msg.Text
+                        <div class="timestamp">@msg.SentOn.ToShortTimeString()</div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">No chat selected or no messages.</p>
+        }
+
+        @if (selectedChatId.HasValue)
+        {
+            <div class="input-group mt-3">
+                <input type="text" id="messageInput" class="form-control" placeholder="Type your message..." />
+                <button class="btn btn-primary" type="button" onclick="sendMessage(@selectedChatId)">Send</button>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+    function sendMessage(chatId) {
+        const text = document.getElementById("messageInput").value;
+        if (!text.trim()) return;
+
+        fetch("/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ text: text, chatId: chatId })
+        })
+        .then(response => response.text())
+        .then(data => {
+            location.reload();
+        })
+        .catch(error => {
+            document.getElementById("responseText").textContent = "Error: " + error;
+        });
+    }
+</script>

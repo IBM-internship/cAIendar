@@ -88,7 +88,6 @@ public class ChatController(ApplicationDbContext db) : Controller
 
         return Ok("Description saved successfully.");
     }
-
 }
 
 public class DescriptionDto

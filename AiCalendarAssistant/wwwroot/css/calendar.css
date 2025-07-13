@@ -20,7 +20,7 @@ body {
     backdrop-filter: blur(10px);
     border-radius: 20px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-    padding: 30px;
+    padding: 20px;
     margin: 20px 0;
 }
 
@@ -29,7 +29,7 @@ body {
     color: white;
     padding: 20px;
     border-radius: 15px;
-    margin-bottom: 20px;
+    margin-top: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -423,4 +423,28 @@ body {
 .toast-error {
     background: linear-gradient(135deg, #dc3545, #c82333);
     color: white;
+}
+
+.chat-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100%;
+    background-color: #f8f9fa;
+    border-left: 1px solid #dee2e6;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    z-index: 1050;
+}
+
+    .chat-sidebar.hidden {
+        transform: translateX(100%);
+    }
+
+.chat-toggle-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1100;
 }

@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@model AiCalendarAssistant.Controllers.ChatViewModel
+
+<!DOCTYPE html>
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
@@ -19,6 +21,7 @@
 <body>
     <div class="container-fluid">
         <div class="calendar-container">
+            <div id="calendar"></div>
             <div class="calendar-header">
                 <h1 class="calendar-title">
                     <i class="fas fa-calendar-alt me-2"></i>
@@ -42,10 +45,15 @@
                     </button>
                 </div>
             </div>
-
-            <div id="calendar"></div>
         </div>
     </div>
+
+    <div id="chatSidebar" class="chat-sidebar hidden">
+        @await Html.PartialAsync("_ChatPartial", Model)
+    </div>
+    <button id="toggleChatBtn" class="btn btn-primary chat-toggle-btn">
+        <i class="fas fa-comments"></i>
+    </button>
 
     <!-- Event Form Modal -->
     <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
@@ -191,9 +199,10 @@
                     </button>
                 </div>
             </div>
+
+
         </div>
     </div>
-
 
     <button class="absolute-btn">chat window</button>
 
