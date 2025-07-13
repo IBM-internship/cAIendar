@@ -1,0 +1,376 @@
+﻿@model AiCalendarAssistant.Controllers.ChatViewModel
+@{
+    var selectedChatId = (int?)ViewData["SelectedChatId"];
+}
+
+<div id="chatContainer" class="chat-container d-flex flex-column">
+    <!-- Chat header -->
+    <div class="chat-header d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0">Your Chats</h6>
+        <button id="newChatBtn" class="btn btn-sm btn-success">+ New</button>
+    </div>
+
+    <!-- Chats topbar -->
+    <div id="chatTopbar" class="chat-topbar d-flex overflow-auto mb-3">
+        @foreach (var chat in Model.Chats)
+        {
+            var activeClass = chat.Id == selectedChatId ? "active" : "";
+            <a href="?selectedChatId=@chat.Id" class="chat-tab btn btn-outline-primary me-2 @activeClass" style="white-space: nowrap;" data-chatid="@chat.Id">
+                Chat @chat.Id
+            </a>
+        }
+
+        @if (selectedChatId.HasValue)
+        {
+            <button id="deleteChatBtn" class="btn btn-outline-danger btn-sm ms-auto">Delete Selected</button>
+        }
+    </div>
+
+    <!-- Messages area -->
+    <div id="chatMessages" class="chat-messages flex-grow-1 overflow-auto mb-3">
+        @if (Model.SelectedChat?.Messages != null && Model.SelectedChat.Messages.Any())
+        {
+            <div class="d-flex flex-column">
+                @foreach (var msg in Model.SelectedChat.Messages)
+                {
+                    {
+                        var roleLower = msg.Role.ToString().ToLower();
+                        var isUser = roleLower == "user";
+                        var bubbleClass = isUser ? "msg-user" : "msg-assistant";
+                        var alignClass = isUser ? "align-self-end" : "align-self-start";
+                    }
+                    <div class="message-bubble @@bubbleClass @@alignClass">
+                        <div class="message-text">@msg.Text</div>
+                        <div class="message-meta text-muted small">@msg.Role • @msg.SentOn.ToShortTimeString()</div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-muted text-center mt-3">No chat selected or no messages.</p>
+        }
+    </div>
+
+    <!-- Input for sending messages -->
+    @if (selectedChatId.HasValue)
+    {
+        <div class="input-group">
+            <input type="text" id="messageInput" class="form-control" placeholder="Type your message..." aria-label="Message input" />
+            <button id="sendMessageBtn" class="btn btn-primary" aria-label="Send message">Send</button>
+        </div>
+        <div class="mt-2 text-danger" id="responseText" style="min-height: 1.2em;"></div>
+    }
+</div>
+
+<style>
+    .chat-topbar {
+        min-height: 3.5rem; /* taller */
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid #ddd;
+        scroll-behavior: smooth;
+        align-items: center;
+    }
+
+    .chat-tab {
+        flex: 0 0 auto;
+        border-radius: 20px;
+        padding: 0.5rem 1rem; /* bigger padding */
+        font-size: 1rem; /* bigger text */
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+        .chat-tab.active,
+        .chat-tab.btn-primary {
+            background-color: #0d6efd !important;
+            color: white !important;
+            border-color: #0d6efd !important;
+        }
+
+    .chat-container {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 0.9rem;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        max-height: 600px;
+        overflow: hidden;
+    }
+
+    .chat-header h6 {
+        font-weight: 600;
+        color: #0d6efd;
+    }
+
+    .chat-messages {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 10px;
+        box-shadow: inset 0 0 5px rgb(0 0 0 / 0.05);
+        overflow-y: auto;
+    }
+
+    .message-bubble {
+        max-width: 75%;
+        margin-bottom: 0.5rem;
+        padding: 10px 15px;
+        border-radius: 18px;
+        box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+        line-height: 1.3;
+        word-wrap: break-word;
+    }
+
+    .msg-user {
+        background-color: #0d6efd;
+        color: white;
+        border-radius: 18px 18px 0 18px;
+    }
+
+    .msg-assistant {
+        background-color: #e9ecef;
+        color: #212529;
+        border-radius: 18px 18px 18px 0;
+    }
+
+    .message-meta {
+        font-size: 0.75rem;
+        margin-top: 4px;
+        opacity: 0.7;
+    }
+
+    .input-group {
+        gap: 0.5rem;
+        padding-bottom: 1rem;
+    }
+
+        .input-group input.form-control {
+            flex-grow: 1;
+        }
+
+        .input-group button.btn-primary {
+            min-width: 75px;
+        }
+</style>
+
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+        const popup = document.getElementById('chatPopup');
+        const chatContainer = document.getElementById('chatContainer');
+        const newChatBtn = document.getElementById('newChatBtn');
+        const deleteChatBtn = document.getElementById('deleteChatBtn');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const messageInput = document.getElementById('messageInput');
+        const responseText = document.getElementById('responseText');
+        const chatTopbar = document.getElementById('chatTopbar');
+
+        // Restore popup open state
+        if (localStorage.getItem('chatPopupOpen') === 'true') {
+            popup.classList.remove('d-none');
+        }
+
+        // Toggle popup function (make sure your toggleChat() calls this)
+        window.toggleChat = function () {
+            popup.classList.toggle('d-none');
+            localStorage.setItem('chatPopupOpen', !popup.classList.contains('d-none'));
+        };
+
+        // Helper to fetch and update chatContainer partial (refresh chats/messages)
+        async function reloadChatPartial(selectedChatId) {
+            let url = window.location.pathname;
+            if (selectedChatId) {
+                url += '?selectedChatId=' + selectedChatId;
+            }
+            const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (response.ok) {
+                const html = await response.text();
+                // Replace innerHTML of chatContainer
+                chatContainer.innerHTML = html;
+
+                // Re-bind event handlers because innerHTML replaced content
+                bindEvents();
+
+                // Keep popup open
+                localStorage.setItem('chatPopupOpen', 'true');
+            } else {
+                console.error('Failed to reload chat partial');
+            }
+        }
+
+        // Send message
+            async function sendMessage(chatId) {
+        const input = document.getElementById("messageInput");
+        const text = input.value.trim();
+        if (!text) return;
+
+        try {
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chatId: chatId, text: text })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || "Failed to send message");
+            }
+
+            const data = await response.json();
+
+            // Clear the input and any previous error
+            input.value = "";
+            document.getElementById("responseText").textContent = "";
+
+            // Insert new user message into the chat UI
+            appendMessage("user", text);
+
+            // Insert assistant message
+            appendMessage("assistant", data.assistantText);
+
+            // Scroll to bottom so latest messages are visible
+            scrollMessagesToBottom();
+
+        } catch (error) {
+            document.getElementById("responseText").textContent = "Error: " + error.message;
+        }
+    }
+
+    // Helper function to append a message bubble to the chat container dynamically
+    function appendMessage(role, text) {
+        const container = document.querySelector(".chat-messages > div"); // the messages container div inside .chat-messages
+        if (!container) return;
+
+        const bubble = document.createElement("div");
+        bubble.classList.add("message-bubble");
+        bubble.classList.add(role === "user" ? "msg-user" : "msg-assistant");
+        bubble.classList.add(role === "user" ? "align-self-end" : "align-self-start");
+
+        const messageText = document.createElement("div");
+        messageText.classList.add("message-text");
+        messageText.textContent = text;
+
+        const meta = document.createElement("div");
+        meta.classList.add("message-meta", "text-muted", "small");
+        meta.textContent = role + " • " + new Date().toLocaleTimeString();
+
+        bubble.appendChild(messageText);
+        bubble.appendChild(meta);
+        container.appendChild(bubble);
+    }
+
+    // Helper to scroll the messages container to the bottom
+    function scrollMessagesToBottom() {
+        const chatMessages = document.querySelector(".chat-messages");
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    }
+
+
+
+        // Create new chat
+        async function createChat() {
+            newChatBtn.disabled = true;
+            try {
+                const response = await fetch('/Chat/Create', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (response.ok) {
+                    // Reload partial without selectedChatId, so it refreshes list and sets new chat active
+                    await reloadChatPartial();
+                } else {
+                    alert('Failed to create new chat');
+                }
+            } catch (error) {
+                alert('Error creating chat: ' + error);
+            } finally {
+                newChatBtn.disabled = false;
+            }
+        }
+
+        // Delete selected chat
+        async function deleteChat() {
+            if (!confirm('Are you sure you want to delete the selected chat?')) return;
+
+            deleteChatBtn.disabled = true;
+            try {
+                const selectedChatId = getSelectedChatId();
+                if (!selectedChatId) return;
+
+                const formData = new FormData();
+                formData.append('id', selectedChatId);
+
+                const response = await fetch('/Chat/Delete', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (response.ok) {
+                    // After delete, reload partial with no chat selected
+                    await reloadChatPartial();
+                } else {
+                    alert('Failed to delete chat');
+                }
+            } catch (error) {
+                alert('Error deleting chat: ' + error);
+            } finally {
+                deleteChatBtn.disabled = false;
+            }
+        }
+
+        // Get selected chat id from active tab
+        function getSelectedChatId() {
+            const activeTab = chatTopbar.querySelector('.chat-tab.active');
+            return activeTab ? activeTab.dataset.chatid : null;
+        }
+
+        // Switch chat by clicking tab — load that chat without page reload
+        function switchChat(chatId) {
+            // Update URL without reload
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('selectedChatId', chatId);
+            window.history.pushState({}, '', newUrl);
+
+            // Reload partial with selected chat
+            reloadChatPartial(chatId);
+        }
+
+        // Bind click handlers on dynamic elements (call after reloadChatPartial)
+        function bindEvents() {
+            // Re-bind buttons
+            const newBtn = document.getElementById('newChatBtn');
+            const delBtn = document.getElementById('deleteChatBtn');
+            const sendBtn = document.getElementById('sendMessageBtn');
+            const input = document.getElementById('messageInput');
+            const topbar = document.getElementById('chatTopbar');
+
+            if (newBtn) newBtn.onclick = (e) => { e.preventDefault(); createChat(); };
+            if (delBtn) delBtn.onclick = (e) => { e.preventDefault(); deleteChat(); };
+            if (sendBtn && input) sendBtn.onclick = (e) => { e.preventDefault(); sendMessage(getSelectedChatId()); };
+
+            // Chat tabs click
+            if (topbar) {
+                topbar.querySelectorAll('.chat-tab').forEach(tab => {
+                    tab.onclick = (e) => {
+                        e.preventDefault();
+                        const chatId = tab.dataset.chatid;
+                        switchChat(chatId);
+                    };
+                });
+            }
+        }
+
+        // Initial binding on page load
+        bindEvents();
+
+        // Also handle browser back/forward buttons to reload correct chat
+        window.onpopstate = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const chatId = urlParams.get('selectedChatId');
+            reloadChatPartial(chatId);
+        };
+    });
+
+</script>

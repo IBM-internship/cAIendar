@@ -12,10 +12,7 @@ namespace AiCalendarAssistant.Controllers.ApiControllers;
 [ApiController]
 [Route("api/chat")]
 [Authorize]
-public class ChatApiController(
-    ApplicationDbContext db,
-    ChatMessenger chatMessenger)
-    : ControllerBase
+public class ChatApiController(ApplicationDbContext db, ChatMessenger chatMessenger): ControllerBase
 {
     public record MessageModel(int ChatId, string Text);
 

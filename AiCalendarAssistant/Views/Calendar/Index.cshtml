@@ -1,4 +1,9 @@
-﻿<!DOCTYPE html>
+﻿@model AiCalendarAssistant.Controllers.ChatViewModel
+@{
+    ViewData["Title"] = "Chat";
+    var selectedChatId = (int?)ViewData["SelectedChatId"];
+}
+<!DOCTYPE html>
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
@@ -196,55 +201,39 @@
         </div>
     </div>
 
-    <!-- Chat Window Button -->
-    <button class="absolute-btn" id="chatToggle">
-        <i class="fas fa-comments me-2"></i>
-        Assistant
-    </button>
+    
+    <button onclick="toggleChat()" class="btn btn-primary">💬 Chat</button>
 
-    <!-- Chat Window Overlay -->
-    <div class="chat-overlay" id="chatOverlay">
-        <div class="chat-window">
-            <div class="chat-header">
-                <h3>
-                    <i class="fas fa-robot"></i>
-                </h3>
-                <button class="chat-close" id="chatClose">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="chat-body">
-                <div class="chat-sidebar">
-                    <button class="new-chat-btn" id="newChatBtn">
-                        <i class="fas fa-plus me-2"></i>
-                        New Chat
-                    </button>
-                    <div class="chat-list" id="chatList">
-                        <!-- Chat items will be populated here -->
-                    </div>
-                    <button class="delete-chat-btn" id="deleteChatBtn" style="display: none;">
-                        <i class="fas fa-trash me-2"></i>
-                        Delete Chat
-                    </button>
-                </div>
-                <div class="chat-main">
-                    <div class="messages-container" id="messagesContainer">
-                        <div class="no-messages" id="noMessages">
-                            <i class="fas fa-comments fa-3x mb-3 text-muted"></i>
-                            <p>No chat selected. Create a new chat to start conversation.</p>
-                        </div>
-                    </div>
-                    <div class="message-input-container" id="messageInputContainer" style="display: none;">
-                        <input type="text" class="message-input" id="messageInput" placeholder="Type your message...">
-                        <button class="send-btn" id="sendBtn">
-                            <i class="fas fa-paper-plane"></i>
-                            Send
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Chat popup -->
+    <div id="chatPopup" class="chat-popup d-none">
+        @await Html.PartialAsync("_ChatBox", Model)
     </div>
+
+    <script>
+        function toggleChat() {
+            document.getElementById("chatPopup").classList.toggle("d-none");
+        }
+    </script>
+
+    <style>
+        .chat-popup {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            width: 450px; /* wider */
+            max-width: 90vw; /* responsive max */
+            max-height: 150vh; /* limit height */
+            overflow-y: auto; /* scroll inside */
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 0px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.25);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
 
     <!-- Toast Container -->
     <div class="toast-container"></div>
