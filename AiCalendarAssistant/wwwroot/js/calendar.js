@@ -87,10 +87,8 @@
                         calendarId: '1',
                         title: event.title,
                         category: event.isAllDay ? 'allday' : 'time',
-                        start: isoStringToLocalDatetime(event.start+'Z'),
-                        end: isoStringToLocalDatetime(event.end+'Z'),
-                        //start: event.start,
-                        //end: event.end,
+                        start: event.start,
+                        end: event.end,
                         isAllDay: event.isAllDay,
                         location: event.location,
                         backgroundColor: event.color || '#007bff',
@@ -220,11 +218,11 @@
             Title: document.getElementById('eventTitle').value,
             Description: document.getElementById('eventDescription').value,
             Start: isAllDay
-                ? new Date(document.getElementById('eventStart').value + 'T00:00:00').toISOString()
+                ? toLocalISOString(new Date(document.getElementById('eventStart').value + 'T00:00:00'))//idk what im doing
                 : localDatetimeToISOString(document.getElementById('eventStart').value),
             End: isAllDay
-                ? new Date(document.getElementById('eventEnd').value + 'T23:59:59').toISOString()
-                : localDatetimeToISOString(document.getElementById('eventEnd').value),
+                ? toLocalISOString(new Date(document.getElementById('eventEnd').value + 'T23:59:59'))
+                : localDatetimeToISOString(document.getElementById('eventEnd').value),//hopes and dreams 
             IsAllDay: isAllDay,
             Location: document.getElementById('eventLocation').value,
             MeetingLink: document.getElementById('eventMeetingLink').value,
@@ -344,8 +342,8 @@
         try {
             const updatePayload = {
                 id: parseInt(event.id),
-                start: changes.start ? new Date(changes.start).toISOString() : new Date(event.start).toISOString(),
-                end: changes.end ? new Date(changes.end).toISOString() : new Date(event.end).toISOString()
+                start: changes.start ? toLocalISOString(new Date(changes.start)) : toLocalISOString(new Date(changes.start)),
+                end: changes.end ? toLocalISOString(new Date(changes.end)) : toLocalISOString(new Date(changes.end))
             };
 
             const response = await fetch('/api/calendarapi/move', {
@@ -504,7 +502,7 @@
 
     function localDatetimeToISOString(localDateTime) {
         const dt = new Date(localDateTime);
-        return dt.toISOString();
+        return toLocalISOString(dt);
     }
     function isoStringToLocalDatetime(isoString) {
         const dt = new Date(isoString);
@@ -519,7 +517,20 @@
         // Format as local datetime string similar to input format: "YYYY-MM-DDTHH:mm:ss"
         return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     }
-
+    function toLocalISOString(date) {
+        const pad = (n) => n.toString().padStart(2, '0')
+        const year = date.getFullYear()
+        const month = pad(date.getMonth() + 1)
+        const day = pad(date.getDate())
+        const hours = pad(date.getHours())
+        const minutes = pad(date.getMinutes())
+        const seconds = pad(date.getSeconds())
+        const offset = -date.getTimezoneOffset()
+        const sign = offset >= 0 ? '+' : '-'
+        const offsetHours = pad(Math.floor(Math.abs(offset) / 60))
+        const offsetMinutes = pad(Math.abs(offset) % 60)
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${sign}${offsetHours}:${offsetMinutes}`
+    }
     // Initialize the calendar
     loadEvents();
 
