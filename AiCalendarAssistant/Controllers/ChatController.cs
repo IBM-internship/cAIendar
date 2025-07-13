@@ -62,8 +62,39 @@ public class ChatController(ApplicationDbContext db) : Controller
 
         return RedirectToAction(nameof(Index), new { selectedChatId = chat.Id });
     }
+
+    [HttpPost]
+    public async Task<IActionResult> AddUserDescription([FromBody] DescriptionDto model)
+    {
+        if (string.IsNullOrWhiteSpace(model.Description))
+        {
+            return BadRequest("Description cannot be empty.");
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
+        var user = await db.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return NotFound("User not found.");
+        }
+
+        user.UserDiscription = model.Description;
+        await db.SaveChangesAsync();
+
+        return Ok("Description saved successfully.");
+    }
+
 }
 
+public class DescriptionDto
+{
+    public string Description { get; set; }
+}
 
 public class ChatViewModel
 {
