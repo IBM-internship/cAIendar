@@ -1,7 +1,8 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
     let calendar;
-    let currentEvents = [];
     let selectedEvent = null;
+    calendar = initializeCalendar(); // ✅ assign to the global variable
+    loadAllItems(); // ✅ now calendar is defined
 
     // Navigation controls
     document.getElementById('prevBtn').addEventListener('click', () => {
@@ -29,12 +30,29 @@
     });
     // Initialize Calendar
     function initializeCalendar() {
-        calendar = new tui.Calendar('#calendar', {
+        const newCalendar = new tui.Calendar('#calendar', {
             defaultView: 'month',
             useFormPopup: false,
             useDetailPopup: false,
             isReadOnly: false,
+            taskView: true,
             usageStatistics: false,
+            calendars: [
+                {
+                    id: '1',
+                    name: 'Events',
+                    color: '#ffffff',
+                    bgColor: '#007bff',
+                    borderColor: '#007bff'
+                },
+                {
+                    id: '2',
+                    name: 'Tasks',
+                    color: '#ffffff',
+                    bgColor: '#28a745',
+                    borderColor: '#28a745'
+                }
+            ],
             template: {
                 monthDayname: function (dayname) {
                     return `<span class="calendar-day">${dayname.label}</span>`;
@@ -42,70 +60,92 @@
             }
         });
 
-        // Calendar event handlers
-        calendar.on('clickEvent', function (e) {
-            const event = e.event;
-            showEventDetails(event);
+        // Event handlers
+        newCalendar.on('clickEvent', function (e) {
+            showEventDetails(e.event);
         });
 
-        calendar.on('beforeUpdateEvent', function (e) {
-            const event = e.event;
-            const changes = e.changes;
-            updateEventOnServer(event, changes);
+        newCalendar.on('beforeUpdateEvent', function (e) {
+            updateEventOnServer(e.event, e.changes);
         });
 
-        calendar.on('beforeDeleteEvent', function (e) {
-            const event = e.event;
+        newCalendar.on('beforeDeleteEvent', function (e) {
             if (confirm('Are you sure you want to delete this event?')) {
-                deleteEventFromServer(event.id);
+                deleteEventFromServer(e.event.id);
             }
         });
 
-        // Enable drag and drop
-        calendar.on('beforeCreateEvent', function (e) {
-            const event = e;
-            // Auto-create event when dragging on calendar
-            createQuickEvent(event);
+        newCalendar.on('beforeCreateEvent', function (e) {
+            createQuickEvent(e);
         });
+
+        return newCalendar; // ✅ return it!
     }
+
 
     // Load events from server
-    function loadEvents() {
+    async function loadAllItems() {
         const calendarEl = document.getElementById('calendar');
-        calendarEl.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+        calendar.clear(); // ✅ Clear previous events if any
 
-        fetch('/api/calendarapi/all')
-            .then(res => res.json())
-            .then(events => {
-                currentEvents = events;
-                calendarEl.innerHTML = '';
-                initializeCalendar();
+        try {
+            const [events, tasks] = await Promise.all([
+                fetch('/api/calendarapi/all').then(res => res.json()),
+                fetch('/api/tasks/all').then(res => res.json()),
+            ]);
 
-                events.forEach(event => {
-                    calendar.createEvents([{
-                        id: String(event.id),
-                        calendarId: '1',
-                        title: event.title,
-                        category: event.isAllDay ? 'allday' : 'time',
-                        start: event.start,
-                        end: event.end,
-                        isAllDay: event.isAllDay,
-                        location: event.location,
-                        backgroundColor: event.color || '#007bff',
-                        borderColor: event.color || '#007bff',
-                        raw: event
-                    }]);
-                });
-            })
-            .catch(error => {
-                console.error('Error loading events:', error);
-                showToast('Error while loading events', 'error');
+            events.forEach(event => {
+                calendar.createEvents([{
+                    id: String(event.id),
+                    calendarId: '1',
+                    title: event.title,
+                    category: event.isAllDay ? 'allday' : 'time',
+                    start: event.start,
+                    end: event.end,
+                    isAllDay: event.isAllDay,
+                    location: event.location,
+                    backgroundColor: event.color || '#007bff',
+                    borderColor: event.color || '#007bff',
+                    raw: event
+                }]);
             });
+
+            tasks.forEach(task => {
+                const taskDate = new Date(`${task.date}T00:00:00`);
+                const importanceColorMap = {
+                    Low: '#28a745',
+                    Medium: '#ffc107',
+                    High: '#dc3545'
+                };
+
+                const color = task.color || importanceColorMap[task.importance] || '#28a745';
+
+                calendar.createEvents([{
+                    id: `task-${task.id}`,
+                    calendarId: '2',
+                    title: task.isCompleted ? `✅ ${task.title}` : task.title,
+                    category: 'task',
+                    start: taskDate,
+                    end: taskDate,
+                    isAllDay: true,
+                    backgroundColor: color,
+                    borderColor: color,
+                    raw: task
+                }]);
+            });
+
+        } catch (error) {
+            console.error('Error loading calendar data:', error);
+            showToast('Error while loading calendar data', 'error');
+        }
     }
+
+
 
     // Modal handlers
     const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
-    const eventDetailsModal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+const eventDetailsModal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+const taskModal = new bootstrap.Modal(document.getElementById('taskModal'));
 
     // Color picker
     document.querySelectorAll('.color-option').forEach(option => {
@@ -151,6 +191,40 @@
     document.getElementById('addEventBtn').addEventListener('click', () => {
         openEventForm();
     });
+
+document.getElementById('addTaskBtn').addEventListener('click', () => {
+    openTaskForm();
+});
+
+    function openTaskForm(task = null) {
+        selectedTask = task;
+        document.getElementById('taskForm').reset();
+
+        if (task) {
+            document.getElementById('taskModalLabel').innerHTML = '<i class="fas fa-edit me-2"></i>Edit Task';
+            document.getElementById('taskId').value = task.id;
+            document.getElementById('taskTitle').value = task.title;
+            document.getElementById('taskDescription').value = task.description || '';
+            document.getElementById('taskDueDate').value = task.date ? task.date.split('T')[0] : '';
+            document.getElementById('taskPriority').value = task.importance || 'Medium';
+            document.getElementById('taskStatus').value = task.isCompleted ? 'true' : 'false';
+            document.getElementById('taskColor').value = task.color || '#28a745';
+
+            document.getElementById('deleteTaskBtn').style.display = 'block';
+        } else {
+            document.getElementById('taskModalLabel').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Create New Task';
+            document.getElementById('taskId').value = '';
+            document.getElementById('deleteTaskBtn').style.display = 'none';
+
+            document.getElementById('taskDueDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('taskStatus').value = 'false';
+            document.getElementById('taskPriority').value = 'Medium';
+            document.getElementById('taskColor').value = '#28a745';
+        }
+
+        taskModal.show();
+    }
+}
 
     // Helper functions
     function openEventForm(event = null) {
@@ -206,6 +280,11 @@
     document.getElementById('eventForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         await saveEvent();
+    });
+
+document.getElementById('taskForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    await saveTask();
     });
 
     async function saveEvent() {
@@ -280,8 +359,73 @@
             console.error('Error saving event:', error);
             showToast('Грешка при запазване на събитието', 'error');
         }
-    }
+}
+async function saveTask() {
+    const taskIdValue = document.getElementById('taskId').value;
+    const isNew = !taskIdValue || taskIdValue === '0';
 
+    const task = {
+        id: isNew ? 0 : parseInt(taskIdValue, 10),
+        title: document.getElementById('taskTitle').value,
+        description: document.getElementById('taskDescription').value,
+        date: document.getElementById('taskDueDate').value, // matches UserTask.Date
+        importance: document.getElementById('taskPriority').value, // Low/Medium/High
+        isCompleted: document.getElementById('taskStatus').value === 'true',
+        color: document.getElementById('taskColor').value
+    };
+
+    const endpoint = isNew ? '/api/tasks/add' : '/api/tasks/replace';
+    const method = isNew ? 'POST' : 'PUT';
+
+    try {
+        const response = await fetch(endpoint, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(task)
+        });
+
+        if (response.ok) {
+            const result = isNew ? await response.json() : task.id;
+
+            const start = new Date(`${task.date}T00:00:00`);
+            const end = new Date(`${task.date}T23:59:59`);
+
+            if (isNew) {
+                calendar.createEvents([{
+                    id: `task-${result}`,
+                    calendarId: '2',
+                    title: task.title,
+                    category: 'task',
+                    start,
+                    end,
+                    isAllDay: true,
+                    backgroundColor: task.color,
+                    borderColor: task.color,
+                    raw: task
+                }]);
+            } else {
+                calendar.updateEvent(`task-${task.id}`, '2', {
+                    title: task.title,
+                    start,
+                    end,
+                    isAllDay: true,
+                    backgroundColor: task.color,
+                    borderColor: task.color,
+                    raw: task
+                });
+            }
+
+            taskModal.hide();
+            showToast(isNew ? 'Task created successfully!' : 'Task updated successfully!', 'success');
+        } else {
+            const errorText = await response.text();
+            showToast(`Error saving task: ${errorText}`, 'error');
+        }
+    } catch (error) {
+        console.error('Error saving task:', error);
+        showToast('Error saving task', 'error');
+    }
+}
     function showEventDetails(event) {
         selectedEvent = {
             id: event.id,
@@ -531,8 +675,6 @@
         const offsetMinutes = pad(Math.abs(offset) % 60)
         return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${sign}${offsetHours}:${offsetMinutes}`
     }
-    // Initialize the calendar
-    loadEvents();
 
     // Keyboard shortcuts
     document.addEventListener('keydown', function (e) {
@@ -555,16 +697,6 @@
                     calendar.today();
                     break;
             }
-        }
-    });
-
-    document.getElementById('messageInput').addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();// prevent form submission or reload
-            const message = document.getElementById('landingMessageInput').value.trim();
-            if (!message) return;
-            const encodedMessage = encodeURIComponent(message);
-            window.location.href = `/Calendar?message=${encodedMessage}`;
         }
     });
 
