@@ -146,6 +146,13 @@ var llmSettings = new LlmSettings
 
 builder.Services.AddSingleton(llmSettings);
 
+var googleSettings = new GoogleSearchSettings
+{
+    ApiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY"),
+    Cx = Environment.GetEnvironmentVariable("GOOGLE_CX")
+};
+builder.Services.AddSingleton(googleSettings);
+builder.Services.AddSingleton<GoogleSearchService>();
 
 var app = builder.Build();
 var router = app.Services.GetRequiredService<PromptRouter>();
