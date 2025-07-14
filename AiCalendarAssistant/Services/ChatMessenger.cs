@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using AiCalendarAssistant.Data;
 using AiCalendarAssistant.Data.Models;
 using AiCalendarAssistant.Models;
@@ -614,17 +615,35 @@ public sealed class ChatMessenger(
     var args = NormalizeArguments(call.Arguments);
     var query = args.GetProperty("query").GetString()!;
 
-    // 2) Hit your Custom Search + scrape top result
-    var rawJson = await _googleSearchService.SearchAndScrapeAsync(query);
-	Console.WriteLine($"Raw search result: {rawJson}\n\n\n\n\n");
-    using var doc = JsonDocument.Parse(rawJson);
-    var root = doc.RootElement;
-    // If Google returned an error payload, pass it straight back
-    if (root.TryGetProperty("error", out _))
-      return rawJson;
+	//    // 2) Hit your Custom Search + scrape top result
+	//    var rawJson = await _googleSearchService.SearchAndScrapeAsync(query);
+	// Console.WriteLine($"Raw search result: {rawJson}\n\n\n\n\n");
+	//    using var doc = JsonDocument.Parse(rawJson);
+	//    var root = doc.RootElement;
+	//    // If Google returned an error payload, pass it straight back
+	//    if (root.TryGetProperty("error", out _))
+	//      return rawJson;
+	//
+	//    var url = root.GetProperty("url").GetString();
+	//    var content = root.GetProperty("content").GetString();
 
-    var url = root.GetProperty("url").GetString();
-    var content = root.GetProperty("content").GetString();
+
+        var rawJson = await _googleSearchService.SearchAndScrapeAsync(query);
+        using var doc = JsonDocument.Parse(rawJson);
+        var root = doc.RootElement;
+        if (root.TryGetProperty("error", out _))
+            return rawJson;
+
+        var url     = root.GetProperty("url").GetString();
+        var content = root.GetProperty("content").GetString() ?? string.Empty;
+
+        // 3) Collapse whitespace and trim length
+        //    Remove newlines and sequences of spaces
+        content = Regex.Replace(content, "\\s+", " ").Trim();
+        //    Limit to first 30,000 characters
+        if (content.Length > 30000)
+            content = content.Substring(0, 30000);
+
 
     // 3) Summarize with a fresh LLM call (no tools)
     var subHistory = new List<PromptMessage>
