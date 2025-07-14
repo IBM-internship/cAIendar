@@ -16,14 +16,13 @@ using Message = AiCalendarAssistant.Models.Message;
 var builder = WebApplication.CreateBuilder(args);
 
 Env.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
-const string connectionStringFile = "db_connection.txt";
 
-if (!File.Exists(connectionStringFile))
+var connectionString = Environment.GetEnvironmentVariable("ConnectionString");
+
+if (string.IsNullOrEmpty(connectionString))
 {
-    throw new FileNotFoundException("Connection string file not found.", connectionStringFile);
+    throw new InvalidOperationException("ConnectionString not found in environment variables.");
 }
-
-var connectionString = File.ReadAllText(connectionStringFile).Trim();
 
 // Add services to the containers
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
