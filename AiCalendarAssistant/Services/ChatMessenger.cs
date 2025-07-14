@@ -14,7 +14,7 @@ public sealed class ChatMessenger(
     ApplicationDbContext context,
     PromptRouter router,
     ICalendarService calendarService,
-	ITaskService taskService)
+    ITaskService taskService)
 {
     // ──────────────────────────────────────────────────────────────────────────
     private const string SystemPrompt =
@@ -57,6 +57,115 @@ public sealed class ChatMessenger(
                 "required": ["start_day","end_day"]
               }
             }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "create_event",
+              "description": "Create a new calendar event",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "start": { "type": "string", "description": "ISO-8601 datetime" },
+                  "end":   { "type": "string", "description": "ISO-8601 datetime" },
+                  "location": { "type": "string" },
+                  "is_all_day": { "type": "boolean" },
+                  "is_in_person": { "type": "boolean" },
+                  "meeting_link": { "type": "string" },
+                  "importance": { "type": "string", "enum": ["Low","Normal","High"] }
+                },
+                "required": ["title","start","end"]
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "update_event",
+              "description": "Replace an existing event's details",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer" },
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "start": { "type": "string", "description": "ISO-8601 datetime" },
+                  "end":   { "type": "string", "description": "ISO-8601 datetime" },
+                  "location": { "type": "string" },
+                  "is_all_day": { "type": "boolean" },
+                  "is_in_person": { "type": "boolean" },
+                  "meeting_link": { "type": "string" },
+                  "importance": { "type": "string", "enum": ["Low","Normal","High"] }
+                },
+                "required": ["id"]
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "delete_event",
+              "description": "Delete an event by its ID",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer" }
+                },
+                "required": ["id"]
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "create_task",
+              "description": "Create a new task",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "date": { "type": "string", "description": "ISO-8601 date" },
+                  "importance": { "type": "string", "enum": ["Low","Normal","High"] }
+                },
+                "required": ["title","date"]
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "update_task",
+              "description": "Replace an existing task's details",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer" },
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "date": { "type": "string", "description": "ISO-8601 date" },
+                  "importance": { "type": "string", "enum": ["Low","Normal","High"] },
+                  "is_completed": { "type": "boolean" }
+                },
+                "required": ["id"]
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "delete_task",
+              "description": "Delete a task by its ID",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer" }
+                },
+                "required": ["id"]
+              }
+            }
           }
         ]
         """);
@@ -89,25 +198,24 @@ public sealed class ChatMessenger(
             return await PersistAssistantReplyAsync(
                 chat, firstResp.Content ?? string.Empty, messages.Count, ct);
 
-		// 4) add the assistant message that CONTAINS the tool_calls
-		 var assistantWithCalls = new PromptMessage(
-			 "assistant",
-			 firstResp.Content ?? string.Empty,
-			 firstResp.ToolCalls);           //  ←  the list we got back
+        // 4) add the assistant message that CONTAINS the tool_calls
+        var assistantWithCalls = new PromptMessage(
+            "assistant",
+            firstResp.Content ?? string.Empty,
+            firstResp.ToolCalls);
+        history.Add(assistantWithCalls);
 
-		 history.Add(assistantWithCalls);
-
-		 // 5) handle each tool-call, append the tool messages
+        // 5) handle each tool-call, append the tool messages
         foreach (var call in firstResp.ToolCalls!)
         {
             var payload = await ExecuteToolCallAsync(call, chat.UserId, ct);
             if (payload is null) continue; // unknown tool → skip
 
-			history.Add(new PromptMessage(
-				  "tool",
-				  payload,
-				  ToolCalls : null,
-				  ToolCallId : call.Id));
+            history.Add(new PromptMessage(
+                "tool",
+                payload,
+                ToolCalls: null,
+                ToolCallId: call.Id));
         }
 
         // 6) second pass – assistant now has the data
@@ -117,7 +225,6 @@ public sealed class ChatMessenger(
         return await PersistAssistantReplyAsync(
             chat, finalResp.Content ?? string.Empty, messages.Count, ct);
     }
-    // ──────────────────────────────────────────────────────────────────────────
 
     private async Task<string?> ExecuteToolCallAsync(
         ToolCall call,
@@ -127,20 +234,24 @@ public sealed class ChatMessenger(
         return call.Name switch
         {
             "get_events_in_time_range" => await HandleGetEventsInTimeRangeAsync(call, userId, ct),
-            "get_tasks_in_day_range" => await HandleGetTasksInDayRangeAsync(call, userId, ct),
-            _ => null // unknown tool
+            "get_tasks_in_day_range"  => await HandleGetTasksInDayRangeAsync(call, userId, ct),
+            "create_event"            => await HandleCreateEventAsync(call, userId, ct),
+            "update_event"            => await HandleUpdateEventAsync(call, userId, ct),
+            "delete_event"            => await HandleDeleteEventAsync(call, userId, ct),
+            "create_task"             => await HandleCreateTaskAsync(call, userId, ct),
+            "update_task"             => await HandleUpdateTaskAsync(call, userId, ct),
+            "delete_task"             => await HandleDeleteTaskAsync(call, userId, ct),
+            _                         => null // unknown tool
         };
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-
     private static JsonElement NormalizeArguments(JsonElement element)
     {
-        // The LLM sometimes returns a JSON-encoded string instead of an object.
-        if (element.ValueKind != JsonValueKind.String) return element;
+        if (element.ValueKind != JsonValueKind.String)
+            return element;
 
         using var tmp = JsonDocument.Parse(element.GetString() ?? "{}");
-        return tmp.RootElement.Clone(); // keep alive after tmp.Dispose()
+        return tmp.RootElement.Clone();
     }
 
     private async Task<string> HandleGetEventsInTimeRangeAsync(
@@ -229,6 +340,153 @@ public sealed class ChatMessenger(
     });
 }
 
+
+private async Task<string> HandleCreateEventAsync(
+    ToolCall call,
+    string? userId,
+    CancellationToken ct)
+{
+    var args = NormalizeArguments(call.Arguments);
+
+    // required
+    var title = args.GetProperty("title").GetString()!;
+    var start = DateTime.Parse(
+        args.GetProperty("start").GetString()!,
+        null, DateTimeStyles.RoundtripKind);
+    var end = DateTime.Parse(
+        args.GetProperty("end").GetString()!,
+        null, DateTimeStyles.RoundtripKind);
+
+    // optional
+    var description = args.TryGetProperty("description", out var descProp)
+        ? descProp.GetString()
+        : null;
+
+    var location = args.TryGetProperty("location", out var locProp)
+        ? locProp.GetString()
+        : null;
+
+    var isAllDay = args.TryGetProperty("is_all_day", out var allDayProp)
+        && allDayProp.GetBoolean();
+
+    var isInPerson = args.TryGetProperty("is_in_person", out var inPersonProp)
+        && inPersonProp.GetBoolean();
+
+    var meetingLink = args.TryGetProperty("meeting_link", out var linkProp)
+        ? linkProp.GetString()
+        : null;
+
+    var importance = Enum.Parse<Importance>(
+        args.TryGetProperty("importance", out var impProp)
+            ? impProp.GetString()!
+            : "Medium");
+
+    var ev = new Event
+    {
+        Title       = title,
+        Description = description,
+        Start       = start,
+        End         = end,
+        Location    = location,
+        IsAllDay    = isAllDay,
+        IsInPerson  = isInPerson,
+        MeetingLink = meetingLink,
+        Importance  = importance,
+        UserId      = userId
+    };
+
+    await calendarService.AddEventAsync(ev);
+    return JsonSerializer.Serialize(new { success = true, id = ev.Id });
+}
+    private async Task<string> HandleUpdateEventAsync(
+        ToolCall call,
+        string? userId,
+        CancellationToken ct)
+    {
+        var args = NormalizeArguments(call.Arguments);
+        var ev = new Event
+        {
+            Id          = args.GetProperty("id").GetInt32(),
+            Title       = args.GetProperty("title").GetString(),
+            Description = args.GetProperty("description").GetString(),
+            Start       = DateTime.Parse(args.GetProperty("start").GetString()!, null, DateTimeStyles.RoundtripKind),
+            End         = DateTime.Parse(args.GetProperty("end").GetString()!,   null, DateTimeStyles.RoundtripKind),
+            Location    = args.GetProperty("location").GetString(),
+            IsAllDay    = args.GetProperty("is_all_day").GetBoolean(),
+            IsInPerson  = args.GetProperty("is_in_person").GetBoolean(),
+            MeetingLink = args.GetProperty("meeting_link").GetString(),
+            Importance  = Enum.Parse<Importance>(args.GetProperty("importance").GetString() ?? "Normal"),
+            UserId      = userId
+        };
+
+        var ok = await calendarService.ReplaceEventAsync(ev);
+        return JsonSerializer.Serialize(new { success = ok, id = ev.Id });
+    }
+
+    private async Task<string> HandleDeleteEventAsync(
+        ToolCall call,
+        string? userId,
+        CancellationToken ct)
+    {
+        var args = NormalizeArguments(call.Arguments);
+        var id = args.GetProperty("id").GetInt32();
+        var ok = await calendarService.DeleteEventAsync(id);
+        return JsonSerializer.Serialize(new { success = ok, id });
+    }
+
+    private async Task<string> HandleCreateTaskAsync(
+        ToolCall call,
+        string? userId,
+        CancellationToken ct)
+    {
+        var args = NormalizeArguments(call.Arguments);
+		Console.WriteLine($"Creating task with args: {args}");
+		// {"title":"Walk the dog","date":"2025-07-15"}
+        var task = new UserTask
+        {
+            Title       = args.GetProperty("title").GetString()!,
+			Description = args.TryGetProperty("description", out var descProp) ? descProp.GetString() ?? string.Empty : string.Empty,
+            Date        = DateOnly.Parse(args.GetProperty("date").GetString()!),
+            Importance  = Enum.Parse<Importance>(args.TryGetProperty("importance", out var impProp) ? impProp.GetString() ?? "Medium" : "Medium"),
+            UserId      = userId
+        };
+
+        await taskService.AddTaskAsync(task);
+        return JsonSerializer.Serialize(new { success = true, id = task.Id });
+    }
+
+    private async Task<string> HandleUpdateTaskAsync(
+        ToolCall call,
+        string? userId,
+        CancellationToken ct)
+    {
+        var args = NormalizeArguments(call.Arguments);
+        var task = new UserTask
+        {
+            Id          = args.GetProperty("id").GetInt32(),
+            Title       = args.GetProperty("title").GetString(),
+            Description = args.GetProperty("description").GetString(),
+            Date        = DateOnly.Parse(args.GetProperty("date").GetString()!),
+            Importance  = Enum.Parse<Importance>(args.GetProperty("importance").GetString() ?? "Normal"),
+            IsCompleted = args.GetProperty("is_completed").GetBoolean(),
+            UserId      = userId
+        };
+
+        var ok = await taskService.ReplaceTaskAsync(task);
+        return JsonSerializer.Serialize(new { success = ok, id = task.Id });
+    }
+
+    private async Task<string> HandleDeleteTaskAsync(
+        ToolCall call,
+        string? userId,
+        CancellationToken ct)
+    {
+        var args = NormalizeArguments(call.Arguments);
+        var id = args.GetProperty("id").GetInt32();
+        var ok = await taskService.DeleteTaskAsync(id);
+        return JsonSerializer.Serialize(new { success = ok, id });
+    }
+
     private async Task<DataMessage> PersistAssistantReplyAsync(
         Chat chat,
         string replyText,
@@ -238,9 +496,9 @@ public sealed class ChatMessenger(
         var msg = new DataMessage
         {
             ChatId = chat.Id,
-            Role = MessageRole.Assistant,
-            Text = replyText,
-            Pos = position,
+            Role   = MessageRole.Assistant,
+            Text   = replyText,
+            Pos    = position,
             SentOn = DateTime.UtcNow
         };
 
@@ -249,3 +507,4 @@ public sealed class ChatMessenger(
         return msg;
     }
 }
+
