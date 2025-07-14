@@ -13,7 +13,8 @@ namespace AiCalendarAssistant.Services;
 public sealed class ChatMessenger(
     ApplicationDbContext context,
     PromptRouter router,
-    ICalendarService calendarService)
+    ICalendarService calendarService,
+	ITaskService taskService)
 {
     // ──────────────────────────────────────────────────────────────────────────
     private const string SystemPrompt =
@@ -180,45 +181,53 @@ public sealed class ChatMessenger(
         });
     }
 
-    private async Task<string> HandleGetTasksInDayRangeAsync(
-        ToolCall call,
-        string? userId,
-        CancellationToken ct)
+	private async Task<string> HandleGetTasksInDayRangeAsync(
+    ToolCall call,
+    string? userId,
+    CancellationToken ct)
+{
+    var args = NormalizeArguments(call.Arguments);
+
+    var startDay = DateOnly.FromDateTime(
+        DateTime.Parse(args.GetProperty("start_day").GetString()!,
+            null, DateTimeStyles.RoundtripKind));
+
+    var endDay = DateOnly.FromDateTime(
+        DateTime.Parse(args.GetProperty("end_day").GetString()!,
+            null, DateTimeStyles.RoundtripKind));
+
+    List<UserTask> tasks;
+
+    if (!string.IsNullOrEmpty(userId))
     {
-        var args = NormalizeArguments(call.Arguments);
-
-        var startDay = DateOnly.FromDateTime(
-            DateTime.Parse(args.GetProperty("start_day").GetString()!,
-                null, DateTimeStyles.RoundtripKind));
-
-        var endDay = DateOnly.FromDateTime(
-            DateTime.Parse(args.GetProperty("end_day").GetString()!,
-                null, DateTimeStyles.RoundtripKind));
-
-        var tasksQry = context.UserTasks.AsQueryable();
-
-        if (!string.IsNullOrEmpty(userId))
-            tasksQry = tasksQry.Where(t => t.UserId == userId);
-
-        var tasks = await tasksQry
-            .Where(t => t.Date >= startDay && t.Date <= endDay)
-            .OrderBy(t => t.Date)
-            .ToListAsync(ct);
-
-        return JsonSerializer.Serialize(new
-        {
-            tasks = tasks.Select(t => new
-            {
-                t.Id,
-                t.Title,
-                t.Description,
-                date = t.Date,
-                importance = t.Importance.ToString(),
-                t.IsCompleted
-            })
-        });
+        tasks = await taskService.GetTasksInDateRangeAsync(startDay, endDay, userId);
     }
-    // ──────────────────────────────────────────────────────────────────────────
+    else
+    {
+        // fall back to a non-scoped query if no userId is provided
+        tasks = await taskService.GetTasksAsync(
+            t => t.Date >= startDay && t.Date <= endDay);
+    }
+
+    // keep results deterministic
+    tasks = tasks
+        .OrderBy(t => t.Date)
+        .ThenBy(t => t.Title)
+        .ToList();
+
+    return JsonSerializer.Serialize(new
+    {
+        tasks = tasks.Select(t => new
+        {
+            t.Id,
+            t.Title,
+            t.Description,
+            date = t.Date,
+            importance = t.Importance.ToString(),
+            t.IsCompleted
+        })
+    });
+}
 
     private async Task<DataMessage> PersistAssistantReplyAsync(
         Chat chat,
