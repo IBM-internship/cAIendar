@@ -32,18 +32,14 @@
                     <ul class="navbar-nav flex-grow-1">
                         @if (User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-light" asp-controller="Home" asp-action="Dashboard">Dashboard</a>
-                            </li>
+                            
                             <li class="nav-item">
                                 <a class="nav-link text-light" asp-controller="Emails" asp-action="Last">Emails</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link text-light" asp-controller="Calendar" asp-action="Index">Calendar</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-light" asp-controller="Chat" asp-action="Index">TestChat</a>
-                            </li>
+                            
                         }
                     </ul>
                     <partial name="_LoginPartial" />

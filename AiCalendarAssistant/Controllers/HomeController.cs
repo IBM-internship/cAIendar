@@ -28,12 +28,7 @@ namespace AiCalendarAssistant.Controllers
 			return View();
 		}
 
-		public async Task<IActionResult> Dashboard()
-		{
-			var emails = await _gmail.GetLastEmailsAsync();
-			;
-			return View(emails);
-		}
+		
 
 		[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 		public IActionResult Error()
