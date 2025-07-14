@@ -45,6 +45,8 @@ services:
     container_name: app
     networks:
       - app-network
+    environment:
+      - AiCalendarAssistant/.env
     depends_on:
       - sqlserver
     
