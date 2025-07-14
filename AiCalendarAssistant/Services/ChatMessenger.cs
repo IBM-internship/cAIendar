@@ -14,7 +14,10 @@ public sealed class ChatMessenger(
     ApplicationDbContext context,
     PromptRouter router,
     ICalendarService calendarService,
-    ITaskService taskService)
+    // ITaskService taskService)
+	// private readonly GoogleSearchService _googleSearchService;
+	ITaskService taskService,
+	GoogleSearchService _googleSearchService)
 {
     // ──────────────────────────────────────────────────────────────────────────
     private const string SystemPrompt =
@@ -172,6 +175,20 @@ public sealed class ChatMessenger(
                 "required": ["id"]
               }
             }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "internet_search",
+              "description": "Perform an internet search and return the top result",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": { "type": "string", "description": "Search query" },
+                },
+                "required": ["query"]
+              }
+            }
           }
         ]
         """);
@@ -302,7 +319,7 @@ public sealed class ChatMessenger(
 		Console.WriteLine($"\n\n\nAgent executing tool call: {call.Name} with args: {call.Arguments}\n\n\n");
         return call.Name switch
         {
-            "get_events_in_time_range" => await HandleGetEventsInTimeRangeAsync(call, userId, ct),
+            "get_events_in_time_range"=> await HandleGetEventsInTimeRangeAsync(call, userId, ct),
             "get_tasks_in_day_range"  => await HandleGetTasksInDayRangeAsync(call, userId, ct),
             "create_event"            => await HandleCreateEventAsync(call, userId, ct),
             "update_event"            => await HandleUpdateEventAsync(call, userId, ct),
@@ -310,6 +327,7 @@ public sealed class ChatMessenger(
             "create_task"             => await HandleCreateTaskAsync(call, userId, ct),
             "update_task"             => await HandleUpdateTaskAsync(call, userId, ct),
             "delete_task"             => await HandleDeleteTaskAsync(call, userId, ct),
+			"internet_search"         => await HandleInternetSearchAsync(call, userId, ct),
             _                         => null // unknown tool
         };
     }
@@ -585,5 +603,50 @@ private async Task<string> HandleUpdateTaskAsync(
         await context.SaveChangesAsync(ct);
         return msg;
     }
+
+private async Task<string> HandleInternetSearchAsync(
+        ToolCall call,
+        string? userId,
+        CancellationToken ct)
+    {
+        // 1) Parse the incoming arguments
+        var args  = NormalizeArguments(call.Arguments);
+        var query = args.GetProperty("query").GetString()!;
+
+        // 2) Hit your Custom Search + scrape top result
+        var rawJson = await _googleSearchService.SearchAndScrapeAsync(query);
+        using var doc = JsonDocument.Parse(rawJson);
+        var root = doc.RootElement;
+        // If Google returned an error payload, pass it straight back
+        if (root.TryGetProperty("error", out _))
+            return rawJson;
+
+        var url     = root.GetProperty("url").GetString();
+        var content = root.GetProperty("content").GetString();
+
+        // 3) Summarize with a fresh LLM call (no tools)
+        var subHistory = new List<PromptMessage>
+        {
+            new PromptMessage(
+                "system",
+                $"You are a helpful assistant. The user asked: \"{query}\". " +
+                "Please extract the key information from the following webpage text and " +
+                "return a concise summary of about 100 words."),
+            new PromptMessage(
+                "user",
+                $"Here is the scraped content:\n\n{content}")
+        };
+
+        var subReq  = new PromptRequest(subHistory);
+        var subResp = await _router.SendAsync(subReq, userId, ct);
+        var summary = subResp.Content?.Trim() ?? "";
+
+        // 4) Return just the bits we care about
+        return JsonSerializer.Serialize(new
+        {
+            query,
+            url,
+            summary
+        });
 }
 
