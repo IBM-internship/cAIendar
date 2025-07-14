@@ -29,7 +29,13 @@
             <div class="calendar-header">
                 <h1 class="calendar-title">
                     <i class="fas fa-calendar-alt me-2"></i>
+
+                    <button onclick="toggleChat()" class="btn p-0 border-0 bg-transparent icon-btn">
+                        <i class="fa-solid fa-comment-dots fa-2x text-purple"></i>
+                    </button>
+
                 </h1>
+
                 <div class="calendar-controls">
                     <button class="nav-btn" id="prevBtn">
                         <i class="fas fa-chevron-left"></i>
@@ -202,7 +208,7 @@
     </div>
 
     
-    <button onclick="toggleChat()" class="btn btn-primary">💬 Chat</button>
+    
 
     <!-- Chat popup -->
     <div id="chatPopup" class="chat-popup d-none">
@@ -216,6 +222,16 @@
     </script>
 
     <style>
+       
+        .text-purple {
+            color: #6E65C6 !important;
+        }
+
+        .icon-btn:hover i {
+            color: #6f42c1; /* A nice Bootstrap-style purple */
+            transform: scale(1.1);
+            transition: all 0.2s ease;
+        }
         .chat-popup {
             position: fixed;
             bottom: 20px;
