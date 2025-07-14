@@ -558,8 +558,14 @@
         }
     });
 
-    document.getElementById('toggleChatBtn').addEventListener('click', () => {
-        document.getElementById('chatSidebar').classList.toggle('hidden');
+    document.getElementById('messageInput').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();// prevent form submission or reload
+            const message = document.getElementById('landingMessageInput').value.trim();
+            if (!message) return;
+            const encodedMessage = encodeURIComponent(message);
+            window.location.href = `/Calendar?message=${encodedMessage}`;
+        }
     });
 
     // Auto-refresh events periodically

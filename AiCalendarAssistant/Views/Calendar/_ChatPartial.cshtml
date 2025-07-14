@@ -14,11 +14,14 @@
         margin-bottom: 0.5rem;
         position: relative;
         word-wrap: break-word;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background-color: rgba(255, 255, 255, 0.05); /* Very light translucent */
+        backdrop-filter: blur(6px);
     }
 
         .chat-message.user {
-            background-color: #e9ecef;
-            color: #212529;
+            background-color: rgba(255, 255, 255, 0.1); /* Light translucent */
+            color: #fff;
             margin-right: auto;
             border-bottom-left-radius: 0;
         }
@@ -26,15 +29,15 @@
         .chat-message.assistant,
         .chat-message.tool,
         .chat-message.system {
-            background-color: #0d6efd;
-            color: white;
+            background-color: rgba(0, 123, 255, 0.15);
+            color: #fff;
             margin-left: auto;
             border-bottom-right-radius: 0;
         }
 
     .timestamp {
         font-size: 0.75rem;
-        color: #6c757d;
+        color: #ccc;
         margin-top: 0.2rem;
         text-align: right;
     }
@@ -44,6 +47,37 @@
         overflow-y: auto;
         padding-right: 0.5rem;
         padding-left: 0.5rem;
+        background-color: transparent;
+    }
+
+
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+            background: transparent;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.12); /* softer, less bright */
+            border-radius: 6px; /* more rounded */
+            border: 1.5px solid rgba(0, 0, 0, 0.1); /* subtle border for depth */
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+
+
+       
+
+    .card-body {
+        background-color: transparent !important;
+    }
+
+    .card {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 </style>
 
@@ -76,18 +110,13 @@
             <p class="text-muted">No chat selected or no messages.</p>
         }
 
-        @if (selectedChatId.HasValue)
-        {
-            <div class="input-group mt-3">
-                <input type="text" id="messageInput" class="form-control" placeholder="Type your message..." />
-                <button class="btn btn-primary" type="button" onclick="sendMessage(@selectedChatId)">Send</button>
-            </div>
-        }
+        
     </div>
 </div>
 
 <script>
     function sendMessage(chatId) {
+        const textbox = document.getElementById("messageInput");
         const text = document.getElementById("messageInput").value;
         if (!text.trim()) return;
 
@@ -100,10 +129,33 @@
         })
         .then(response => response.text())
         .then(data => {
-            location.reload();
+            textboxvalue = "";
+            loadChatMessagesPartial(chatId);
         })
         .catch(error => {
             document.getElementById("responseText").textContent = "Error: " + error;
         });
     }
+
+        function loadChatMessagesPartial(chatId) {
+        fetch(`/Calendar/ChatMessagesPartial?chatId=${chatId}`)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById("Chat").innerHTML = html;
+                  setTimeout(() => {
+                const container = document.getElementById("chatMessagesContainer");
+                if (container) {
+                    container.scrollTop = container.scrollHeight;
+                }
+            }, 50);
+        });
+            
+    }
+
+        document.addEventListener("DOMContentLoaded", function () {
+        const container = document.getElementById("chatMessagesContainer");
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+    });
 </script>

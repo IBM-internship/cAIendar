@@ -10,22 +10,29 @@
 }
 
 body {
-    background: linear-gradient(135deg, #FDF0D5 0%, #43AA8B 100%);
+    background: linear-gradient(135deg, #D0F0FD 0%, #43AA8B 100%);
     min-height: 100dvh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.tui-full-calendar-weekday-grid,
+.tui-full-calendar-daygrid {
+    background-color: transparent !important;
+}
+
+.tui-full-calendar-weekday-grid-event {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    border: none !important;
+}
+
+
 .calendar-container {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
     padding: 20px;
     margin: 20px 0;
 }
 
 .calendar-header {
-    background: linear-gradient(135deg, #FDF0D5 0%, #43AA8B 100%);
+    background-color: transparent !important;
     color: white;
     padding: 20px;
     border-radius: 15px;
@@ -110,13 +117,15 @@ body {
 #calendar {
     max-width: 100%;
     border: none;
-    background-color: #fff;
+    background-color: rgba(255, 255, 255, 0.2); /* translucent white */
+    backdrop-filter: blur(12px); /* subtle blur */
     border-radius: 15px;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     min-height: 700px;
     height: 700px;
 }
+
 
 /* Enhanced Calendar Styling */
 .tui-full-calendar-weekday-grid-line {
@@ -425,26 +434,35 @@ body {
     color: white;
 }
 
-.chat-sidebar {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 300px;
-    height: 100%;
-    background-color: #f8f9fa;
-    border-left: 1px solid #dee2e6;
-    overflow-y: auto;
-    transition: transform 0.3s ease;
-    z-index: 1050;
+.calendar-input-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
 }
 
-    .chat-sidebar.hidden {
-        transform: translateX(100%);
+#messageInput {
+    background-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 2rem;
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    transition: background-color 0.3s ease;
+    width: 100%;
+    max-width: 900px; /* 👈 Wider than before */
+    box-sizing: border-box;
+    font-size: 1.1rem;
+}
+
+    #messageInput::placeholder {
+        color: rgba(255, 255, 255, 0.2);
     }
 
-.chat-toggle-btn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1100;
-}
+    #messageInput:focus {
+        background-color: rgba(255, 255, 255, 0.2);
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.4);
+    }
+
+
