@@ -121,8 +121,11 @@ public class EventProcessor(
             {
                 db.Events.Remove(collidingEvent);
 
+                if (collidingEvent.EventCreatedFromEmail == null) 
+                    continue;
+                
                 SendAsyncFunc(SendCancellationEmailWithScopeAsync(
-                    collidingEvent.EventCreatedFromEmail!.SendingUserEmail,
+                    collidingEvent.EventCreatedFromEmail.SendingUserEmail!,
                     collidingEvent,
                     newEvent.EventCreatedFromEmail!,
                     user));

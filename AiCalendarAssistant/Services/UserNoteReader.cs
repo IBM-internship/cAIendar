@@ -12,7 +12,7 @@ public class UserNoteReader : IUserNoteReader
 		{
 			Title = "Stefan's Party",
 			Body = "next tuesday, 7pm at his place, bring a gift",
-			CreatedOn = DateTime.UtcNow.AddHours(3),
+			CreatedOn = DateTime.UtcNow,
 			IsProcessed=false
 		};
 

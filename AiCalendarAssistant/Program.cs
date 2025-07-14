@@ -16,34 +16,34 @@ using Message = AiCalendarAssistant.Models.Message;
 var builder = WebApplication.CreateBuilder(args);
 
 Env.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
-const string connectionStringFile = "db_connection.txt";
 
-if (!File.Exists(connectionStringFile))
+var connectionString = Environment.GetEnvironmentVariable("ConnectionString");
+
+if (string.IsNullOrEmpty(connectionString))
 {
-    throw new FileNotFoundException("Connection string file not found.", connectionStringFile);
+    throw new InvalidOperationException("ConnectionString not found in environment variables.");
 }
-
-var connectionString = File.ReadAllText(connectionStringFile).Trim();
 
 // Add services to the containers
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
-{
-    options.SignIn.RequireConfirmedAccount = false;
-    options.Password.RequireDigit = false;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 4;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>();
+    {
+        options.SignIn.RequireConfirmedAccount = false;
+        options.Password.RequireDigit = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequiredLength = 4;
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext>();
 
 var googleClientId = Environment.GetEnvironmentVariable("Authentication__Google__ClientId")
                      ?? throw new InvalidOperationException("Google ClientId not found in environment variables.");
 var googleClientSecret = Environment.GetEnvironmentVariable("Authentication__Google__ClientSecret")
-                         ?? throw new InvalidOperationException("Google ClientSecret not found in environment variables.");
+                         ?? throw new InvalidOperationException(
+                             "Google ClientSecret not found in environment variables.");
 
 builder.Services.AddAuthentication()
     .AddGoogle(options =>
@@ -122,28 +122,28 @@ builder.Services.AddScoped<ChatMessenger>();
 builder.Services.AddSingleton<EmailComposer>();
 builder.Services.AddScoped<EventProcessor>();
 
-var watsonxUrl        = Environment.GetEnvironmentVariable("Llm__Url");
-var watsonxProjectId  = Environment.GetEnvironmentVariable("Llm__ProjectId");
-var watsonxModelId    = Environment.GetEnvironmentVariable("Llm__ModelId");
-var watsonxApiKey     = Environment.GetEnvironmentVariable("Llm__ApiKey");
-var watsonxVersion    = Environment.GetEnvironmentVariable("Llm__Version");
-var ollamaUse         = Environment.GetEnvironmentVariable("Llm__UseOllama");
-var ollamaUrl         = Environment.GetEnvironmentVariable("Llm__OllamaUrl");
-var ollamaModel       = Environment.GetEnvironmentVariable("Llm__OllamaModel");
-var ollamaApiKey      = Environment.GetEnvironmentVariable("Llm__OllamaApiKey");
+var watsonxUrl = Environment.GetEnvironmentVariable("Llm__Url");
+var watsonxProjectId = Environment.GetEnvironmentVariable("Llm__ProjectId");
+var watsonxModelId = Environment.GetEnvironmentVariable("Llm__ModelId");
+var watsonxApiKey = Environment.GetEnvironmentVariable("Llm__ApiKey");
+var watsonxVersion = Environment.GetEnvironmentVariable("Llm__Version");
+var ollamaUse = Environment.GetEnvironmentVariable("Llm__UseOllama");
+var ollamaUrl = Environment.GetEnvironmentVariable("Llm__OllamaUrl");
+var ollamaModel = Environment.GetEnvironmentVariable("Llm__OllamaModel");
+var ollamaApiKey = Environment.GetEnvironmentVariable("Llm__OllamaApiKey");
 
 // Create LlmSettings from environment variables
 var llmSettings = new LlmSettings
 {
-    Url         = watsonxUrl        ?? throw new InvalidOperationException("Missing Llm__Url"),
-    ProjectId   = watsonxProjectId  ?? throw new InvalidOperationException("Missing Llm__ProjectId"),
-    ModelId     = watsonxModelId    ?? throw new InvalidOperationException("Missing Llm__ModelId"),
-    ApiKey      = watsonxApiKey     ?? throw new InvalidOperationException("Missing Llm__ApiKey"),
-    Version     = watsonxVersion    ?? "2023-10-25",
-    UseOllama   = bool.TryParse(ollamaUse, out var useOllama) && useOllama,
-    OllamaUrl   = ollamaUrl         ?? "http://host.docker.internal:11434",
-    OllamaModel = ollamaModel       ?? "granite3.3:latest",
-    OllamaApiKey =  ollamaApiKey
+    Url = watsonxUrl ?? throw new InvalidOperationException("Missing Llm__Url"),
+    ProjectId = watsonxProjectId ?? throw new InvalidOperationException("Missing Llm__ProjectId"),
+    ModelId = watsonxModelId ?? throw new InvalidOperationException("Missing Llm__ModelId"),
+    ApiKey = watsonxApiKey ?? throw new InvalidOperationException("Missing Llm__ApiKey"),
+    Version = watsonxVersion ?? "2023-10-25",
+    UseOllama = bool.TryParse(ollamaUse, out var useOllama) && useOllama,
+    OllamaUrl = ollamaUrl ?? "http://host.docker.internal:11434",
+    OllamaModel = ollamaModel ?? "granite3.3:latest",
+    OllamaApiKey = ollamaApiKey
 };
 
 builder.Services.AddSingleton(llmSettings);
@@ -160,28 +160,28 @@ var app = builder.Build();
 var router = app.Services.GetRequiredService<PromptRouter>();
 
 var chat = new PromptRequest([
-    new Message("system", "You are a helpful assistant."),
-    new Message("user", "What is the capital of France?")
-],
-JsonDocument.Parse(
-    """
-    {
-      "type": "json_schema",
-      "json_schema": {
-        "name": "email_info",
-        "strict": false,
-        "schema": {
-          "type": "object",
-          "properties": {
-            "capital": { "type": "string" },
-            "date": { "type": "string", "format": "date" }
-          },
-          "required": ["capital"],
-          "additionalProperties": false
+        new Message("system", "You are a helpful assistant."),
+        new Message("user", "What is the capital of France?")
+    ],
+    JsonDocument.Parse(
+        """
+        {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "email_info",
+            "strict": false,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "capital": { "type": "string" },
+                "date": { "type": "string", "format": "date" }
+              },
+              "required": ["capital"],
+              "additionalProperties": false
+            }
+          }
         }
-      }
-    }
-    """).RootElement);
+        """).RootElement);
 
 
 // var chatResp = await router.SendAsync(chat);
