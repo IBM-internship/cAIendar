@@ -1,31 +1,29 @@
-# ---- build stage ----
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-
-# Copy solution & projects
-COPY *.sln .
-COPY AiCalendarAssistant.Data/*.csproj AiCalendarAssistant.Data/
-COPY AiCalendarAssistant/*.csproj AiCalendarAssistant/
-
-# Restore dependencies
-RUN dotnet restore
-
-# Copy everything else and publish
-COPY . .
-WORKDIR /src/AiCalendarAssistant
-RUN dotnet publish -c Release -o /app/publish
-
-# ---- runtime stage ----
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+# This stage is used when running from VS in fast mode (Default for Debug configuration)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
+RUN apk add --no-cache icu-libs
+USER $APP_UID
 WORKDIR /app
+EXPOSE 8080
+EXPOSE 8081
 
-# Copy published output
-COPY --from=build /app/publish .
 
-# Expose ports (if needed)
-EXPOSE 5032
-EXPOSE 7194
+# This stage is used to build the service project
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+COPY ["AiCalendarAssistant/AiCalendarAssistant.csproj", "AiCalendarAssistant/"]
+RUN dotnet restore "./AiCalendarAssistant/AiCalendarAssistant.csproj"
+COPY . .
+WORKDIR "/src/AiCalendarAssistant"
+RUN dotnet build "./AiCalendarAssistant.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Run the app
+# This stage is used to publish the service project to be copied to the final stage
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "./AiCalendarAssistant.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "AiCalendarAssistant.dll"]
-
