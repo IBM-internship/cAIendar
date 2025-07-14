@@ -1,5 +1,9 @@
-﻿@using Microsoft.AspNetCore.Identity
+﻿@model AiCalendarAssistant.Controllers.ChatViewModel
+@using Microsoft.AspNetCore.Identity
 @inject SignInManager<AiCalendarAssistant.Data.Models.ApplicationUser> SignInManager
+@{
+    var selectedChatId = (int?)ViewData["SelectedChatId"];
+}
 
 <!-- 🎥 Background Video -->
 <div class="video-background">
@@ -14,28 +18,50 @@
 <section class="text-center py-5 bg-transparent position-relative" style="z-index: 1;">
     <div class="container text-white">
         <h1 class="display-4 fw-bold">
-            Welcome to your <span class="text-primary"> personal</span><br>
+            Welcome to your <span class="text-primary"> personal</span><br />
             <span class="text-primary">AI-powered </span><br />
             calendar <span class="text-primary"> assistant</span>
         </h1>
         <p class="lead mt-3">Imagine the freedom of personal assistance, for free.</p><br />
 
-        @if (!SignInManager.IsSignedIn(User))
-        {
-            <a class="btn btn-light btn-lg px-4"
-               asp-area="Identity" asp-page="/Account/Register">
-                Sign up
-            </a>
-            <a class="btn btn-light btn-lg px-4"
-               asp-area="Identity" asp-page="/Account/Login">
-                Already in? Sign in here
-            </a>
-            <p class="text-light mt-2">No credit card required.</p>
-        }
+        
+            <form id="createChatForm" method="post" action="/Calendar/Create">
+                @Html.AntiForgeryToken()
+                <input type="text"
+                       id="landingMessageInput"
+                       class="form-control form-control-lg w-50 mx-auto"
+                       onkeydown="handleKey(event)"
+                       placeholder="Type message..."
+                       autocomplete="off" />
+            </form>
+
+            <p class="text-light mt-2">Press Enter to continue. No credit card required.</p>
+
+            <div class="mt-4">
+                <a class="btn btn-light btn-lg px-4 me-2" asp-area="Identity" asp-page="/Account/Register">
+                    Sign up
+                </a>
+                <a class="btn btn-light btn-lg px-4" asp-area="Identity" asp-page="/Account/Login">
+                    Already in? Sign in here
+                </a>
+            </div>
+        
     </div>
 </section>
 
+<script>
+    function handleKey(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Prevent form submission or page reload
 
+            const messageInput = document.getElementById('landingMessageInput');
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            document.getElementById('createChatForm').submit();
+        }
+    }
+</script>
 
 <!-- 🎨 CSS -->
 <style>
@@ -91,13 +117,41 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(to bottom right, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7));
+        background: linear-gradient(to bottom right, rgba(0,0,0,0.4), rgba(0,0,0,0.7));
     }
 
-        
-        @@keyframes zoomVideo {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.1); }
+    @@keyframes zoomVideo {
+        0%
+
+    {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(1.1);
+    }
+
+    }
+
+    #landingMessageInput {
+        background-color: rgba(255, 255, 255, 0);
+        border: 2px solid rgba(93, 176, 151, 0.4);
+        border-radius: 50px;
+        color: white;
+        padding: 0.5rem 1rem;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        outline: none;
+    }
+
+        #landingMessageInput::placeholder {
+            color: rgba(255, 255, 255, 0.6);
         }
-    
+
+        #landingMessageInput:hover,
+        #landingMessageInput:focus {
+            background-color: rgba(93, 176, 151, 0.1);
+            border-color: var(--blue-accent);
+            box-shadow: 0 0 8px rgba(93, 176, 151, 0.6);
+            color: white;
+        }
 </style>
