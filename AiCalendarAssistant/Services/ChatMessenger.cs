@@ -11,7 +11,7 @@ using PromptMessage = AiCalendarAssistant.Models.Message;
 namespace AiCalendarAssistant.Services;
 
 public sealed class ChatMessenger(
-    ApplicationDbContext db,
+    ApplicationDbContext context,
     PromptRouter router,
     ICalendarService calendarService,
     ITaskService taskService)
@@ -20,9 +20,13 @@ public sealed class ChatMessenger(
     private const string SystemPrompt =
         """
         You are the user's personal calendar manager. You help them organise events,
-        meetings, notes and tasks.  
+        meetings and tasks.  
         When the user asks for information that requires external data, call one of
         the available tools with a JSON tool_call.
+        If the user asks you to do something that requires mutliple steps, you can
+        call a tool to fetch the data, then use the data to call another tool and 
+        so on until you have done everything to complete the task or have gathered
+        enough information to answer the user's question.
         """;
 
     private static readonly JsonDocument ToolDoc = JsonDocument.Parse(
@@ -97,7 +101,8 @@ public sealed class ChatMessenger(
                   "is_all_day": { "type": "boolean" },
                   "is_in_person": { "type": "boolean" },
                   "meeting_link": { "type": "string" },
-                  "importance": { "type": "string", "enum": ["Low","Normal","High"] }
+                  "importance": { "type": "string", "enum": ["Low","Normal","High"] },
+                  "color": { "type": "string", "description": "Optional color for the event with words" }
                 },
                 "required": ["id"]
               }
@@ -128,7 +133,8 @@ public sealed class ChatMessenger(
                   "title": { "type": "string" },
                   "description": { "type": "string" },
                   "date": { "type": "string", "description": "ISO-8601 date" },
-                  "importance": { "type": "string", "enum": ["Low","Normal","High"] }
+                  "importance": { "type": "string", "enum": ["Low","Normal","High"] },
+                  "color": { "type": "string", "description": "Optional color for the event with words" }
                 },
                 "required": ["title","date"]
               }
@@ -169,47 +175,55 @@ public sealed class ChatMessenger(
           }
         ]
         """);
-    // ──────────────────────────────────────────────────────────────────────────
-    public async Task<DataMessage> GenerateAssistantMessageAsync(
-        Chat chat,
-        ApplicationUser user,
-        CancellationToken ct = default)
+		public async Task<DataMessage> GenerateAssistantMessageAsync(
+    Chat chat,
+    ApplicationUser user,
+    CancellationToken ct = default)
+{
+    // 1) build conversation history
+    var history = new List<PromptMessage> { new("system", SystemPrompt) };
+    var messages = await context.Messages
+        .Where(m => m.ChatId == chat.Id)
+        .OrderBy(m => m.Pos)
+        .ToListAsync(ct);
+    history.AddRange(messages.Select(m => new PromptMessage(m.Role.ToString().ToLowerInvariant(), m.Text)));
+
+    DataMessage finalMsg = null!;
+    int position = messages.Count;
+
+    // 2) loop until the model returns no function calls
+    while (true)
     {
-        // 1) build conversation history
-        var history = new List<PromptMessage> { new("system", SystemPrompt) };
-
-        var messages = await db.Messages
-            .Where(m => m.ChatId == chat.Id)
-            .OrderBy(m => m.Pos)
-            .ToListAsync(ct);
-
-        history.AddRange(messages.Select(m => new PromptMessage(m.Role.ToString().ToLowerInvariant(), m.Text)));
-
-        // 2) first pass – let the model decide whether to call a tool
-        var firstReq = new PromptRequest(
+        // send the history with tools enabled every time
+        var req = new PromptRequest(
             history,
             Tools: ToolDoc.RootElement,
             ToolChoice: "auto");
+        var resp = await router.SendAsync(req, user, ct);
 
-        var firstResp = await router.SendAsync(firstReq, user, ct);
+        // if no calls, this is our final assistant output
+        if (!resp.HasToolCalls)
+        {
+            finalMsg = await PersistAssistantReplyAsync(
+                chat,
+                resp.Content ?? string.Empty,
+                position,
+                ct);
+            break;
+        }
 
-        // 3) if no tool call, persist answer & return
-        if (!firstResp.HasToolCalls)
-            return await PersistAssistantReplyAsync(
-                chat, firstResp.Content ?? string.Empty, messages.Count, ct);
-
-        // 4) add the assistant message that CONTAINS the tool_calls
+        // otherwise, record the assistant’s “tool call” message
         var assistantWithCalls = new PromptMessage(
             "assistant",
-            firstResp.Content ?? string.Empty,
-            firstResp.ToolCalls);
+            resp.Content ?? string.Empty,
+            resp.ToolCalls);
         history.Add(assistantWithCalls);
 
-        // 5) handle each tool-call, append the tool messages
-        foreach (var call in firstResp.ToolCalls!)
+        // execute each function and append its “tool” output
+        foreach (var call in resp.ToolCalls!)
         {
             var payload = await ExecuteToolCallAsync(call, chat.UserId, ct);
-            if (payload is null) continue; // unknown tool → skip
+            if (payload is null) continue;
 
             history.Add(new PromptMessage(
                 "tool",
@@ -217,20 +231,75 @@ public sealed class ChatMessenger(
                 ToolCalls: null,
                 ToolCallId: call.Id));
         }
-
-        // 6) second pass – assistant now has the data
-        var followUp = new PromptRequest(history);
-        var finalResp = await router.SendAsync(followUp, user, ct);
-
-        return await PersistAssistantReplyAsync(
-            chat, finalResp.Content ?? string.Empty, messages.Count, ct);
+        // now loop back, sending the enriched history again
     }
 
+    return finalMsg;
+}
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // public async Task<DataMessage> GenerateAssistantMessageAsync(
+    //     Chat chat,
+    //     ApplicationUser user,
+    //     CancellationToken ct = default)
+    // {
+    //     // 1) build conversation history
+    //     var history = new List<PromptMessage> { new("system", SystemPrompt) };
+    //
+    //     var messages = await context.Messages
+    //         .Where(m => m.ChatId == chat.Id)
+    //         .OrderBy(m => m.Pos)
+    //         .ToListAsync(ct);
+    //
+    //     history.AddRange(messages.Select(m => new PromptMessage(m.Role.ToString().ToLowerInvariant(), m.Text)));
+    //
+    //     // 2) first pass – let the model decide whether to call a tool
+    //     var firstReq = new PromptRequest(
+    //         history,
+    //         Tools: ToolDoc.RootElement,
+    //         ToolChoice: "auto");
+    //
+    //     var firstResp = await router.SendAsync(firstReq, user, ct);
+    //
+    //     // 3) if no tool call, persist answer & return
+    //     if (!firstResp.HasToolCalls)
+    //         return await PersistAssistantReplyAsync(
+    //             chat, firstResp.Content ?? string.Empty, messages.Count, ct);
+    //
+    //     // 4) add the assistant message that CONTAINS the tool_calls
+    //     var assistantWithCalls = new PromptMessage(
+    //         "assistant",
+    //         firstResp.Content ?? string.Empty,
+    //         firstResp.ToolCalls);
+    //     history.Add(assistantWithCalls);
+    //
+    //     // 5) handle each tool-call, append the tool messages
+    //     foreach (var call in firstResp.ToolCalls!)
+    //     {
+    //         var payload = await ExecuteToolCallAsync(call, chat.UserId, ct);
+    //         if (payload is null) continue; // unknown tool → skip
+    //
+    //         history.Add(new PromptMessage(
+    //             "tool",
+    //             payload,
+    //             ToolCalls: null,
+    //             ToolCallId: call.Id));
+    //     }
+    //
+    //     // 6) second pass – assistant now has the data
+    //     var followUp = new PromptRequest(history);
+    //     var finalResp = await router.SendAsync(followUp, user, ct);
+    //
+    //     return await PersistAssistantReplyAsync(
+    //         chat, finalResp.Content ?? string.Empty, messages.Count, ct);
+    // }
+    //
     private async Task<string?> ExecuteToolCallAsync(
         ToolCall call,
         string? userId,
         CancellationToken ct)
     {
+		Console.WriteLine($"\n\n\nAgent executing tool call: {call.Name} with args: {call.Arguments}\n\n\n");
         return call.Name switch
         {
             "get_events_in_time_range" => await HandleGetEventsInTimeRangeAsync(call, userId, ct),
@@ -287,6 +356,7 @@ public sealed class ChatMessenger(
                 e.IsAllDay,
                 e.IsInPerson,
                 e.MeetingLink,
+				e.Color,
                 importance = e.Importance.ToString()
             })
         });
@@ -398,30 +468,35 @@ private async Task<string> HandleCreateEventAsync(
     await calendarService.AddEventAsync(ev);
     return JsonSerializer.Serialize(new { success = true, id = ev.Id });
 }
-    private async Task<string> HandleUpdateEventAsync(
-        ToolCall call,
-        string? userId,
-        CancellationToken ct)
-    {
-        var args = NormalizeArguments(call.Arguments);
-        var ev = new Event
-        {
-            Id          = args.GetProperty("id").GetInt32(),
-            Title       = args.GetProperty("title").GetString(),
-            Description = args.GetProperty("description").GetString(),
-            Start       = DateTime.Parse(args.GetProperty("start").GetString()!, null, DateTimeStyles.RoundtripKind),
-            End         = DateTime.Parse(args.GetProperty("end").GetString()!,   null, DateTimeStyles.RoundtripKind),
-            Location    = args.GetProperty("location").GetString(),
-            IsAllDay    = args.GetProperty("is_all_day").GetBoolean(),
-            IsInPerson  = args.GetProperty("is_in_person").GetBoolean(),
-            MeetingLink = args.GetProperty("meeting_link").GetString(),
-            Importance  = Enum.Parse<Importance>(args.GetProperty("importance").GetString() ?? "Normal"),
-            UserId      = userId
-        };
+private async Task<string> HandleUpdateEventAsync(
+    ToolCall call,
+    string? userId,
+    CancellationToken ct)
+{
+    var args = NormalizeArguments(call.Arguments);
+    var id = args.GetProperty("id").GetInt32();
 
-        var ok = await calendarService.ReplaceEventAsync(ev);
-        return JsonSerializer.Serialize(new { success = ok, id = ev.Id });
-    }
+    // 1. Fetch the existing event
+    var ev = await calendarService.GetEventByIdAsync(id);
+    if (ev == null)
+        return JsonSerializer.Serialize(new { success = false, error = "Event not found", id });
+
+    // 2. Only update provided fields
+    if (args.TryGetProperty("title", out var titleProp))        ev.Title       = titleProp.GetString();
+    if (args.TryGetProperty("description", out var descProp))   ev.Description = descProp.GetString();
+    if (args.TryGetProperty("start", out var startProp))        ev.Start       = DateTime.Parse(startProp.GetString()!, null, DateTimeStyles.RoundtripKind);
+    if (args.TryGetProperty("end", out var endProp))            ev.End         = DateTime.Parse(endProp.GetString()!, null, DateTimeStyles.RoundtripKind);
+    if (args.TryGetProperty("location", out var locProp))       ev.Location    = locProp.GetString();
+    if (args.TryGetProperty("is_all_day", out var allDayProp))  ev.IsAllDay    = allDayProp.GetBoolean();
+    if (args.TryGetProperty("is_in_person", out var inPersProp))ev.IsInPerson  = inPersProp.GetBoolean();
+    if (args.TryGetProperty("meeting_link", out var linkProp))  ev.MeetingLink = linkProp.GetString();
+    if (args.TryGetProperty("importance", out var impProp))     ev.Importance  = Enum.Parse<Importance>(impProp.GetString() ?? "Normal");
+
+    // You might want to enforce userId or permissions here
+
+    var ok = await calendarService.ReplaceEventAsync(ev);
+    return JsonSerializer.Serialize(new { success = ok, id = ev.Id });
+}
 
     private async Task<string> HandleDeleteEventAsync(
         ToolCall call,
@@ -455,27 +530,31 @@ private async Task<string> HandleCreateEventAsync(
         return JsonSerializer.Serialize(new { success = true, id = task.Id });
     }
 
-    private async Task<string> HandleUpdateTaskAsync(
-        ToolCall call,
-        string? userId,
-        CancellationToken ct)
-    {
-        var args = NormalizeArguments(call.Arguments);
-        var task = new UserTask
-        {
-            Id          = args.GetProperty("id").GetInt32(),
-            Title       = args.GetProperty("title").GetString(),
-            Description = args.GetProperty("description").GetString(),
-            Date        = DateOnly.Parse(args.GetProperty("date").GetString()!),
-            Importance  = Enum.Parse<Importance>(args.GetProperty("importance").GetString() ?? "Normal"),
-            IsCompleted = args.GetProperty("is_completed").GetBoolean(),
-            UserId      = userId
-        };
+private async Task<string> HandleUpdateTaskAsync(
+    ToolCall call,
+    string? userId,
+    CancellationToken ct)
+{
+    var args = NormalizeArguments(call.Arguments);
+    var id = args.GetProperty("id").GetInt32();
 
-        var ok = await taskService.ReplaceTaskAsync(task);
-        return JsonSerializer.Serialize(new { success = ok, id = task.Id });
-    }
+    // 1. Fetch the existing task
+    var task = await taskService.GetTaskByIdAsync(id);
+    if (task == null)
+        return JsonSerializer.Serialize(new { success = false, error = "Task not found", id });
 
+    // 2. Only update provided fields
+    if (args.TryGetProperty("title", out var titleProp))         task.Title       = titleProp.GetString();
+    if (args.TryGetProperty("description", out var descProp))    task.Description = descProp.GetString();
+    if (args.TryGetProperty("date", out var dateProp))           task.Date        = DateOnly.Parse(dateProp.GetString()!);
+    if (args.TryGetProperty("importance", out var impProp))      task.Importance  = Enum.Parse<Importance>(impProp.GetString() ?? "Normal");
+    if (args.TryGetProperty("is_completed", out var compProp))   task.IsCompleted = compProp.GetBoolean();
+
+    // You might want to enforce userId or permissions here
+
+    var ok = await taskService.ReplaceTaskAsync(task);
+    return JsonSerializer.Serialize(new { success = ok, id = task.Id });
+}
     private async Task<string> HandleDeleteTaskAsync(
         ToolCall call,
         string? userId,
@@ -502,8 +581,8 @@ private async Task<string> HandleCreateEventAsync(
             SentOn = DateTime.UtcNow
         };
 
-        db.Messages.Add(msg);
-        await db.SaveChangesAsync(ct);
+        context.Messages.Add(msg);
+        await context.SaveChangesAsync(ct);
         return msg;
     }
 }
