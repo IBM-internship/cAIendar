@@ -21,7 +21,7 @@ namespace AiCalendarAssistant.Controllers.ApiControllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] SearchRequest request)
+        public async Task<IActionResult> Search([FromBody] SearchRequest request)
         {
             if (string.IsNullOrWhiteSpace(request?.Query))
                 return BadRequest(new { error = "Missing 'query' in request body." });
@@ -37,6 +37,24 @@ namespace AiCalendarAssistant.Controllers.ApiControllers
             catch
             {
                 return StatusCode(500, new { error = "Failed to parse search result." });
+            }
+        }
+        [HttpPost("scrapefirst")]
+        public async Task<IActionResult> SearchAndScrape([FromBody] SearchRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request?.Query))
+                return BadRequest(new { error = "Missing 'query' in request body." });
+
+            var resultJson = await _searchService.SearchAndScrapeAsync(request.Query);
+
+            try
+            {
+                var parsed = JsonSerializer.Deserialize<object>(resultJson);
+                return Ok(parsed);
+            }
+            catch
+            {
+                return StatusCode(500, new { error = "Failed to parse final response." });
             }
         }
     }
