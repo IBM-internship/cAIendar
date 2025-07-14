@@ -641,6 +641,8 @@ private async Task<string> HandleInternetSearchAsync(
         var subResp = await _router.SendAsync(subReq, userId, ct);
         var summary = subResp.Content?.Trim() ?? "";
 
+		Console.WriteLine($"Search summary: {summary}\n\n\n\n\n");
+
         // 4) Return just the bits we care about
         return JsonSerializer.Serialize(new
         {
