@@ -399,10 +399,15 @@
             });
 
             if (response.ok) {
-                calendar.deleteEvent(eventId, '1');
+                calendar.deleteEvent(eventId, '1'); 
                 eventModal.hide();
                 eventDetailsModal.hide();
                 showToast('Event was deleted successfully!', 'success');
+
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000); 
             } else {
                 const errorText = await response.text();
                 showToast(`Error while deleting event: ${errorText}`, 'error');
@@ -412,6 +417,7 @@
             showToast('Error while deleting event', 'error');
         }
     }
+
 
     function createQuickEvent(eventData) {
         const title = prompt('Insert event title:');
