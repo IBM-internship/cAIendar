@@ -21,7 +21,7 @@ public class UserNoteProcessor(PromptRouter router, IUserNoteReader reader)
               "type": "object",
               "properties": {
                 "title_of_event": { "type": "string" },
-                "importance": { "type": "string", "enum": ["high", "medium", "low"]},
+                "importance": { "type": "string", "enum": ["low", "medium", "high"]},
                 "date": { "type": "string" },
                 "start_time": { "type": "string" },
                 "end_time": { "type": "string" },
@@ -47,7 +47,7 @@ public class UserNoteProcessor(PromptRouter router, IUserNoteReader reader)
 		// Extra: new(){["temperature"] = 1.5, ["top_p"] = 0.8},
         ResponseFormat: schemaDoc.RootElement);
 
-        var response = await router.SendAsync(prompt, ct);
+        var response = await router.SendAsync(prompt, null, ct);
 
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Extracted UserNote Info → {response.Content}");

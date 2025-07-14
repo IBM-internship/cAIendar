@@ -27,14 +27,37 @@ public class WatsonxClient(HttpClient http, TokenProvider tokens, LlmSettings cf
 		{
 			["model"]    = cfg.ModelId,
 			["project_id"]  = cfg.ProjectId,
-			["messages"] = p.Messages.Select(m =>
-			{
-				if (m.Role == "system" && !string.IsNullOrWhiteSpace(additionalInstructions))
-				{
-					return new { role = m.Role, content = m.Content + additionalInstructions };
-				}
-				return new { role = m.Role, content = m.Content };
-			}).ToArray()
+ ["messages"] = p.Messages.Select(m =>
+ {
+     // final content (optionally appending extra system instructions)
+     var content = (m.Role == "system" && !string.IsNullOrWhiteSpace(additionalInstructions))
+                   ? m.Content + additionalInstructions
+                   : m.Content;
+
+     // anonymous type → JSON; Opts ignores nulls, so unused props disappear
+     return new
+     {
+         role    = m.Role,
+         content,
+
+         // assistant messages that *created* a tool call
+         tool_calls = (m.ToolCalls is { Count: > 0 })
+                      ? m.ToolCalls.Select(tc => new
+                        {
+                            id   = tc.Id,
+                            type = "function",
+                            function = new
+                            {
+                                name      = tc.Name,
+                                arguments = tc.Arguments
+                            }
+                        })
+                      : null,
+
+         // tool *response* messages
+         tool_call_id = string.IsNullOrWhiteSpace(m.ToolCallId) ? null : m.ToolCallId
+     };
+ }).ToArray()
 		};
 		Console.WriteLine($"Payload messages: {JsonSerializer.Serialize(payload["messages"], Opts)}");
 		//

@@ -1,0 +1,31 @@
+# ---- build stage ----
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy solution & projects
+COPY *.sln .
+COPY AiCalendarAssistant.Data/*.csproj AiCalendarAssistant.Data/
+COPY AiCalendarAssistant/*.csproj AiCalendarAssistant/
+
+# Restore dependencies
+RUN dotnet restore
+
+# Copy everything else and publish
+COPY . .
+WORKDIR /src/AiCalendarAssistant
+RUN dotnet publish -c Release -o /app/publish
+
+# ---- runtime stage ----
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Copy published output
+COPY --from=build /app/publish .
+
+# Expose ports (if needed)
+EXPOSE 5032
+EXPOSE 7194
+
+# Run the app
+ENTRYPOINT ["dotnet", "AiCalendarAssistant.dll"]
+

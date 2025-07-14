@@ -45,23 +45,24 @@ public class EmailComposer(PromptRouter router)
           }
         }
         """);
-    
-    public async Task<string> ComposeCancellationEmailAsync(string recipient, Event cancelledEvent, Email reasonForCancellation)
+
+    public async Task<string> ComposeCancellationEmailAsync(string recipient, Event cancelledEvent,
+        Email reasonForCancellation, ApplicationUser user)
     {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine("Composing cancellation email.");
         Console.ResetColor();
-        
-        var reasonForCancellationSummary = await GetCancellationReasonSummaryAsync(reasonForCancellation);
-        return await ComposeCancellationEmailAsync(recipient, cancelledEvent, reasonForCancellationSummary);
+
+        var reasonForCancellationSummary = await GetCancellationReasonSummaryAsync(reasonForCancellation, user);
+        return await ComposeCancellationEmailAsync(recipient, cancelledEvent, reasonForCancellationSummary, user);
     }
-    
-    private async Task<string> GetCancellationReasonSummaryAsync(Email reasonForCancellation)
+
+    private async Task<string> GetCancellationReasonSummaryAsync(Email? reasonForCancellation, ApplicationUser user)
     {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine("Composing reason for cancellation summary.");
         Console.ResetColor();
-        
+
         // Add null check for reasonForCancellation
         if (reasonForCancellation == null)
         {
@@ -70,7 +71,7 @@ public class EmailComposer(PromptRouter router)
             Console.ResetColor();
             return "A higher priority event has been scheduled.";
         }
-        
+
         try
         {
             var prompt = new PromptRequest(
@@ -87,15 +88,15 @@ public class EmailComposer(PromptRouter router)
                 new Message("user",
                     $"""
                      Summarise the reason for cancellation from the following email:
-                     
+
                      From: {reasonForCancellation.SendingUserEmail ?? "Unknown"}
                      Subject: {reasonForCancellation.Title ?? "No Subject"}
                      Body: {reasonForCancellation.Body ?? "No content"}
                      """)
             ], ResponseFormat: ReasonForCancellationSummarySchema.RootElement);
 
-            var response = await router.SendAsync(prompt); // Make it properly async
-            
+            var response = await router.SendAsync(prompt, user); // Make it properly async
+
             if (response?.Content == null)
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
@@ -103,14 +104,14 @@ public class EmailComposer(PromptRouter router)
                 Console.ResetColor();
                 return "A higher priority event has been scheduled.";
             }
-            
+
             using var doc = JsonDocument.Parse(response.Content);
             var summary = doc.RootElement.GetProperty("summary").GetString();
-            
+
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Reason for cancellation summary: {summary ?? "No summary provided"}");
             Console.ResetColor();
-            
+
             return summary ?? "A higher priority event has been scheduled.";
         }
         catch (Exception ex)
@@ -122,12 +123,13 @@ public class EmailComposer(PromptRouter router)
         }
     }
 
-    private async Task<string> ComposeCancellationEmailAsync(string recipient, Event cancelledEvent, string reasonForCancellationSummary)
+    private async Task<string> ComposeCancellationEmailAsync(string recipient, Event cancelledEvent,
+        string reasonForCancellationSummary, ApplicationUser user)
     {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Composing cancellation email for {recipient} regarding event {cancelledEvent.Title}.");
         Console.ResetColor();
-        
+
         try
         {
             // TODO: add more context for the recipient (is he a boss or a colleague, etc.)
@@ -142,17 +144,20 @@ public class EmailComposer(PromptRouter router)
                 new Message("user",
                     $"""
                      Compose an email to {recipient} informing them that the following event has been cancelled:
-                     
+
                      Title: {cancelledEvent.Title}
                      Date: {cancelledEvent.Start:yyyy-MM-dd}
                      Start Time: {cancelledEvent.Start:HH:mm}
                      End Time: {cancelledEvent.End:HH:mm}
                      Reason for cancellation: {reasonForCancellationSummary}
+                     Use language according to the context of the email that is being cancelled, and the tone or relationship with the recipient.
+                     Talk to the recipient in first person, as if you were the one sending the email.
+                     Use the user's information to make the email more personal, if available.
                      """)
             ], ResponseFormat: CancellationEmailSchema.RootElement);
 
-            var response = await router.SendAsync(prompt); // Make it properly async
-            
+            var response = await router.SendAsync(prompt, user); // Make it properly async
+
             if (response?.Content == null)
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
@@ -160,19 +165,21 @@ public class EmailComposer(PromptRouter router)
                 Console.ResetColor();
                 return CreateDefaultCancellationEmail(recipient, cancelledEvent, reasonForCancellationSummary);
             }
-            
+
             using var doc = JsonDocument.Parse(response.Content);
             var emailBody = doc.RootElement.GetProperty("email-body").GetString();
-            
+
             StringBuilder emailBodyBuilder = new();
-            emailBodyBuilder.AppendLine(emailBody ?? CreateDefaultCancellationEmail(recipient, cancelledEvent, reasonForCancellationSummary));
+            emailBodyBuilder.AppendLine(emailBody ??
+                                        CreateDefaultCancellationEmail(recipient, cancelledEvent,
+                                            reasonForCancellationSummary));
             emailBodyBuilder.AppendLine();
             emailBodyBuilder.AppendLine("[ This response was generated by an AI assistant ]");
-            
+
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Cancellation email body:\n{emailBodyBuilder}");
             Console.ResetColor();
-            
+
             return emailBodyBuilder.ToString();
         }
         catch (Exception ex)
@@ -183,28 +190,29 @@ public class EmailComposer(PromptRouter router)
             return CreateDefaultCancellationEmail(recipient, cancelledEvent, reasonForCancellationSummary);
         }
     }
-    
-    private static string CreateDefaultCancellationEmail(string recipient, Event cancelledEvent, string reasonForCancellationSummary)
+
+    private static string CreateDefaultCancellationEmail(string recipient, Event cancelledEvent,
+        string reasonForCancellationSummary)
     {
         return $"""
-               Dear {recipient},
-               
-               I hope this email finds you well.
-               
-               I am writing to inform you that the following event has been cancelled:
-               
-               Event: {cancelledEvent.Title}
-               Date: {cancelledEvent.Start:yyyy-MM-dd}
-               Time: {cancelledEvent.Start:HH:mm} - {cancelledEvent.End:HH:mm}
-               
-               Reason for cancellation: {reasonForCancellationSummary}
-               
-               I apologize for any inconvenience this may cause.
-               
-               Best regards,
-               Your Calendar Assistant
-               
-               [ This response was generated by an AI assistant ]
-               """;
+                Dear {recipient},
+
+                I hope this email finds you well.
+
+                I am writing to inform you that the following event has been cancelled:
+
+                Event: {cancelledEvent.Title}
+                Date: {cancelledEvent.Start:yyyy-MM-dd}
+                Time: {cancelledEvent.Start:HH:mm} - {cancelledEvent.End:HH:mm}
+
+                Reason for cancellation: {reasonForCancellationSummary}
+
+                I apologize for any inconvenience this may cause.
+
+                Best regards,
+                Your Calendar Assistant
+
+                [ This response was generated by an AI assistant ]
+                """;
     }
 }

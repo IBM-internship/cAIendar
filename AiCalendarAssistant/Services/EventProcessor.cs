@@ -34,7 +34,7 @@ public class EventProcessor(
         }
         """);
 
-    public async Task ProcessEventAsync(Event newEvent, CancellationToken ct = default)
+    public async Task ProcessEventAsync(Event newEvent, ApplicationUser user, CancellationToken ct = default)
     {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Processing event {newEvent.Title}");
@@ -55,7 +55,8 @@ public class EventProcessor(
 
         if (newEvent.EventCreatedFromEmailId.HasValue)
         {
-            var existingEmail = await db.Emails.FindAsync([newEvent.EventCreatedFromEmailId.Value], cancellationToken: ct);
+            var existingEmail =
+                await db.Emails.FindAsync([newEvent.EventCreatedFromEmailId.Value], cancellationToken: ct);
             if (existingEmail != null)
             {
                 newEvent.EventCreatedFromEmail = existingEmail;
@@ -89,32 +90,33 @@ public class EventProcessor(
         }
 
         var sameCategory = mostImportantEvent.Importance == newEvent.Importance;
-        var shouldReplace = sameCategory && ShouldReplaceEvent(collidingEvents, newEvent);
-        
+        var shouldReplace = sameCategory && ShouldReplaceEvent(collidingEvents, newEvent, user);
+
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Most important event importance: {mostImportantEvent.Importance}");
         Console.WriteLine($"New event importance: {newEvent.Importance}");
         Console.WriteLine($"Same category: {sameCategory}");
         Console.WriteLine($"Should replace (if same category): {shouldReplace}");
         Console.ResetColor();
-        
+
         if ((sameCategory && !shouldReplace) || mostImportantEvent.Importance > newEvent.Importance)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("Most important event is more important than the new event, not replacing it.");
             Console.ResetColor();
-            
+
             SendAsyncFunc(SendCancellationEmailWithScopeAsync(
                 newEvent.EventCreatedFromEmail!.SendingUserEmail,
                 newEvent,
-                mostImportantEvent.EventCreatedFromEmail!));
+                mostImportantEvent.EventCreatedFromEmail,
+                user));
         }
         else if ((sameCategory && shouldReplace) || mostImportantEvent.Importance < newEvent.Importance)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("Most important event is less important than the new event, replacing them.");
             Console.ResetColor();
-            
+
             foreach (var collidingEvent in collidingEvents)
             {
                 db.Events.Remove(collidingEvent);
@@ -122,7 +124,8 @@ public class EventProcessor(
                 SendAsyncFunc(SendCancellationEmailWithScopeAsync(
                     collidingEvent.EventCreatedFromEmail!.SendingUserEmail,
                     collidingEvent,
-                    newEvent.EventCreatedFromEmail!));
+                    newEvent.EventCreatedFromEmail!,
+                    user));
             }
 
             db.Events.Add(newEvent);
@@ -130,23 +133,22 @@ public class EventProcessor(
         }
     }
 
-    // TODO: Make it in the future with ApplicationUser instead of string recipient
-    private async Task SendCancellationEmailWithScopeAsync(string recipient, Event cancelledEvent, Email reasonForCancellation)
+    private async Task SendCancellationEmailWithScopeAsync(string recipient, Event cancelledEvent,
+        Email? reasonForCancellation, ApplicationUser user)
     {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine("Beginning sending cancellation email for event: " + cancelledEvent.Title);
         Console.ResetColor();
-        
+
         using var scope = serviceScopeFactory.CreateScope();
         var scopedEmailComposer = scope.ServiceProvider.GetRequiredService<EmailComposer>();
         var scopedGmailService = scope.ServiceProvider.GetRequiredService<IGmailEmailService>();
 
-        // Pass the user ID to the email service
         await SendCancellationEmailAsync(scopedEmailComposer, scopedGmailService, recipient, cancelledEvent,
-            reasonForCancellation, cancelledEvent.UserId); // Add user ID parameter
+            reasonForCancellation, user);
     }
 
-    
+
     private async Task<List<Event>> GetCollidingEventsAsync(Event newEvent, CancellationToken ct = default)
     {
         var existingEvents = await db.Events
@@ -156,44 +158,36 @@ public class EventProcessor(
 
         return existingEvents;
     }
-    
+
     private async Task SendCancellationEmailAsync(
         EmailComposer emailComposer,
         IGmailEmailService gmailEmailService,
         string recipient,
         Event cancelledEvent,
-        Email reasonForCancellation,
-        string userId) // Add user ID parameter
+        Email? reasonForCancellation,
+        ApplicationUser user) // Add user ID parameter
     {
-        if (reasonForCancellation == null)
-        {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"Warning: reasonForCancellation is null for event {cancelledEvent.Title}. Cannot send cancellation email.");
-            Console.ResetColor();
-            return;
-        }
-
-        var body = await emailComposer.ComposeCancellationEmailAsync(recipient, cancelledEvent, reasonForCancellation);
+        var body = await emailComposer.ComposeCancellationEmailAsync(recipient, cancelledEvent, reasonForCancellation,
+            user);
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Sending the cancellation email to {recipient} for event: {cancelledEvent.Title}");
         Console.ResetColor();
-    
-        // Use the new method that accepts userId
+
         await gmailEmailService.ReplyToEmailAsync(
-            reasonForCancellation.MessageId,
-            reasonForCancellation.ThreadId,
+            reasonForCancellation?.MessageId,
             cancelledEvent.Title,
             recipient,
             body,
-            userId);
+            user.Id);
     }
 
-    private bool ShouldReplaceEvent(List<Event> existingEvents, Event newEvent)
+    private bool ShouldReplaceEvent(List<Event> existingEvents, Event newEvent, ApplicationUser user)
     {
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("Deciding whether to replace existing events with the new one based on importance and categories.");
+        Console.WriteLine(
+            "Deciding whether to replace existing events with the new one based on importance and categories.");
         Console.ResetColor();
-        
+
         StringBuilder eventsInfo = new();
         eventsInfo.AppendLine("Existing events:");
         foreach (var existingEvent in existingEvents)
@@ -221,9 +215,9 @@ public class EventProcessor(
             ],
             ResponseFormat: ShouldReplaceEventSchema.RootElement);
 
-        var response = router.SendAsync(prompt).Result;
+        var response = router.SendAsync(prompt, user).Result;
         using var doc = JsonDocument.Parse(response.Content!);
-        
+
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Should replace event: {doc.RootElement.GetProperty("should-change-event").GetBoolean()}");
         Console.ResetColor();
