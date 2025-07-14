@@ -16,6 +16,7 @@ using Message = AiCalendarAssistant.Models.Message;
 var builder = WebApplication.CreateBuilder(args);
 
 Env.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
+Env.Load();
 
 var connectionString = Environment.GetEnvironmentVariable("ConnectionString");
 
