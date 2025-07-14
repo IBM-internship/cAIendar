@@ -641,8 +641,9 @@ public sealed class ChatMessenger(
         //    Remove newlines and sequences of spaces
         content = Regex.Replace(content, "\\s+", " ").Trim();
         //    Limit to first 30,000 characters
-        if (content.Length > 30000)
-            content = content.Substring(0, 30000);
+		var threshold = 100000;
+        if (content.Length > threshold)
+            content = content.Substring(0, threshold);
 
 
     // 3) Summarize with a fresh LLM call (no tools)
