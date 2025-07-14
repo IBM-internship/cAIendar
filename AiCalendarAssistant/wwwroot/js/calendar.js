@@ -18,6 +18,7 @@
             }
         });
 
+        
         // Calendar event handlers
         calendar.on('clickEvent', function (e) {
             const event = e.event;
@@ -63,16 +64,15 @@
                         calendarId: '1',
                         title: event.title,
                         category: event.isAllDay ? 'allday' : 'time',
-                        start: isoStringToLocalDatetime(event.start+'Z'),
-                        end: isoStringToLocalDatetime(event.end+'Z'),
-                        //start: event.start,
-                        //end: event.end,
+                        start: isoStringToLocalDatetime(event.start + 'Z'),
+                        end: isoStringToLocalDatetime(event.end + 'Z'),
                         isAllDay: event.isAllDay,
                         location: event.location,
                         backgroundColor: event.color || '#007bff',
                         borderColor: event.color || '#007bff',
                         raw: event
                     }]);
+
                 });
             })
             .catch(error => {
@@ -219,60 +219,63 @@
     }
 
     function showEventDetails(event) {
+        
+
         selectedEvent = {
             id: event.id,
             title: event.title,
-            description: event.raw.description || '',
+            description: event.raw?.Description || '',
             start: event.start,
             end: event.end,
             isAllDay: event.isAllDay,
             location: event.location || '',
-            meetingLink: event.raw.meetingLink || '',
-            isInPerson: event.raw.isInPerson || false,
+            meetingLink: event.raw?.MeetingLink || '',
+            isInPerson: event.raw?.IsInPerson || false,
             color: event.backgroundColor || '#007bff'
         };
 
         const content = document.getElementById('eventDetailsContent');
 
         content.innerHTML = `
-                    <div class="event-details">
-                        <div class="event-detail-item">
-                            <div class="event-color-indicator" style="background-color: ${event.backgroundColor}"></div>
-                            <strong>${event.title}</strong>
-                        </div>
-                        ${event.raw.description ? `
-                            <div class="event-detail-item">
-                                <i class="fas fa-align-left event-detail-icon"></i>
-                                <span>${event.raw.description}</span>
-                            </div>
-                        ` : ''}
-                        <div class="event-detail-item">
-                            <i class="fas fa-clock event-detail-icon"></i>
-                            <span>${formatEventTime(event)}</span>
-                        </div>
-                        ${event.location ? `
-                            <div class="event-detail-item">
-                                <i class="fas fa-map-marker-alt event-detail-icon"></i>
-                                <span>${event.location}</span>
-                            </div>
-                        ` : ''}
-                        ${event.raw.meetingLink ? `
-                            <div class="event-detail-item">
-                                <i class="fas fa-link event-detail-icon"></i>
-                                <a href="${event.raw.meetingLink}" target="_blank">${event.raw.meetingLink}</a>
-                            </div>
-                        ` : ''}
-                        ${event.raw.isInPerson ? `
-                            <div class="event-detail-item">
-                                <i class="fas fa-users event-detail-icon"></i>
-                                <span>In-person event</span>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
+        <div class="event-details">
+            <div class="event-detail-item">
+                <div class="event-color-indicator" style="background-color: ${event.backgroundColor}"></div>
+                <strong>${event.title}</strong>
+            </div>
+            ${event.raw?.Description ? `
+                <div class="event-detail-item">
+                    <i class="fas fa-align-left event-detail-icon"></i>
+                    <span>${event.raw.Description.replace(/\n/g, '<br>')}</span>
+                </div>
+            ` : ''}
+            <div class="event-detail-item">
+                <i class="fas fa-clock event-detail-icon"></i>
+                <span>${formatEventTime(event)}</span>
+            </div>
+            ${event.location ? `
+                <div class="event-detail-item">
+                    <i class="fas fa-map-marker-alt event-detail-icon"></i>
+                    <span>${event.location}</span>
+                </div>
+            ` : ''}
+            ${event.raw?.MeetingLink ? `
+                <div class="event-detail-item">
+                    <i class="fas fa-link event-detail-icon"></i>
+                    <a href="${event.raw.MeetingLink}" target="_blank">${event.raw.MeetingLink}</a>
+                </div>
+            ` : ''}
+            ${event.raw?.IsInPerson ? `
+                <div class="event-detail-item">
+                    <i class="fas fa-users event-detail-icon"></i>
+                    <span>In-person event</span>
+                </div>
+            ` : ''}
+        </div>
+    `;
 
         eventDetailsModal.show();
     }
+
 
     async function saveEvent() {
         const eventIdValue = document.getElementById('eventId').value;
