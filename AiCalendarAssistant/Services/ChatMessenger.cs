@@ -11,7 +11,7 @@ using PromptMessage = AiCalendarAssistant.Models.Message;
 namespace AiCalendarAssistant.Services;
 
 public sealed class ChatMessenger(
-    ApplicationDbContext context,
+    ApplicationDbContext db,
     PromptRouter router,
     ICalendarService calendarService)
 {
@@ -68,7 +68,7 @@ public sealed class ChatMessenger(
         // 1) build conversation history
         var history = new List<PromptMessage> { new("system", SystemPrompt) };
 
-        var messages = await context.Messages
+        var messages = await db.Messages
             .Where(m => m.ChatId == chat.Id)
             .OrderBy(m => m.Pos)
             .ToListAsync(ct);
@@ -195,7 +195,7 @@ public sealed class ChatMessenger(
             DateTime.Parse(args.GetProperty("end_day").GetString()!,
                 null, DateTimeStyles.RoundtripKind));
 
-        var tasksQry = context.UserTasks.AsQueryable();
+        var tasksQry = db.UserTasks.AsQueryable();
 
         if (!string.IsNullOrEmpty(userId))
             tasksQry = tasksQry.Where(t => t.UserId == userId);
@@ -235,8 +235,8 @@ public sealed class ChatMessenger(
             SentOn = DateTime.UtcNow
         };
 
-        context.Messages.Add(msg);
-        await context.SaveChangesAsync(ct);
+        db.Messages.Add(msg);
+        await db.SaveChangesAsync(ct);
         return msg;
     }
 }

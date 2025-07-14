@@ -57,7 +57,7 @@ public class EmailComposer(PromptRouter router)
         return await ComposeCancellationEmailAsync(recipient, cancelledEvent, reasonForCancellationSummary, user);
     }
 
-    private async Task<string> GetCancellationReasonSummaryAsync(Email reasonForCancellation, ApplicationUser user)
+    private async Task<string> GetCancellationReasonSummaryAsync(Email? reasonForCancellation, ApplicationUser user)
     {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine("Composing reason for cancellation summary.");

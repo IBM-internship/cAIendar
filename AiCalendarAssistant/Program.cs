@@ -111,6 +111,7 @@ builder.Services.AddScoped<TokenRefreshService>(provider =>
 builder.Services.AddScoped<ICalendarService, CalendarService>();
 builder.Services.AddScoped<IEmailProcessor, EmailProcessor>();
 builder.Services.AddScoped<IGmailEmailService, GmailEmailService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<INoteService, NoteService>();
 builder.Services.AddHttpClient<TokenProvider>();
 builder.Services.AddHttpClient<WatsonxClient>();

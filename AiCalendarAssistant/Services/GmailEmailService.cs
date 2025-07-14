@@ -77,14 +77,14 @@ public class GmailEmailService(
                 ThreadId = detail.ThreadId ?? "",
                 MessageId = headers.FirstOrDefault(h => h.Name == "Message-ID")?.Value ?? "",
             };
-            
+
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Adding email {email.GmailMessageId} to the database for user {userId}");
             Console.ResetColor();
-            
+
             db.Emails.Add(email);
             emails.Add(email);
-            
+
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Processing email {email.GmailMessageId}");
             Console.ResetColor();
@@ -100,7 +100,7 @@ public class GmailEmailService(
         return emails;
     }
 
-    public async Task<bool> ReplyToEmailAsync(string messageId, string threadId, string originalSubject,
+    public async Task<bool> ReplyToEmailAsync(string messageId, string originalSubject,
         string fromEmail, string body, string userId)
     {
         try
@@ -129,13 +129,18 @@ public class GmailEmailService(
         }
     }
 
-    private Message CreateReplyMessage(string userEmail, string toEmail, string subject, string inReplyToMessageId, string body)
+    private Message CreateReplyMessage(
+        string userEmail, 
+        string toEmail, 
+        string subject, 
+        string? inReplyToMessageId,
+        string body)
     {
         var emailContent = new StringBuilder();
         emailContent.AppendLine($"From: {userEmail}");
         emailContent.AppendLine($"To: {toEmail}");
         emailContent.AppendLine($"Subject: {subject}");
-        emailContent.AppendLine($"In-Reply-To: {inReplyToMessageId}");
+        if (inReplyToMessageId != null) emailContent.AppendLine($"In-Reply-To: {inReplyToMessageId}");
         emailContent.AppendLine("Content-Type: text/plain; charset=utf-8");
         emailContent.AppendLine();
         emailContent.AppendLine(body);
@@ -172,6 +177,7 @@ public class GmailEmailService(
             case 2: input += "=="; break;
             case 3: input += "="; break;
         }
+
         var bytes = Convert.FromBase64String(input);
         return Encoding.UTF8.GetString(bytes);
     }

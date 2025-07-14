@@ -108,7 +108,7 @@ public class EventProcessor(
             SendAsyncFunc(SendCancellationEmailWithScopeAsync(
                 newEvent.EventCreatedFromEmail!.SendingUserEmail,
                 newEvent,
-                mostImportantEvent.EventCreatedFromEmail!,
+                mostImportantEvent.EventCreatedFromEmail,
                 user));
         }
         else if ((sameCategory && shouldReplace) || mostImportantEvent.Importance < newEvent.Importance)
@@ -134,7 +134,7 @@ public class EventProcessor(
     }
 
     private async Task SendCancellationEmailWithScopeAsync(string recipient, Event cancelledEvent,
-        Email reasonForCancellation, ApplicationUser user)
+        Email? reasonForCancellation, ApplicationUser user)
     {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine("Beginning sending cancellation email for event: " + cancelledEvent.Title);
@@ -164,27 +164,17 @@ public class EventProcessor(
         IGmailEmailService gmailEmailService,
         string recipient,
         Event cancelledEvent,
-        Email reasonForCancellation,
+        Email? reasonForCancellation,
         ApplicationUser user) // Add user ID parameter
     {
-        if (reasonForCancellation == null)
-        {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine(
-                $"Warning: reasonForCancellation is null for event {cancelledEvent.Title}. Cannot send cancellation email.");
-            Console.ResetColor();
-            return;
-        }
-
-        var body = await emailComposer.ComposeCancellationEmailAsync(recipient, cancelledEvent, reasonForCancellation, user);
+        var body = await emailComposer.ComposeCancellationEmailAsync(recipient, cancelledEvent, reasonForCancellation,
+            user);
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Sending the cancellation email to {recipient} for event: {cancelledEvent.Title}");
         Console.ResetColor();
 
-        // Use the new method that accepts userId
         await gmailEmailService.ReplyToEmailAsync(
-            reasonForCancellation.MessageId,
-            reasonForCancellation.ThreadId,
+            reasonForCancellation?.MessageId,
             cancelledEvent.Title,
             recipient,
             body,
