@@ -18,5 +18,53 @@ html {
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
+    /* adjust based on your navbar height */
+    /* Adjust body padding so content is not hidden under fixed navbar */
+    padding-top: 100px !important;
+    font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
 }
+
+/* Custom translucent white fixed navbar with rounded corners and increased size */
+.navbar-glass {
+    position: fixed !important;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95%;
+    max-width: 1400px;
+    background-color: transparent !important;
+    
+    border-radius: 50px;
+    z-index: 1040;
+    padding: 25px 40px !important; /* bigger padding for a taller navbar */
+    color: white; /* slightly off-white for readability */
+    font-size: 1.25rem; /* consistent font size */
+    font-weight: 300; /* soft and readable */
+    line-height: 1.6;
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.15); /* subtle glow */
+    margin-top: 1rem !important;
+    margin-bottom: 1rem;
+    transition: box-shadow 0.3s ease, border 0.3s ease, background-color 0.3s ease;
+}
+
+    /* Make navbar links bigger and more spaced */
+    .navbar-glass .nav-link:hover {
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.3); /* subtle glow on links */
+        color: #ffffff; /* ensure white text */
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* Hover effect: mossy green background with subtle glow and border */
+    /* Keep margins consistent to avoid layout shift */
+    .navbar-glass:hover {
+        /* border-radius and margin already set, no need to repeat */
+        background-color: rgba(93, 176, 151, 0.1);
+        border-color: #5DB097;
+        box-shadow: 0 0 8px rgba(93, 176, 151, 0.6);
+        border: 2px solid rgba(93, 176, 151, 0.4);
+    }
+
+
+

@@ -1,4 +1,7 @@
 ﻿@model AiCalendarAssistant.Controllers.ChatViewModel
+@{
+    var selectedChatId = (int?)ViewData["SelectedChatId"];
+}
 
 <!DOCTYPE html>
 <html lang="bg">
@@ -19,13 +22,65 @@
     <link rel="stylesheet" href="~/css/calendar.css" />
 </head>
 <body>
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="/videos/bg-video-landing.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+        </video>
+        <div class="video-overlay"></div>
+    </div>
     <div class="container-fluid">
-        <div class="calendar-container">
-            <div id="calendar"></div>
+        <div class="calendar-container" id="calendarContainer">
             <div class="calendar-header">
                 <h1 class="calendar-title">
-                    <i class="fas fa-calendar-alt me-2"></i>
+                    <i class="fas fa-calendar-alt me-2" onclick="closeSidebar()"></i>
                 </h1>
+
+                @if (Model.SelectedChat != null)
+                {
+                    <div class="calendar-input-wrapper">
+                        <input type="text"
+                               id="messageInput"
+                               class="form-control form-control-lg glass-input"
+                               onkeydown="handleKey(event)" class="btn btn-outline-light position-fixed top-0 end-0 m-3" 
+                               placeholder="Tell your assistant what to do..." />
+                    </div>
+                }
+
+                <script>
+                    function handleKey(event) {
+                       if (event.key === 'Enter') { 
+                           event.preventDefault(); 
+                           sendMessage(@Model.SelectedChat.Id);
+                           const chatEl = document.getElementById('Chat');
+                           const calendarContainer = document.getElementById('calendarContainer');
+
+                           if (chatEl.classList.contains('hidden')) {
+                             chatEl.classList.remove('hidden');
+                             calendarContainer.classList.add('with-sidebar');
+                           }
+                        }
+                    }
+
+                    function closeSidebar() {
+                       
+                           event.preventDefault();
+                          
+                           const chatEl = document.getElementById('Chat');
+                           const calendarContainer = document.getElementById('calendarContainer');
+
+                           if (!chatEl.classList.contains('hidden')) {
+                             calendarContainer.classList.remove('with-sidebar');
+                             chatEl.classList.add('hidden');
+                           }
+                           else{
+                                chatEl.classList.remove('hidden');
+                             calendarContainer.classList.add('with-sidebar');
+                           }
+                        
+                    }
+                </script>
+
                 <div class="calendar-controls">
                     <button class="nav-btn" id="prevBtn">
                         <i class="fas fa-chevron-left"></i>
@@ -34,26 +89,37 @@
                     <button class="nav-btn" id="nextBtn">
                         <i class="fas fa-chevron-right"></i>
                     </button>
+
                     <div class="view-buttons">
                         <button class="view-btn active" data-view="month">Month</button>
                         <button class="view-btn" data-view="week">Week</button>
                         <button class="view-btn" data-view="day">Day</button>
                     </div>
+
                     <button class="add-event-btn" id="addEventBtn">
                         <i class="fas fa-plus me-2"></i>
                         New event
                     </button>
                 </div>
             </div>
+            <div id="calendar"></div>
+            
         </div>
+
+
+        <div class="chat-sidebar hidden" id="Chat">
+                @await Html.PartialAsync("_ChatPartial", Model)
+                </div>
+        
+        
     </div>
 
-    <div id="chatSidebar" class="chat-sidebar hidden">
-        @await Html.PartialAsync("_ChatPartial", Model)
+    <!--<div id="chatSidebar" class="chat-sidebar hidden">
+        @*await Html.PartialAsync("_ChatPartial", Model)*@
     </div>
     <button id="toggleChatBtn" class="btn btn-primary chat-toggle-btn">
         <i class="fas fa-comments"></i>
-    </button>
+    </button>-->
 
     <!-- Event Form Modal -->
     <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
@@ -203,8 +269,6 @@
 
         </div>
     </div>
-
-    <button class="absolute-btn">chat window</button>
 
     <!-- Toast Container -->
     <div class="toast-container"></div>

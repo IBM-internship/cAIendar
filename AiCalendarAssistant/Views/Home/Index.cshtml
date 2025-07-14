@@ -1,4 +1,8 @@
 ﻿<!-- 🎥 Background Video -->
+@model AiCalendarAssistant.Controllers.ChatViewModel
+@{
+    var selectedChatId = (int?)ViewData["SelectedChatId"];
+}
 <div class="video-background">
     <video autoplay muted loop playsinline>
         <source src="/videos/bg-video-landing.mp4" type="video/mp4" />
@@ -18,13 +22,29 @@
         </h1>
         <p class="lead mt-3">Imagine the freedom of personal assistance, for free.</p><br />
 
-        <a class="btn btn-light btn-lg px-4" asp-area="Identity" asp-page="/Account/Register">Sign up</a>
-        <a class="btn btn-light btn-lg px-4" asp-area="Identity" asp-page="/Account/Register">Already in? Sign in here</a>
-        <p class="text-light mt-2">No credit card required.</p>
+        <form id="createChatForm" method="post" action="/Calendar/Create">
+            @Html.AntiForgeryToken()
+        </form>
+
+        <input type="text" id="landingMessageInput" class="form-control form-control-lg w-50 mx-auto" onkeydown="handleKey(event)" placeholder="Type message..." />
+
+        <p class="text-light mt-2">Press Enter to continue. No credit card required.</p>
+       
     </div>
 </section>
 
+<script>
+    function handleKey(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // stop form submission or page reload
+           
+            const message = document.getElementById('landingMessageInput').value.trim();
+            if (!message) return;
 
+           document.getElementById('createChatForm').submit()
+        }
+    }
+</script>
 
 <!-- 🎨 CSS -->
 <style>
@@ -83,10 +103,88 @@
         background: linear-gradient(to bottom right, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7));
     }
 
-        
         @@keyframes zoomVideo {
             0% { transform: scale(1); }
             100% { transform: scale(1.1); }
         }
+
+ 
+
+    /*#landingMessageInput {
+        position: relative;
+        z-index: 0;
+        border-radius: 15px;
+        background-color: rgba(255, 255, 255, 0); 
+        border: 2px solid rgba(93, 176, 151, 0.4);
+        color: white;
+        padding: 0.5rem 1rem;
+        outline: none;
+        transition: background-color 0.3s ease;
+        overflow: visible; 
+    }
+
+       
+        #landingMessageInput::before {
+            content: "";
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            border-radius: 20px; /
+            background: conic-gradient( from 0deg, rgba(93, 176, 151, 0.8), rgba(93, 176, 151, 0), rgba(93, 176, 151, 0.8) );
+            animation: rotateGlow 3s linear infinite;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+       
+        #landingMessageInput:hover::before,
+        #landingMessageInput:focus::before {
+            opacity: 1;
+        }
+
     
+@@keyframes rotateGlow {
+        0%
+
+    {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+
+    }*/
+  
+
+    #landingMessageInput {
+        background-color: rgba(255, 255, 255, 0); 
+        border: 2px solid rgba(93, 176, 151, 0.4); 
+        border-radius: 50px; 
+        color: white;
+        padding: 0.5rem 1rem;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        outline: none;
+    }
+
+        #landingMessageInput::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        #landingMessageInput:hover,
+        #landingMessageInput:focus {
+            background-color: rgba(93, 176, 151, 0.1);
+            border-color: #5DB097;
+            box-shadow: 0 0 8px rgba(93, 176, 151, 0.6); 
+            color: white;
+        }
+        
+
+   
 </style>
+
+
