@@ -117,7 +117,7 @@ public class EmailProcessor(
         email.IsProcessed = true;
 
         var isRelevant = await IsRelevantEventAsync(email, user, ct);
-        if (!isRelevant)
+        if (/*!isRelevant*/false)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Email is not relevant for calendar event, skipping. {email.Body}");
@@ -232,23 +232,28 @@ public class EmailProcessor(
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Extracting event from email. {email.Body}");
         Console.ResetColor();
+        
+        var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(user.TimeZone);
+        var currentLocalTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, userTimeZone);
+        
         var prompt = new PromptRequest([
-                new Message("system",
-                    """
-                    You are an assistant that extracts information from emails and helps organise the user's calendar events. 
-                    Pay attention to the format required for the response - hours must be in 24 hour format.
-                    You must list the importance of the event, and the date must be in YYYY-MM-DD format.
-                    """),
-                new Message("user",
-                    $"""
-                     Extract the important parts of the email and format them in the corresponding json so the event can be added into my calendar
+            new Message("system",
+                $"""
+                 You are an assistant that extracts information from emails and helps organise the user's calendar events. 
+                 Pay attention to the format required for the response - hours must be in 24 hour format.
+                 The user's current local time is: {currentLocalTime:yyyy-MM-dd HH:mm:ss}
+                 When extracting dates and times, consider them in the user's local timezone.
+                 You must list the importance of the event, and the date must be in YYYY-MM-DD format.
+                 """),
+            new Message("user",
+                $"""
+                 Extract the important parts of the email and format them in the corresponding json so the event can be added into my calendar
 
-                     From: {email.SendingUserEmail}
-                     Subject: {email.Title}
-                     Body:
-                     {email.Body}
-                     """)
-            ],
+                 From: {email.SendingUserEmail}
+                 Subject: {email.Title}
+                 Body:
+                 {email.Body}
+                 """)],
             ResponseFormat: EventInfoSchema.RootElement);
 
         Console.ForegroundColor = ConsoleColor.Red;
@@ -262,16 +267,21 @@ public class EmailProcessor(
         Console.ResetColor();
 
         var root = JsonDocument.Parse(response.Content!).RootElement;
+        
+        var localStartDateTime = DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("start_time").GetString()}");
+        var localEndDateTime = root.GetProperty("has_end_time").GetBoolean()
+            ? DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("end_time").GetString()}")
+            : DateTime.Parse($"{root.GetProperty("date").GetString()} 23:59:59");
+        
+        var utcStart = TimeZoneInfo.ConvertTimeToUtc(localStartDateTime, userTimeZone);
+        var utcEnd = TimeZoneInfo.ConvertTimeToUtc(localEndDateTime, userTimeZone);
 
         var calendarEvent = new Event
         {
             Title = root.GetProperty("title_of_event").GetString() ?? "",
             Description = root.TryGetProperty("description", out var desc) ? desc.GetString() : null,
-            Start = DateTime.Parse(
-                $"{root.GetProperty("date").GetString()} {root.GetProperty("start_time").GetString()}"),
-            End = root.GetProperty("has_end_time").GetBoolean()
-                ? DateTime.Parse($"{root.GetProperty("date").GetString()} {root.GetProperty("end_time").GetString()}")
-                : DateTime.Parse($"{root.GetProperty("date").GetString()} 23:59:59"),
+            Start = utcStart,
+            End = utcEnd,
             IsAllDay = root.TryGetProperty("is_all_day", out var isAllDay) && isAllDay.GetBoolean(),
             IsInPerson = root.TryGetProperty("is_in_person", out var inPerson) && inPerson.GetBoolean(),
             Location = root.TryGetProperty("location", out var location) ? location.GetString() : null,

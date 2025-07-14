@@ -1,40 +1,27 @@
 using System.Diagnostics;
 using AiCalendarAssistant.Models;
-using AiCalendarAssistant.Services;
-using AiCalendarAssistant.Services.Contracts;
-using Google.Apis.Gmail.v1;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AiCalendarAssistant.Controllers
+namespace AiCalendarAssistant.Controllers;
+
+public class HomeController : BaseController
 {
-	[Authorize]
-	public class HomeController : BaseController
-	{
-		private readonly IGmailEmailService _gmail;
+    [AllowAnonymous]
+    public IActionResult Index()
+    {
+        return View();
+    }
 
-		public HomeController(IGmailEmailService gmail)
-		{
-			_gmail = gmail;
-		}
+    [Authorize]
+    public IActionResult Calendar()
+    {
+        return View();
+    }
 
-		public IActionResult Index()
-		{
-			return View();
-		}
-
-		public IActionResult Calendar()
-		{
-			return View();
-		}
-
-		
-
-		[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-		public IActionResult Error()
-		{
-			return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-		}
-	}
-
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
 }

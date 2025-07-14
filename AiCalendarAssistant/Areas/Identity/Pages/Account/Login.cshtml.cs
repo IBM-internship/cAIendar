@@ -8,19 +8,35 @@ namespace AiCalendarAssistant.Areas.Identity.Pages.Account;
 
 public class LoginModel(SignInManager<ApplicationUser> signInManager) : PageModel
 {
-    public string ReturnUrl { get; set; } = string.Empty;
+    [BindProperty]
+    public InputModel Input { get; set; }
 
-    public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme>();
+    public string ReturnUrl { get; set; }
 
-    public async Task OnGetAsync(string? returnUrl = null)
+    public void OnGet(string returnUrl = null)
     {
-        if (User.Identity?.IsAuthenticated == true)
-        {
-            Response.Redirect(returnUrl ?? "/Calendar");
-            return;
-        }
+        ReturnUrl = returnUrl;
+    }
 
-        ReturnUrl = returnUrl ?? Url.Content("~/");
-        ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+    {
+        returnUrl ??= Url.Content("~/Home/Index");
+        if (!ModelState.IsValid) return Page();
+
+        var result = await signInManager.PasswordSignInAsync(
+            Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+
+        if (result.Succeeded)
+            return LocalRedirect(returnUrl);
+
+        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+        return Page();
+    }
+
+    public class InputModel
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public bool RememberMe { get; set; }
     }
 }

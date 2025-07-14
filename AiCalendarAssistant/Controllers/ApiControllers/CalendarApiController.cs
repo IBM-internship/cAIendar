@@ -121,7 +121,11 @@ namespace AiCalendarAssistant.Controllers
 		public async Task<IActionResult> UpdateEventTime([FromBody] UpdateTimeRequest update)
 		{
 			Console.WriteLine("event moved");
-			var success = await _calendarService.UpdateEventTimeAsync(update.Id, update.Start, update.End);
+			// Ensure UTC handling
+			var utcStart = DateTime.SpecifyKind(update.Start, DateTimeKind.Utc);
+			var utcEnd = DateTime.SpecifyKind(update.End, DateTimeKind.Utc);
+    
+			var success = await _calendarService.UpdateEventTimeAsync(update.Id, utcStart, utcEnd);
 			if (!success)
 				return NotFound();
 

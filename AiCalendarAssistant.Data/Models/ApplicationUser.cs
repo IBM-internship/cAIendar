@@ -9,6 +9,7 @@ public class ApplicationUser : IdentityUser
     public IEnumerable<Email>? Emails { get; set; }
     public IEnumerable<UserNote>? UserNotes { get; set; }
     public IEnumerable<Chat>? Chats { get; set; }
-    public IEnumerable<UserTask>? Tasks{ get; set; }
+    public IEnumerable<UserTask>? Tasks { get; set; }
     public bool IsDeleted { get; set; } = false; // Flag to mark user as deleted without removing from database
+    public string TimeZone { get; set; } = "GMT Standard Time";
 }

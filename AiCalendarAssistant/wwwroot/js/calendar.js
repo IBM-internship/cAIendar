@@ -285,10 +285,10 @@
             Description: document.getElementById('eventDescription').value,
             Start: isAllDay
                 ? new Date(document.getElementById('eventStart').value + 'T00:00:00').toISOString()
-                : localDatetimeToISOString(document.getElementById('eventStart').value),
+                : new Date(document.getElementById('eventStart').value).toISOString(),
             End: isAllDay
                 ? new Date(document.getElementById('eventEnd').value + 'T23:59:59').toISOString()
-                : localDatetimeToISOString(document.getElementById('eventEnd').value),
+                : new Date(document.getElementById('eventEnd').value).toISOString(),
             IsAllDay: isAllDay,
             Location: document.getElementById('eventLocation').value,
             MeetingLink: document.getElementById('eventMeetingLink').value,
@@ -424,7 +424,7 @@
                 MeetingLink: '',
                 IsInPerson: false,
                 Color: '#007bff'
-            };
+            };  
 
             // Save to server
             fetch('/api/calendarapi/add', {

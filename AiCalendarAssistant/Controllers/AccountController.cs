@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using AiCalendarAssistant.Data.Models;
+using TimeZoneConverter;
 
 namespace AiCalendarAssistant.Controllers;
 
@@ -11,8 +12,10 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
     : Controller
 {
     [HttpGet]
+    [AllowAnonymous]
     public IActionResult ExternalLogin(string provider, string? returnUrl)
     {
+        returnUrl ??= Url.Action("Index", "Home");
         var redirectUrl = Url.Action("ExternalLoginCallback", "Account", new { returnUrl });
         var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
         properties.IsPersistent = true;
@@ -22,7 +25,7 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
     [HttpGet]
     public async Task<IActionResult> ExternalLoginCallback(string? returnUrl, string? remoteError)
     {
-        returnUrl = returnUrl ?? Url.Content("~/");
+        returnUrl = returnUrl ?? Url.Content("~/Home/Index");
 
         if (remoteError != null)
         {
@@ -42,6 +45,12 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
         if (result.Succeeded)
         {
             await signInManager.UpdateExternalAuthenticationTokensAsync(info);
+
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return LocalRedirect(returnUrl);
+            user.TimeZone = GetTimezoneFromRequest();
+            await userManager.UpdateAsync(user);
+
             return LocalRedirect(returnUrl);
         }
 
@@ -50,17 +59,18 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
         var email = info.Principal.FindFirstValue(ClaimTypes.Email);
         if (string.IsNullOrEmpty(email)) return RedirectToPage("/Account/Login", new { Area = "Identity" });
 
-        var user = new ApplicationUser
+        var newUser = new ApplicationUser
         {
             UserName = email,
             Email = email,
-            EmailConfirmed = true
+            EmailConfirmed = true,
+            TimeZone = GetTimezoneFromRequest()
         };
 
-        var createResult = await userManager.CreateAsync(user);
+        var createResult = await userManager.CreateAsync(newUser);
         if (!createResult.Succeeded) return RedirectToPage("/Account/Login", new { Area = "Identity" });
 
-        createResult = await userManager.AddLoginAsync(user, info);
+        createResult = await userManager.AddLoginAsync(newUser, info);
         if (!createResult.Succeeded) return RedirectToPage("/Account/Login", new { Area = "Identity" });
 
         var accessToken = info.AuthenticationTokens?.FirstOrDefault(t => t.Name == "access_token")?.Value;
@@ -69,28 +79,47 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
 
         if (!string.IsNullOrEmpty(accessToken))
         {
-            await userManager.SetAuthenticationTokenAsync(user, info.LoginProvider, "access_token", accessToken);
+            await userManager.SetAuthenticationTokenAsync(newUser, info.LoginProvider, "access_token", accessToken);
         }
 
         if (!string.IsNullOrEmpty(refreshToken))
         {
-            await userManager.SetAuthenticationTokenAsync(user, info.LoginProvider, "refresh_token", refreshToken);
+            await userManager.SetAuthenticationTokenAsync(newUser, info.LoginProvider, "refresh_token", refreshToken);
         }
 
         if (!string.IsNullOrEmpty(expiresAt))
         {
-            await userManager.SetAuthenticationTokenAsync(user, info.LoginProvider, "expires_at", expiresAt);
+            await userManager.SetAuthenticationTokenAsync(newUser, info.LoginProvider, "expires_at", expiresAt);
         }
 
-        await signInManager.SignInAsync(user, isPersistent: true);
+        await signInManager.SignInAsync(newUser, isPersistent: true);
         return LocalRedirect(returnUrl);
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
         await signInManager.SignOutAsync();
         return RedirectToAction("Index", "Home");
+    }
+
+    private static bool IsValidTimezone(string timezone)
+    {
+        try
+        {
+            TimeZoneInfo.FindSystemTimeZoneById(timezone);
+            return true;
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return false;
+        }
+    }
+    
+    private string GetTimezoneFromRequest()
+    {
+        return TZConvert.IanaToWindows(Request.Headers["X-Timezone"].FirstOrDefault() ?? 
+               Request.Cookies["timezone"] ?? 
+               "GMT Standard Time");
     }
 }
