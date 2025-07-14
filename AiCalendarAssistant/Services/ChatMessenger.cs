@@ -184,7 +184,7 @@ public sealed class ChatMessenger(
               "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": { "type": "string", "description": "Search query" },
+                    "query": { "type": "string", "description": "Search query" }
                 },
                 "required": ["query"]
               }
@@ -609,12 +609,14 @@ public sealed class ChatMessenger(
           string? userId,
           CancellationToken ct)
   {
+	  Console.WriteLine("\n\n\n\n");
     // 1) Parse the incoming arguments
     var args = NormalizeArguments(call.Arguments);
     var query = args.GetProperty("query").GetString()!;
 
     // 2) Hit your Custom Search + scrape top result
     var rawJson = await _googleSearchService.SearchAndScrapeAsync(query);
+	Console.WriteLine($"Raw search result: {rawJson}\n\n\n\n\n");
     using var doc = JsonDocument.Parse(rawJson);
     var root = doc.RootElement;
     // If Google returned an error payload, pass it straight back
