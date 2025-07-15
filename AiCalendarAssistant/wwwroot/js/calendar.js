@@ -2,6 +2,8 @@
     let calendar;
     let selectedEvent = null;
     let selectedTask = null;
+    let eventsCache = null;
+    let tasksCache = null;
     calendar = initializeCalendar(); // ✅ assign to the global variable
     loadAllItems(); // ✅ now calendar is defined
 
@@ -107,20 +109,71 @@
         return newCalendar; 
     }
 
-    function toggleCategory(categoryId, isVisible) {
-        const schedules = calendar.getSchedules();
-        schedules.forEach(schedule => {
-            if (schedule.calendarId === categoryId) {
-                if (isVisible) {
-                    calendar.createEvents([schedule]);
-                } else {
-                    calendar.deleteEvent(schedule.id, schedule.calendarId);
-                }
+    async function loadAllItems() {
+        calendar.clear();
+
+        const showEvents = document.getElementById('toggleEvents').checked;
+        const showTasks = document.getElementById('toggleTasks').checked;
+
+        try {
+            const [events, tasks] = await Promise.all([
+                fetch('/api/calendarapi/all').then(res => res.json()),
+                fetch('/api/tasks/all').then(res => res.json()),
+            ]);
+
+            if (showEvents) {
+                events.forEach(event => {
+                    calendar.createEvents([{
+                        id: String(event.id),
+                        calendarId: '1',
+                        title: event.title,
+                        category: event.isAllDay ? 'allday' : 'time',
+                        start: isoStringToLocalDatetime(event.start + 'Z'),
+                        end: isoStringToLocalDatetime(event.end + 'Z'),
+                        isAllDay: event.isAllDay,
+                        location: event.location,
+                        backgroundColor: event.color || '#007bff',
+                        borderColor: event.color || '#007bff',
+                        raw: event
+                    }]);
+                });
             }
-        });
+
+            if (showTasks) {
+                tasks.forEach(task => {
+                    const taskDate = new Date(`${task.date}T00:00:00`);
+                    const importanceColorMap = {
+                        Low: '#28a745',
+                        Medium: '#ffc107',
+                        High: '#dc3545'
+                    };
+
+                    const color = task.color || importanceColorMap[task.importance] || '#28a745';
+
+                    calendar.createEvents([{
+                        id: String(task.id),
+                        calendarId: '2',
+                        title: task.isCompleted ? `✅ ${task.title}` : task.title,
+                        category: 'task',
+                        start: taskDate,
+                        end: taskDate,
+                        isAllDay: true,
+                        backgroundColor: color,
+                        borderColor: color,
+                        raw: task
+                    }]);
+                });
+            }
+        } catch (err) {
+            console.error('Error rendering calendar:', err);
+            showToast('Failed to refresh calendar', 'error');
+        }
     }
 
-    // Load events from server
+    document.getElementById("toggleTasks").addEventListener("change", loadAllItems);
+    document.getElementById("toggleEvents").addEventListener("change", loadAllItems);
+
+    /*
     async function loadAllItems() {
         calendar.clear(); // ✅ Clear previous events if any
 
@@ -175,7 +228,7 @@
             console.error('Error loading calendar data:', error);
             showToast('Error while loading calendar data', 'error');
         }
-    }
+    }*/
 
 
 
@@ -396,6 +449,7 @@
                 }
 
                 eventModal.hide();
+                loadAllItems();
                 showToast(isNew ? 'Събитието е създадено успешно!' : 'Събитието е обновено успешно!', 'success');
             } else {
                 const errorText = await response.text();
@@ -466,6 +520,7 @@
                 }
 
                 taskModal.hide();
+                loadAllItems();
                 showToast(isNew ? 'Task created successfully!' : 'Task updated successfully!', 'success');
             } else {
                 const errorText = await response.text();
@@ -670,6 +725,8 @@
                 setTimeout(() => {
                     window.location.reload();
                 }, 1000);
+
+
             } else {
                 const errorText = await response.text();
                 showToast(`Error while deleting task: ${errorText}`, 'error');
