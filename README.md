@@ -207,17 +207,5 @@ exception handler (TBD: LoggingService or ErrorController).
 - Run with:
   > docker-compose up --build
 
---------------------------------------------------------------------------------
-9. Next Steps
---------------------------------------------------------------------------------
-
-[ ] Document each Controller endpoint
-[ ] Include Swagger/OpenAPI support
-[ ] Integrate OAuth scopes config for Gmail and Calendar
-[ ] Secure token storage (Google tokens)
-[ ] LLM usage monitoring
-
---------------------------------------------------------------------------------
-Author: ChatGPT (Generated on behalf of the AiCalendarAssistant Dev Team)
 ================================================================================
 
