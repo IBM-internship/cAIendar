@@ -51,31 +51,4 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Create improved startup script with better error handling
-RUN echo '#!/bin/sh' > /app/setup-https.sh && \
-echo 'set -e' >> /app/setup-https.sh && \
-echo 'echo "Starting HTTPS setup..."' >> /app/setup-https.sh && \
-echo 'export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false' >> /app/setup-https.sh && \
-echo 'export DOTNET_EnableDiagnostics=0' >> /app/setup-https.sh && \
-echo 'if [ -f "/app/certs/aspnetapp.pfx" ]; then' >> /app/setup-https.sh && \
-echo '  echo "Using mounted production certificate"' >> /app/setup-https.sh && \
-echo '  cp /app/certs/aspnetapp.pfx /app/keys/aspnetapp.pfx' >> /app/setup-https.sh && \
-echo 'elif [ ! -f "/app/keys/aspnetapp.pfx" ]; then' >> /app/setup-https.sh && \
-echo '  echo "Generating development certificate..."' >> /app/setup-https.sh && \
-echo '  dotnet dev-certs https --clean' >> /app/setup-https.sh && \
-echo '  dotnet dev-certs https --export-path /app/keys/aspnetapp.pfx --password ${CERT_PASSWORD:-DevCertPassword123} --trust' >> /app/setup-https.sh && \
-echo 'fi' >> /app/setup-https.sh && \
-echo 'echo "Certificate setup complete"' >> /app/setup-https.sh && \
-echo 'echo "Starting application..."' >> /app/setup-https.sh && \
-echo 'exec dotnet AiCalendarAssistant.dll' >> /app/setup-https.sh && \
-chmod +x /app/setup-https.sh
-
-# Set environment variables for better stability
-ENV ASPNETCORE_URLS=https://+:8081;http://+:8080
-ENV ASPNETCORE_HTTPS_PORT=8081
-ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
-ENV DOTNET_EnableDiagnostics=0
-ENV ASPNETCORE_Kestrel__Certificates__Default__Path=/app/keys/aspnetapp.pfx
-ENV ASPNETCORE_Kestrel__Certificates__Default__Password=DevCertPassword123
-
 ENTRYPOINT ["/bin/sh", "/app/setup-https.sh"]
