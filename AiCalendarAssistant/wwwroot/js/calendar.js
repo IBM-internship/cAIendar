@@ -1,6 +1,7 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
     let calendar;
     let selectedEvent = null;
+    let selectedTask = null;
     calendar = initializeCalendar(); // ✅ assign to the global variable
     loadAllItems(); // ✅ now calendar is defined
 
@@ -64,7 +65,13 @@
         // Calendar event handlers
         newCalendar.on('clickEvent', function (e) {
             const event = e.event;
-            showEventDetails(event);
+                if (event.category == "task") {
+                    // It's a task, show task details
+                    showTaskDetails(event);
+                } else {
+                    // It's a normal event, show event details
+                    showEventDetails(event);
+                }
         });
 
         newCalendar.on('beforeUpdateEvent', function (e) {
@@ -81,13 +88,14 @@
             createQuickEvent(e);
         });
 
+
+
         return newCalendar; // ✅ return it!
     }
 
 
     // Load events from server
     async function loadAllItems() {
-        const calendarEl = document.getElementById('calendar');
         calendar.clear(); // ✅ Clear previous events if any
 
         try {
@@ -124,7 +132,7 @@
                 const color = task.color || importanceColorMap[task.importance] || '#28a745';
 
                 calendar.createEvents([{
-                    id: `task-${task.id}`,
+                    id: task.id,
                     calendarId: '2',
                     title: task.isCompleted ? `✅ ${task.title}` : task.title,
                     category: 'task',
@@ -149,39 +157,7 @@
     const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
     const eventDetailsModal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
     const taskModal = new bootstrap.Modal(document.getElementById('taskModal'));
-
-    // Color picker
-    document.querySelectorAll('.color-option').forEach(option => {
-        option.addEventListener('click', function () {
-            const color = this.dataset.color;
-            document.getElementById('eventColor').value = color;
-
-            // Update visual selection
-            document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
-            this.classList.add('selected');
-        });
-    });
-
-    // All-day checkbox handler
-    document.getElementById('eventAllDay').addEventListener('change', function () {
-        const startInput = document.getElementById('eventStart');
-        const endInput = document.getElementById('eventEnd');
-
-        if (this.checked) {
-            // Convert to date inputs
-            const startDate = startInput.value.split('T')[0];
-            const endDate = endInput.value.split('T')[0];
-
-            startInput.type = 'date';
-            endInput.type = 'date';
-            startInput.value = startDate;
-            endInput.value = endDate;
-        } else {
-            // Convert back to datetime inputs
-            startInput.type = 'datetime-local';
-            endInput.type = 'datetime-local';
-        }
-    });
+    const taskDetailsModal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
 
     // Edit event from details modal
     document.getElementById('editEventBtn').addEventListener('click', function () {
@@ -199,6 +175,8 @@
         openTaskForm();
     });
 
+
+    // Helper functions
     function openTaskForm(task = null) {
         selectedTask = task;
         document.getElementById('taskForm').reset();
@@ -227,8 +205,6 @@
 
         taskModal.show();
     }
-
-    // Helper functions
     function openEventForm(event = null) {
         selectedEvent = event;
         document.getElementById('eventForm').reset();
@@ -278,61 +254,39 @@
         eventModal.show();
     }
 
-    function showEventDetails(event) {
+    // Color picker
+    document.querySelectorAll('.color-option').forEach(option => {
+        option.addEventListener('click', function () {
+            const color = this.dataset.color;
+            document.getElementById('eventColor').value = color;
 
+            // Update visual selection
+            document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+    });
 
-        selectedEvent = {
-            id: event.id,
-            title: event.title,
-            description: event.raw?.Description || '',
-            start: event.start,
-            end: event.end,
-            isAllDay: event.isAllDay,
-            location: event.location || '',
-            meetingLink: event.raw?.MeetingLink || '',
-            isInPerson: event.raw?.IsInPerson || false,
-            color: event.backgroundColor || '#007bff'
-        };
+    // All-day checkbox handler
+    document.getElementById('eventAllDay').addEventListener('change', function () {
+        const startInput = document.getElementById('eventStart');
+        const endInput = document.getElementById('eventEnd');
 
-        const content = document.getElementById('eventDetailsContent');
+        if (this.checked) {
+            // Convert to date inputs
+            const startDate = startInput.value.split('T')[0];
+            const endDate = endInput.value.split('T')[0];
 
-        content.innerHTML = `
-        <div class="event-details">
-            <div class="event-detail-item">
-                <div class="event-color-indicator" style="background-color: ${event.backgroundColor}"></div>
-                <strong>${event.title}</strong>
-            </div>
-            ${event.raw?.Description ? `
-                <div class="event-detail-item">
-                    <i class="fas fa-align-left event-detail-icon"></i>
-                    <span>${event.raw.Description.replace(/\n/g, '<br>')}</span>
-                </div>
-            ` : ''}
-            <div class="event-detail-item">
-                <i class="fas fa-clock event-detail-icon"></i>
-                <span>${formatEventTime(event)}</span>
-            </div>
-            ${event.location ? `
-                <div class="event-detail-item">
-                    <i class="fas fa-map-marker-alt event-detail-icon"></i>
-                    <span>${event.location}</span>
-                </div>
-            ` : ''}
-            ${event.raw?.MeetingLink ? `
-                <div class="event-detail-item">
-                    <i class="fas fa-link event-detail-icon"></i>
-                    <a href="${event.raw.MeetingLink}" target="_blank">${event.raw.MeetingLink}</a>
-                </div>
-            ` : ''}
-            ${event.raw?.IsInPerson ? `
-                <div class="event-detail-item">
-                    <i class="fas fa-users event-detail-icon"></i>
-                    <span>In-person event</span>
-                </div>
-            ` : ''}
-        </div>
-    `;
-    }
+            startInput.type = 'date';
+            endInput.type = 'date';
+            startInput.value = startDate;
+            endInput.value = endDate;
+        } else {
+            // Convert back to datetime inputs
+            startInput.type = 'datetime-local';
+            endInput.type = 'datetime-local';
+        }
+    });
+
     // Form submission
     document.getElementById('eventForm').addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -540,6 +494,67 @@
 
         eventDetailsModal.show();
     }
+
+    function showTaskDetails(event) {
+        const task = event.raw || event; 
+        selectedTask = {
+            id: task.id,
+            title: task.title,
+            description: task.description || '',
+            date: task.date || event.start?.toISOString().split('T')[0],
+            importance: task.importance || 'Medium',
+            isCompleted: task.isCompleted || false,
+            color: task.color || '#28a745'
+        };
+
+        const content = document.getElementById('taskDetailsContent');
+
+        // Fill modal fields with task data
+        /*document.getElementById('taskModalLabel').textContent = `Task Details - ${task.title}`;
+        document.getElementById('taskId').value = task.id;
+        document.getElementById('taskTitle').value = task.title;
+        document.getElementById('taskDescription').value = task.description || '';
+        document.getElementById('taskColor').value = task.color || '#28a745';
+        document.getElementById('taskDueDate').value = task.date; // Assuming ISO string 'YYYY-MM-DD'
+        document.getElementById('taskPriority').value = task.importance || 'Medium';
+        document.getElementById('taskStatus').value = task.isCompleted ? 'true' : 'false';*/
+
+        // Show the Edit button (optional)
+        document.getElementById('editTaskBtn').style.display = 'inline-block';
+        content.innerHTML = `
+  <div class="event-details">
+            <div class="event-detail-item">
+                <div class="event-color-indicator" style="background-color: ${selectedTask.color};"></div>
+                <strong>${selectedTask.title}</strong>
+            </div>
+
+            ${selectedTask.description ? `
+                <div class="event-detail-item">
+                    <i class="fas fa-align-left event-detail-icon"></i>
+                    <span>${selectedTask.description}</span>
+                </div>
+            ` : ''}
+
+            <div class="event-detail-item">
+                <i class="fas fa-calendar-day event-detail-icon"></i>
+                <span>Due: ${selectedTask.date}</span>
+            </div>
+
+            <div class="event-detail-item">
+                <i class="fas fa-exclamation-circle event-detail-icon"></i>
+                <span>Priority: ${selectedTask.importance}</span>
+            </div>
+
+            <div class="event-detail-item">
+                <i class="fas fa-tasks event-detail-icon"></i>
+                <span>Status: ${selectedTask.isCompleted ? '✅ Completed' : '❌ Incomplete'}</span>
+            </div>
+        </div>
+                `;
+
+        taskDetailsModal.show();
+    }
+
 
     async function updateEventOnServer(event, changes) {
         try {

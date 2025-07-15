@@ -315,8 +315,58 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
 
-        <!--Task Details Modal-->
+
+            <!-- Task Details Modal -->
+            <div class="modal fade" id="taskDetailsModal" tabindex="-1" aria-labelledby="taskDetailsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="taskDetailsModalLabel">
+                                <i class="fas fa-tasks me-2"></i>
+                                Task Details
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body" id="taskDetailsContent">
+                            <dl class="row">
+                                <dt class="col-sm-3">Title:</dt>
+                                <dd class="col-sm-9" id="taskDetailsTitle"></dd>
+
+                                <dt class="col-sm-3">Description:</dt>
+                                <dd class="col-sm-9" id="taskDetailsDescription"></dd>
+
+                                <dt class="col-sm-3">Due Date:</dt>
+                                <dd class="col-sm-9" id="taskDetailsDueDate"></dd>
+
+                                <dt class="col-sm-3">Priority:</dt>
+                                <dd class="col-sm-9" id="taskDetailsPriority"></dd>
+
+                                <dt class="col-sm-3">Status:</dt>
+                                <dd class="col-sm-9" id="taskDetailsStatus"></dd>
+
+                                <dt class="col-sm-3">Color:</dt>
+                                <dd class="col-sm-9">
+                                    <span id="taskDetailsColor" class="d-inline-block rounded" style="width: 24px; height: 24px;"></span>
+                                </dd>
+                            </dl>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>Close
+                            </button>
+                            <button type="button" class="btn btn-primary" id="editTaskBtn">
+                                <i class="fas fa-edit me-2"></i>Edit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
 
     
