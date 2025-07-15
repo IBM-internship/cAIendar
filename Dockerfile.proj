@@ -1,9 +1,22 @@
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
-RUN apk add --no-cache icu-libs
-USER $APP_UID
+
+# Install required packages including ICU and debugging tools
+RUN apk add --no-cache \
+icu-libs \
+icu-data-full \
+ca-certificates \
+tzdata \
+&& ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+
+# Create app directory and set permissions before switching user
 WORKDIR /app
-RUN mkdir -p /app/keys
+RUN mkdir -p /app/keys /app/certs /app/logs \
+&& chown -R $APP_UID:$APP_UID /app
+
+# Switch to non-root user
+USER $APP_UID
+
 EXPOSE 8080
 EXPOSE 8081
 
@@ -38,22 +51,31 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Create startup script that handles certificate setup
+# Create improved startup script with better error handling
 RUN echo '#!/bin/sh' > /app/setup-https.sh && \
+echo 'set -e' >> /app/setup-https.sh && \
 echo 'echo "Starting HTTPS setup..."' >> /app/setup-https.sh && \
+echo 'export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false' >> /app/setup-https.sh && \
+echo 'export DOTNET_EnableDiagnostics=0' >> /app/setup-https.sh && \
 echo 'if [ -f "/app/certs/aspnetapp.pfx" ]; then' >> /app/setup-https.sh && \
 echo '  echo "Using mounted production certificate"' >> /app/setup-https.sh && \
 echo '  cp /app/certs/aspnetapp.pfx /app/keys/aspnetapp.pfx' >> /app/setup-https.sh && \
 echo 'elif [ ! -f "/app/keys/aspnetapp.pfx" ]; then' >> /app/setup-https.sh && \
 echo '  echo "Generating development certificate..."' >> /app/setup-https.sh && \
-echo '  dotnet dev-certs https --export-path /app/keys/aspnetapp.pfx --password ${CERT_PASSWORD:-DevCertPassword123}' >> /app/setup-https.sh && \
+echo '  dotnet dev-certs https --clean' >> /app/setup-https.sh && \
+echo '  dotnet dev-certs https --export-path /app/keys/aspnetapp.pfx --password ${CERT_PASSWORD:-DevCertPassword123} --trust' >> /app/setup-https.sh && \
 echo 'fi' >> /app/setup-https.sh && \
+echo 'echo "Certificate setup complete"' >> /app/setup-https.sh && \
 echo 'echo "Starting application..."' >> /app/setup-https.sh && \
 echo 'exec dotnet AiCalendarAssistant.dll' >> /app/setup-https.sh && \
 chmod +x /app/setup-https.sh
 
-# Set default environment variables for HTTPS
+# Set environment variables for better stability
 ENV ASPNETCORE_URLS=https://+:8081;http://+:8080
 ENV ASPNETCORE_HTTPS_PORT=8081
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+ENV DOTNET_EnableDiagnostics=0
+ENV ASPNETCORE_Kestrel__Certificates__Default__Path=/app/keys/aspnetapp.pfx
+ENV ASPNETCORE_Kestrel__Certificates__Default__Password=DevCertPassword123
 
 ENTRYPOINT ["/bin/sh", "/app/setup-https.sh"]
