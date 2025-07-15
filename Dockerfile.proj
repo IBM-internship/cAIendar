@@ -1,9 +1,12 @@
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
+
 RUN apk add --no-cache icu-libs
 USER $APP_UID
+
 WORKDIR /app
 RUN mkdir -p /app/keys
+
 EXPOSE 8080
 EXPOSE 8081
 
@@ -38,12 +41,4 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-RUN dotnet dev-certs https --trust --export-path /app/keys/aspnetapp.pfx --password password123
-
-# Set environment variables for HTTPS
-ENV ASPNETCORE_URLS=https://+:8081;http://+:8080
-ENV ASPNETCORE_HTTPS_PORT=8081
-ENV ASPNETCORE_Kestrel__Certificates__Default__Password=password123
-ENV ASPNETCORE_Kestrel__Certificates__Default__Path=/app/keys/aspnetapp.pfx
-
-ENTRYPOINT ["dotnet", "AiCalendarAssistant.dll"]
+ENTRYPOINT ["/bin/sh", "/app/setup-https.sh"]

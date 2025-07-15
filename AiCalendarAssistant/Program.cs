@@ -10,7 +10,6 @@ using AiCalendarAssistant.Infrastructure;
 using AiCalendarAssistant.Llm;
 using AiCalendarAssistant.Models;
 using DotNetEnv;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Message = AiCalendarAssistant.Models.Message;
 
@@ -25,10 +24,6 @@ if (string.IsNullOrEmpty(connectionString))
 {
     throw new InvalidOperationException("ConnectionString not found in environment variables.");
 }
-
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo("/app/keys"))
-    .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 
 // Add services to the containers
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
