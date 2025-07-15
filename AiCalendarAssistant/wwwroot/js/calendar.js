@@ -67,9 +67,11 @@
             const event = e.event;
                 if (event.category == "task") {
                     // It's a task, show task details
+                    selectedTask = event;
                     showTaskDetails(event);
                 } else {
                     // It's a normal event, show event details
+                    selectedEvent = event;
                     showEventDetails(event);
                 }
         });
@@ -132,7 +134,7 @@
                 const color = task.color || importanceColorMap[task.importance] || '#28a745';
 
                 calendar.createEvents([{
-                    id: task.id,
+                    id: String(task.id),
                     calendarId: '2',
                     title: task.isCompleted ? `✅ ${task.title}` : task.title,
                     category: 'task',
@@ -164,6 +166,13 @@
         eventDetailsModal.hide();
         setTimeout(() => {
             openEventForm(selectedEvent);
+        }, 300);
+    });
+
+    document.getElementById('editTaskBtn').addEventListener('click', function () {
+        taskDetailsModal.hide();
+        setTimeout(() => {
+            openTaskForm(selectedTask);
         }, 300);
     });
 
@@ -381,6 +390,7 @@
             id: isNew ? 0 : parseInt(taskIdValue, 10),
             title: document.getElementById('taskTitle').value,
             description: document.getElementById('taskDescription').value,
+            //category: "task",
             date: document.getElementById('taskDueDate').value, // matches UserTask.Date
             importance: document.getElementById('taskPriority').value, // Low/Medium/High
             isCompleted: document.getElementById('taskStatus').value === 'true',
@@ -405,7 +415,7 @@
 
                 if (isNew) {
                     calendar.createEvents([{
-                        id: `task-${result}`,
+                        id: String(result),
                         calendarId: '2',
                         title: task.title,
                         category: 'task',
@@ -417,8 +427,10 @@
                         raw: task
                     }]);
                 } else {
-                    calendar.updateEvent(`task-${task.id}`, '2', {
+                    calendar.updateEvent(String(result), '2', {
                         title: task.title,
+                        description: task.description,
+                        //category: 'task',
                         start,
                         end,
                         isAllDay: true,
@@ -509,18 +521,6 @@
 
         const content = document.getElementById('taskDetailsContent');
 
-        // Fill modal fields with task data
-        /*document.getElementById('taskModalLabel').textContent = `Task Details - ${task.title}`;
-        document.getElementById('taskId').value = task.id;
-        document.getElementById('taskTitle').value = task.title;
-        document.getElementById('taskDescription').value = task.description || '';
-        document.getElementById('taskColor').value = task.color || '#28a745';
-        document.getElementById('taskDueDate').value = task.date; // Assuming ISO string 'YYYY-MM-DD'
-        document.getElementById('taskPriority').value = task.importance || 'Medium';
-        document.getElementById('taskStatus').value = task.isCompleted ? 'true' : 'false';*/
-
-        // Show the Edit button (optional)
-        document.getElementById('editTaskBtn').style.display = 'inline-block';
         content.innerHTML = `
   <div class="event-details">
             <div class="event-detail-item">
@@ -587,6 +587,8 @@
             calendar.render();
         }
     }
+
+   
 
     // Delete event
     document.getElementById('deleteEventBtn').addEventListener('click', async function () {
