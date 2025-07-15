@@ -86,15 +86,39 @@
             }
         });
 
+        newCalendar.on('beforeDeleteEvent', function (e) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                deleteTaskFromServer(e.event.id);
+            }
+        });
+
         newCalendar.on('beforeCreateEvent', function (e) {
             createQuickEvent(e);
         });
 
+        /*calendar.on('dblclickDayname', function (e) {
+            const date = e.date.toDate();
+            openTaskForm({
+                date: date.toISOString().split('T')[0]
+            });
+        });*/
 
 
-        return newCalendar; // ✅ return it!
+        return newCalendar; 
     }
 
+    function toggleCategory(categoryId, isVisible) {
+        const schedules = calendar.getSchedules();
+        schedules.forEach(schedule => {
+            if (schedule.calendarId === categoryId) {
+                if (isVisible) {
+                    calendar.createEvents([schedule]);
+                } else {
+                    calendar.deleteEvent(schedule.id, schedule.calendarId);
+                }
+            }
+        });
+    }
 
     // Load events from server
     async function loadAllItems() {
@@ -597,6 +621,12 @@
         }
     });
 
+    document.getElementById('deleteTaskBtn').addEventListener('click', async function () {
+        if (selectedTask && confirm('Are you sure you want to delete this task?')) {
+            await deleteTaskFromServer(selectedTask.id);
+        }
+    });
+
     async function deleteEventFromServer(eventId) {
         try {
             const response = await fetch(`/api/calendarapi/delete/${eventId}`, {
@@ -620,6 +650,32 @@
         } catch (error) {
             console.error('Error deleting event:', error);
             showToast('Error while deleting event', 'error');
+        }
+    }
+
+    async function deleteTaskFromServer(eventId) {
+        try {
+            const response = await fetch(`/api/tasks/delete/${eventId}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                calendar.deleteEvent(eventId, '2');
+                eventModal.hide();
+                eventDetailsModal.hide();
+                showToast('Task was deleted successfully!', 'success');
+
+
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                const errorText = await response.text();
+                showToast(`Error while deleting task: ${errorText}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting task:', error);
+            showToast('Error while deleting task', 'error');
         }
     }
 

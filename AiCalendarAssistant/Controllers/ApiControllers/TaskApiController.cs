@@ -29,17 +29,17 @@ public class TaskApiController(ITaskService taskService) : ControllerBase
         return Ok(newTask.Id);
     }
 
-    [HttpDelete("delete")]
-    public async Task<ActionResult> DeleteTask([FromBody] DeleteTaskRequest request)
+    [HttpDelete("delete/{id}")]
+    public async Task<ActionResult> DeleteTask(int id)
     {
-        var existing = await taskService.GetTaskByIdAsync(request.Id);
+        var existing = await taskService.GetTaskByIdAsync(id);
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (existing == null || existing.UserId != userId)
-            return NotFound($"Task with ID {request.Id} not found or unauthorized.");
+            return NotFound($"Task with ID {id} not found or unauthorized.");
 
-        var success = await taskService.DeleteTaskAsync(request.Id);
+        var success = await taskService.DeleteTaskAsync(id);
         if (!success)
-            return NotFound($"Task with ID {request.Id} could not be deleted.");
+            return NotFound($"Task with ID {id} could not be deleted.");
         return NoContent();
     }
 
