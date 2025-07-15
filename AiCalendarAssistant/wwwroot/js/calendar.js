@@ -67,11 +67,11 @@
             const event = e.event;
                 if (event.category == "task") {
                     // It's a task, show task details
-                    selectedTask = event;
+                    //selectedTask = event;
                     showTaskDetails(event);
                 } else {
                     // It's a normal event, show event details
-                    selectedEvent = event;
+                    //selectedEvent = event;
                     showEventDetails(event);
                 }
         });
@@ -211,9 +211,9 @@
 
     // Helper functions
     function openTaskForm(task = null) {
-        selectedTask = task;
+       
         document.getElementById('taskForm').reset();
-
+        selectedTask = task;
         if (task) {
             document.getElementById('taskModalLabel').innerHTML = '<i class="fas fa-edit me-2"></i>Edit Task';
             document.getElementById('taskId').value = task.id;
@@ -239,8 +239,9 @@
         taskModal.show();
     }
     function openEventForm(event = null) {
-        selectedEvent = event;
+        //selectedEvent = event;
         document.getElementById('eventForm').reset();
+        selectedEvent = event;
 
         if (event) {
             document.getElementById('eventModalLabel').innerHTML = '<i class="fas fa-edit me-2"></i>Edit event';
@@ -534,7 +535,7 @@
     function showTaskDetails(event) {
         const task = event.raw || event; 
         selectedTask = {
-            id: task.id,
+            id: event.id,
             title: task.title,
             description: task.description || '',
             date: task.date || event.start?.toISOString().split('T')[0],
@@ -621,7 +622,7 @@
         }
     });
 
-    document.getElementById('deleteTaskBtn').addEventListener('click', async function () {
+    document.getElementById('deleteTaskBtn').addEventListener('click', async function (e) {
         if (selectedTask && confirm('Are you sure you want to delete this task?')) {
             await deleteTaskFromServer(selectedTask.id);
         }
