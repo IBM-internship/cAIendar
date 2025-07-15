@@ -76,3 +76,136 @@ Llm__ApiKey=...
 ## License
 
 This project is provided as-is for demonstration purposes.
+
+
+# Documentation
+
+
+                          AiCalendarAssistant Project Documentation
+================================================================================
+
+Project Name:     AiCalendarAssistant (cAIendar)
+Maintained by:    Internal Development Team
+Last Updated:     July 14, 2025
+
+--------------------------------------------------------------------------------
+1. Overview
+--------------------------------------------------------------------------------
+
+AiCalendarAssistant (also branded as "cAIendar") is an AI-powered personal
+organizer web application developed using ASP.NET Core. It integrates with 
+Google APIs (Gmail, Calendar) and leverages IBM Watsonx or Ollama LLMs to
+automate daily planning tasks, including email summarization, task extraction,
+calendar event creation, and email drafting.
+
+The goal is to enhance productivity and decision-making by unifying tasks,
+messages, and events in a centralized, intelligent assistant.
+
+--------------------------------------------------------------------------------
+2. Solution Structure
+--------------------------------------------------------------------------------
+
+The solution consists of two projects:
+
+1. AiCalendarAssistant (ASP.NET Core Web Application)
+2. AiCalendarAssistant.Data (Data Access Layer with EF Core)
+
+Directory breakdown:
+
+- Controllers/          → Web endpoints (MVC controllers)
+- Views/                → Razor views (UI rendering)
+- Models/               → ViewModels & domain objects
+- Services/             → Business logic (email, LLM, calendar)
+- Llm/                  → Language Model integration (Watsonx, Ollama)
+- Infrastructure/       → Middleware, auth policies, helpers
+- Config/               → Static app config classes (API keys, etc.)
+- Utilities/            → Utility methods and helpers
+- Areas/                → Modular UI areas (admin/user split if applicable)
+- wwwroot/              → Static assets
+- Program.cs / Program2.cs → App initialization
+- .env / appsettings.json   → Environment & runtime configuration
+
+--------------------------------------------------------------------------------
+3. Core Technologies
+--------------------------------------------------------------------------------
+
+- .NET 8 / ASP.NET Core MVC
+- Entity Framework Core (SQL Server)
+- IBM Watsonx + Ollama (LLM Integration)
+- Google OAuth 2.0 (Gmail/Calendar access)
+- Docker for containerized deployment
+- Razor Pages & Bootstrap for frontend UI
+
+--------------------------------------------------------------------------------
+4. Features Summary
+--------------------------------------------------------------------------------
+
+- Google OAuth Login for account connection
+- Gmail access and email summarization via LLMs
+- Task and intent extraction from messages
+- Event creation and calendar sync
+- Email response drafting using AI
+- Personal LLM chat based on schedule context
+- Real-time update suggestions and schedule insights
+
+--------------------------------------------------------------------------------
+5. Configuration & Environment Setup
+--------------------------------------------------------------------------------
+
+Required environment variables (in `.env`):
+
+- ConnectionString=<SQLServerConnection>
+- GoogleClientId, GoogleClientSecret
+- WatsonxCredentials or OllamaFallback
+- GmailApiKey, GmailSecret
+
+The application loads `.env` at startup via `DotNetEnv`.
+
+--------------------------------------------------------------------------------
+6. App Startup Logic (Program.cs)
+--------------------------------------------------------------------------------
+
+- Loads environment variables
+- Configures EF Core with ApplicationDbContext
+- Adds Identity (ApplicationUser)
+- Registers services: EmailService, LlmService, SchedulerService, etc.
+- Configures Google Authentication and session cookies
+- Starts middleware pipeline and routes
+
+--------------------------------------------------------------------------------
+7. Logging & Diagnostics
+--------------------------------------------------------------------------------
+
+Configured via `appsettings.json`:
+
+```
+"Logging": {
+  "LogLevel": {
+    "Default": "Information",
+    "Microsoft.AspNetCore": "Warning"
+  }
+}
+```
+
+Application emits logs per feature area. Errors are routed to a centralized
+exception handler (TBD: LoggingService or ErrorController).
+
+--------------------------------------------------------------------------------
+8. Development & Deployment
+--------------------------------------------------------------------------------
+
+### Local Dev Setup:
+1. Clone the repo
+2. Set up `.env` and `appsettings.Development.json`
+3. Run EF Core migrations:
+   > dotnet ef database update
+4. Launch the app:
+   > dotnet run
+
+### Docker Deployment:
+- Dockerfile and docker-compose.yml included
+- Run with:
+  > docker-compose up --build
+
+================================================================================
+
