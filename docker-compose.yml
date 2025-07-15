@@ -7,7 +7,7 @@ services:
       - ./:/workspace
     ports:
       - "2223:22"
-      - "5032:5032"
+      - "5033:5032"
       - "7194:7194"
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -36,7 +36,20 @@ services:
     tty: true
     networks:
       - app-network
-
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.proj
+    ports:
+      - 5032:8080
+    container_name: app
+    networks:
+      - app-network
+    environment:
+      - AiCalendarAssistant/.env
+    depends_on:
+      - sqlserver
+    
 volumes:
   sqlserver_data:
 networks:

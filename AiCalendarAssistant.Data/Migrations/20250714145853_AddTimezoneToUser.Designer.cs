@@ -4,6 +4,7 @@ using AiCalendarAssistant.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AiCalendarAssistant.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250714145853_AddTimezoneToUser")]
+    partial class AddTimezoneToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -108,10 +111,10 @@ namespace AiCalendarAssistant.Data.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "USER1@EMAIL.COM",
                             NormalizedUserName = "USER1@EMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEB5WBc7U/aiUcJDUpz4ktXOtVoY/b9rXI6rWtXwP6l81rRQAnXUeNgEipPhnNtH2JQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEBbwExT2bV4Rh3XiSlbbxLU8WBfbM309jP0j7Gmtpc8WerAZHRNVYuJGcL8h1VUDIg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "98875225-7592-4965-b455-c2d06c69ed98",
-                            TimeZone = "GMT Standard Time",
+                            SecurityStamp = "e6636458-cd31-4402-a885-794e6756d8e4",
+                            TimeZone = "UTC",
                             TwoFactorEnabled = false,
                             UserDiscription = "",
                             UserName = "user1@email.com"

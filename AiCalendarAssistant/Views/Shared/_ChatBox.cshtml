@@ -1,0 +1,684 @@
+﻿@model AiCalendarAssistant.Controllers.ChatViewModel
+@{
+    var selectedChatId = (int?)ViewData["SelectedChatId"];
+}
+
+<div id="chatContainer" class="chat-container d-flex flex-column">
+    <!-- Chat header -->
+    <div class="chat-header d-flex justify-content-between align-items-center mb-3">
+        <h6 id="your-chats" class="mb-0">Your Chats</h6>
+        <button id="newChatBtn" class="newChatBtn" data-loading="false">+ New chat</button>
+    </div>
+
+    <!-- Chats topbar -->
+    <div id="chatTopbar" class="chat-topbar d-flex overflow-auto mb-3">
+        @foreach (var chat in Model.Chats)
+        {
+            var activeClass = chat.Id == selectedChatId ? "active" : "";
+            <button type="button" class="chat-tab chatIdBtn btn-sm @activeClass"
+                    data-chatid="@chat.Id"
+                    style="white-space: nowrap;">
+                Chat @chat.Id
+            </button>
+        }
+
+        @if (selectedChatId.HasValue)
+        {
+            <button id="deleteChatBtn" class="btn btn-outline-danger btn-sm ms-auto" data-loading="false">Delete Selected</button>
+        }
+    </div>
+
+    <!-- Messages area -->
+    <div id="chatMessages" class="chat-messages flex-grow-1 overflow-auto mb-3">
+        @if (Model.SelectedChat?.Messages != null && Model.SelectedChat.Messages.Any())
+        {
+            <div class="messages-container d-flex flex-column">
+                @foreach (var msg in Model.SelectedChat.Messages)
+                {
+                    var roleLower = msg.Role.ToString().ToLower();
+                    var isUser = roleLower == "user";
+                    var bubbleClass = isUser ? "msg-user" : "msg-assistant";
+                    var alignClass = isUser ? "align-self-end" : "align-self-start";
+
+                    <div class="message-bubble @bubbleClass @alignClass">
+                        <div class="message-text">@msg.Text</div>
+                        <div class="message-meta text-muted small">@msg.Role • @msg.SentOn.ToShortTimeString()</div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="messages-container d-flex flex-column">
+                <p class="text-muted text-center mt-3">No chat selected or no messages.</p>
+            </div>
+        }
+    </div>
+
+    <!-- Input for sending messages -->
+    @if (selectedChatId.HasValue)
+    {
+        <div class="input-group">
+            <input type="text" id="messageInput" class="form-control"
+                   placeholder="Type your message..."
+                   aria-label="Message input"
+                   data-chat-id="@selectedChatId" />
+            <button id="sendMessageBtn" class="btn btn-primary"
+                    aria-label="Send message"
+                    data-loading="false">
+                Send
+            </button>
+        </div>
+        <div class="mt-2 text-danger" id="responseText" style="min-height: 1.2em;"></div>
+    }
+</div>
+
+<style>
+    #your-chats {
+        color: #fff;
+    }
+
+    .newChatBtn {
+        background-color: white;
+        color: #6E65C6;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 1rem;
+        transition: all 0.25s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+    }
+
+        .newChatBtn:hover:not(:disabled) {
+            background-color: #6E65C6;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .newChatBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+    .chatIdBtn {
+        background-color: #6E65C6;
+        color: white;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        padding: 10px 14px;
+        font-size: 1rem;
+        transition: all 0.25s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-right: 8px;
+    }
+
+        .chatIdBtn:hover:not(.active) {
+            background-color: white;
+            color: #6E65C6;
+            transform: scale(1.05);
+        }
+
+    .chat-topbar {
+        min-height: 3.5rem;
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid #ddd;
+        scroll-behavior: smooth;
+        align-items: center;
+        gap: 8px;
+        overflow-x: auto;
+    }
+
+    .chat-tab {
+        flex: 0 0 auto;
+        border-radius: 20px;
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        transition: background-color 0.3s, color 0.3s;
+        cursor: pointer;
+    }
+
+        .chat-tab.active {
+            background-color: #6E65C6 !important;
+            color: white !important;
+            border-color: #6E65C6 !important;
+        }
+
+    .chat-container {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 0.9rem;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        max-height: 600px;
+        overflow: hidden;
+    }
+
+    .chat-header h6 {
+        font-weight: 600;
+        color: #6E65C6;
+    }
+
+    .chat-messages {
+        border-radius: 10px;
+        padding: 10px;
+        box-shadow: inset 0 0 5px rgb(0 0 0 / 0.05);
+        overflow-y: auto;
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* Internet Explorer 10+ */
+    }
+
+        .chat-messages::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Chrome, Safari and Opera */
+        }
+
+    .messages-container {
+        min-height: 100px;
+    }
+
+    .message-bubble {
+        max-width: 75%;
+        margin-bottom: 0.5rem;
+        padding: 10px 15px;
+        border-radius: 18px;
+        box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+        line-height: 1.3;
+        word-wrap: break-word;
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    .msg-user {
+        background-color: #6E65C6;
+        color: white;
+        border-radius: 18px 18px 0 18px;
+    }
+
+    .msg-assistant {
+        background-color: #e9ecef;
+        color: #212529;
+        border-radius: 18px 18px 18px 0;
+    }
+
+    .message-meta {
+        font-size: 0.75rem;
+        margin-top: 4px;
+        opacity: 0.7;
+    }
+
+    .input-group {
+        gap: 0.5rem;
+        padding-bottom: 1rem;
+    }
+
+        .input-group input.form-control {
+            flex-grow: 1;
+        }
+
+        .input-group button.btn-primary {
+            min-width: 75px;
+            position: relative;
+        }
+
+            .input-group button.btn-primary:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    @@keyframes spin {
+        to
+
+    {
+        transform: rotate(360deg);
+    }
+
+    }
+
+    .btn[data-loading="true"] {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .success-message {
+        color: #28a745;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // State management
+        let currentChatId = null;
+        let isProcessing = false;
+
+        const popup = document.getElementById('chatPopup');
+        const chatContainer = document.getElementById('chatContainer');
+
+        // Initialize current chat ID
+        const activeTab = document.querySelector('.chat-tab.active');
+        if (activeTab) {
+            currentChatId = parseInt(activeTab.dataset.chatid);
+        }
+
+        // Restore popup open state
+        if (localStorage.getItem('chatPopupOpen') === 'true') {
+            popup?.classList.remove('d-none');
+        }
+
+        // Toggle popup function
+        window.toggleChat = function () {
+            if (popup) {
+                popup.classList.toggle('d-none');
+                localStorage.setItem('chatPopupOpen', !popup.classList.contains('d-none'));
+            }
+        };
+
+        // Utility functions
+        function showError(message, elementId = 'responseText') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.className = 'mt-2 text-danger';
+                setTimeout(() => {
+                    element.textContent = '';
+                }, 5000);
+            }
+        }
+
+        function showSuccess(message, elementId = 'responseText') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.className = 'mt-2 text-success';
+                setTimeout(() => {
+                    element.textContent = '';
+                }, 3000);
+            }
+        }
+
+        function setButtonLoading(button, isLoading) {
+            if (!button) return;
+
+            button.setAttribute('data-loading', isLoading);
+            button.disabled = isLoading;
+
+            if (isLoading) {
+                button.dataset.originalText = button.textContent;
+                button.innerHTML = '<span class="loading-spinner"></span> Loading...';
+            } else {
+                button.textContent = button.dataset.originalText || button.textContent;
+            }
+        }
+
+        function scrollMessagesToBottom() {
+            const chatMessages = document.querySelector('.chat-messages');
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        function appendMessage(role, text) {
+            const container = document.querySelector('.messages-container');
+            if (!container) return;
+
+            // Remove "no messages" placeholder if it exists
+            const placeholder = container.querySelector('.text-muted.text-center');
+            if (placeholder) {
+                placeholder.remove();
+            }
+
+            const bubble = document.createElement('div');
+            bubble.classList.add('message-bubble');
+            bubble.classList.add(role === 'user' ? 'msg-user' : 'msg-assistant');
+            bubble.classList.add(role === 'user' ? 'align-self-end' : 'align-self-start');
+
+            const messageText = document.createElement('div');
+            messageText.classList.add('message-text');
+            messageText.textContent = text;
+
+            const meta = document.createElement('div');
+            meta.classList.add('message-meta', 'text-muted', 'small');
+            meta.textContent = role + ' • ' + new Date().toLocaleTimeString();
+
+            bubble.appendChild(messageText);
+            bubble.appendChild(meta);
+            container.appendChild(bubble);
+
+            scrollMessagesToBottom();
+        }
+
+        // Send message function
+        async function sendMessage() {
+            if (isProcessing) return;
+
+            const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendMessageBtn');
+            const responseText = document.getElementById('responseText');
+
+            if (!input || !sendBtn) return;
+
+            const text = input.value.trim();
+            const chatId = currentChatId || parseInt(input.dataset.chatId);
+
+            if (!text || !chatId) {
+                showError('Please enter a message and select a chat.');
+                return;
+            }
+
+            isProcessing = true;
+            setButtonLoading(sendBtn, true);
+            responseText.textContent = '';
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chatId: chatId, text: text })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to send message');
+                }
+
+                const data = await response.json();
+
+                // Clear input and show messages
+                input.value = '';
+                appendMessage('user', text);
+
+                if (data.assistantText) {
+                    appendMessage('assistant', data.assistantText);
+                }
+
+            } catch (error) {
+                console.error('Send message error:', error);
+                showError('Error: ' + error.message);
+            } finally {
+                isProcessing = false;
+                setButtonLoading(sendBtn, false);
+            }
+        }
+
+        // Create new chat
+        async function createChat() {
+            if (isProcessing) return;
+
+            const newChatBtn = document.getElementById('newChatBtn');
+            if (!newChatBtn) return;
+
+            isProcessing = true;
+            setButtonLoading(newChatBtn, true);
+
+            try {
+                const response = await fetch('/Calendar/Create', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create new chat');
+                }
+
+                // Get the new chat ID from response if available
+                const result = await response.json().catch(() => ({}));
+                const newChatId = result.chatId || result.id;
+
+                // Reload chat partial with new chat selected
+                await reloadChatPartial(newChatId);
+
+                if (newChatId) {
+                    currentChatId = newChatId;
+                    updateUrl(newChatId);
+                }
+
+            } catch (error) {
+                console.error('Create chat error:', error);
+                showError('Error creating chat: ' + error.message);
+            } finally {
+                isProcessing = false;
+                setButtonLoading(newChatBtn, false);
+            }
+        }
+
+        // Delete chat
+        async function deleteChat() {
+            if (isProcessing || !currentChatId) return;
+
+            if (!confirm('Are you sure you want to delete the selected chat?')) return;
+
+            const deleteChatBtn = document.getElementById('deleteChatBtn');
+            if (!deleteChatBtn) return;
+
+            isProcessing = true;
+            setButtonLoading(deleteChatBtn, true);
+
+            try {
+                const formData = new FormData();
+                formData.append('id', currentChatId);
+
+                const response = await fetch('/Calendar/Delete', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete chat');
+                }
+
+                // Reset current chat ID and URL
+                currentChatId = null;
+                updateUrl(null);
+
+                // Reload chat partial with no chat selected
+                await reloadChatPartial(null);
+
+            } catch (error) {
+                console.error('Delete chat error:', error);
+                showError('Error deleting chat: ' + error.message);
+            } finally {
+                isProcessing = false;
+                setButtonLoading(deleteChatBtn, false);
+            }
+        }
+
+        // Switch chat
+        function switchChat(chatId) {
+            if (isProcessing || currentChatId === parseInt(chatId)) return;
+
+            currentChatId = parseInt(chatId);
+            updateUrl(chatId);
+
+            // Reload chat partial with selected chat
+            reloadChatPartial(chatId);
+        }
+
+        // Helper function to update URL without page reload
+        function updateUrl(chatId) {
+            const newUrl = new URL(window.location);
+            if (chatId) {
+                newUrl.searchParams.set('selectedChatId', chatId);
+            } else {
+                newUrl.searchParams.delete('selectedChatId');
+            }
+            window.history.pushState({}, '', newUrl);
+        }
+
+        // Helper to fetch and update chatContainer partial (refresh chats/messages)
+        async function reloadChatPartial(selectedChatId) {
+            try {
+                let url = window.location.pathname;
+                if (selectedChatId) {
+                    url += '?selectedChatId=' + selectedChatId;
+                }
+
+                const response = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to reload chat partial');
+                }
+
+                const html = await response.text();
+
+                // Store current scroll position
+                const chatMessages = document.querySelector('.chat-messages');
+                const scrollPos = chatMessages ? chatMessages.scrollTop : 0;
+
+                // Replace innerHTML of chatContainer
+                chatContainer.innerHTML = html;
+
+                // Re-bind event handlers because innerHTML replaced content
+                bindEvents();
+
+                // Update current chat ID from the new content
+                const newActiveTab = document.querySelector('.chat-tab.active');
+                if (newActiveTab) {
+                    currentChatId = parseInt(newActiveTab.dataset.chatid);
+                } else {
+                    currentChatId = null;
+                }
+
+                // Keep popup open
+                if (popup) {
+                    localStorage.setItem('chatPopupOpen', 'true');
+                }
+
+                // Restore scroll position if we're in the same chat
+                if (selectedChatId && chatMessages) {
+                    setTimeout(() => {
+                        const newChatMessages = document.querySelector('.chat-messages');
+                        if (newChatMessages) {
+                            newChatMessages.scrollTop = scrollPos;
+                        }
+                    }, 0);
+                }
+
+            } catch (error) {
+                console.error('Failed to reload chat partial:', error);
+                showError('Failed to refresh chat. Please try again.');
+            }
+        }
+
+        // Event binding function
+        function bindEvents() {
+            // New chat button
+            const newChatBtn = document.getElementById('newChatBtn');
+            if (newChatBtn) {
+                newChatBtn.removeEventListener('click', createChat);
+                newChatBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    createChat();
+                });
+            }
+
+            // Delete chat button
+            const deleteChatBtn = document.getElementById('deleteChatBtn');
+            if (deleteChatBtn) {
+                deleteChatBtn.removeEventListener('click', deleteChat);
+                deleteChatBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    deleteChat();
+                });
+            }
+
+            // Send message button
+            const sendMessageBtn = document.getElementById('sendMessageBtn');
+            if (sendMessageBtn) {
+                sendMessageBtn.removeEventListener('click', sendMessage);
+                sendMessageBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    sendMessage();
+                });
+            }
+
+            // Message input enter key
+            const messageInput = document.getElementById('messageInput');
+            if (messageInput) {
+                messageInput.removeEventListener('keypress', handleEnterKey);
+                messageInput.addEventListener('keypress', handleEnterKey);
+            }
+
+            // Chat tabs
+            const chatTabs = document.querySelectorAll('.chat-tab');
+            chatTabs.forEach(tab => {
+                tab.removeEventListener('click', handleTabClick);
+                tab.addEventListener('click', handleTabClick);
+            });
+        }
+
+        function handleEnterKey(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function handleTabClick(e) {
+            e.preventDefault();
+            const chatId = this.dataset.chatid;
+            if (chatId) {
+                switchChat(chatId);
+            }
+        }
+
+        // Initialize event binding
+        bindEvents();
+
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const chatId = urlParams.get('selectedChatId');
+            if (chatId) {
+                currentChatId = parseInt(chatId);
+                reloadChatPartial(chatId);
+            } else {
+                currentChatId = null;
+                reloadChatPartial(null);
+            }
+        });
+    });
+</script>

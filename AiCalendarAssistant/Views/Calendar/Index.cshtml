@@ -1,8 +1,8 @@
 ﻿@model AiCalendarAssistant.Controllers.ChatViewModel
 @{
+    ViewData["Title"] = "Chat";
     var selectedChatId = (int?)ViewData["SelectedChatId"];
 }
-
 <!DOCTYPE html>
 <html lang="bg">
 <head>
@@ -20,66 +20,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
     <link rel="stylesheet" href="~/css/calendar.css" />
+
+    <link rel="stylesheet" href="~/css/chat.css" />
 </head>
 <body>
-    <div class="video-background">
-        <video autoplay muted loop playsinline>
-            <source src="/videos/bg-video-landing.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-        </video>
-        <div class="video-overlay"></div>
-    </div>
     <div class="container-fluid">
         <div class="calendar-container" id="calendarContainer">
             <div class="calendar-header">
                 <h1 class="calendar-title">
-                    <i class="fas fa-calendar-alt me-2" onclick="closeSidebar()"></i>
+                    <i class="fas fa-calendar-alt me-2"></i>
+
+                    <button onclick="toggleChat()" class="btn p-0 border-0 bg-transparent icon-btn">
+                        <i class="fa-solid fa-comment-dots fa-2x text-purple"></i>
+                    </button>
+
                 </h1>
-
-                @if (Model.SelectedChat != null)
-                {
-                    <div class="calendar-input-wrapper">
-                        <input type="text"
-                               id="messageInput"
-                               class="form-control form-control-lg glass-input"
-                               onkeydown="handleKey(event)" class="btn btn-outline-light position-fixed top-0 end-0 m-3" 
-                               placeholder="Tell your assistant what to do..." />
-                    </div>
-                }
-
-                <script>
-                    function handleKey(event) {
-                       if (event.key === 'Enter') { 
-                           event.preventDefault(); 
-                           sendMessage(@Model.SelectedChat.Id);
-                           const chatEl = document.getElementById('Chat');
-                           const calendarContainer = document.getElementById('calendarContainer');
-
-                           if (chatEl.classList.contains('hidden')) {
-                             chatEl.classList.remove('hidden');
-                             calendarContainer.classList.add('with-sidebar');
-                           }
-                        }
-                    }
-
-                    function closeSidebar() {
-                       
-                           event.preventDefault();
-                          
-                           const chatEl = document.getElementById('Chat');
-                           const calendarContainer = document.getElementById('calendarContainer');
-
-                           if (!chatEl.classList.contains('hidden')) {
-                             calendarContainer.classList.remove('with-sidebar');
-                             chatEl.classList.add('hidden');
-                           }
-                           else{
-                                chatEl.classList.remove('hidden');
-                             calendarContainer.classList.add('with-sidebar');
-                           }
-                        
-                    }
-                </script>
 
                 <div class="calendar-controls">
                     <button class="nav-btn" id="prevBtn">
@@ -102,24 +57,10 @@
                     </button>
                 </div>
             </div>
+
             <div id="calendar"></div>
-            
         </div>
-
-
-        <div class="chat-sidebar hidden" id="Chat">
-                @await Html.PartialAsync("_ChatPartial", Model)
-                </div>
-        
-        
     </div>
-
-    <!--<div id="chatSidebar" class="chat-sidebar hidden">
-        @*await Html.PartialAsync("_ChatPartial", Model)*@
-    </div>
-    <button id="toggleChatBtn" class="btn btn-primary chat-toggle-btn">
-        <i class="fas fa-comments"></i>
-    </button>-->
 
     <!-- Event Form Modal -->
     <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
@@ -266,9 +207,49 @@
                 </div>
             </div>
 
+    
+    
 
-        </div>
+    <!-- Chat popup -->
+    <div id="chatPopup" class="chat-popup d-none">
+        @await Html.PartialAsync("_ChatBox", Model)
     </div>
+
+    <script>
+        function toggleChat() {
+            document.getElementById("chatPopup").classList.toggle("d-none");
+        }
+    </script>
+
+    <style>
+       
+        .text-purple {
+            color: #6E65C6 !important;
+        }
+
+        .icon-btn:hover i {
+            color: #6f42c1; /* A nice Bootstrap-style purple */
+            transform: scale(1.1);
+            transition: all 0.2s ease;
+        }
+        .chat-popup {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            width: 450px; /* wider */
+            max-width: 90vw; /* responsive max */
+            max-height: 150vh; /* limit height */
+            overflow-y: auto; /* scroll inside */
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 0px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.25);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
 
     <!-- Toast Container -->
     <div class="toast-container"></div>
@@ -280,5 +261,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script src="~/js/calendar.js"></script>
+
+    <script src="~/js/chat.js"></script>
 </body>
 </html>

@@ -5,16 +5,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AiCalendarAssistant.Services;
 
-public class NoteService(ApplicationDbContext context) : INoteService
+public class NoteService(ApplicationDbContext db) : INoteService
 {
     public async Task<List<UserNote>> GetAllNotesAsync()
     {
-        return await context.UserNotes.Include(n => n.User).ToListAsync();
+        return await db.UserNotes.Include(n => n.User).ToListAsync();
     }
 
     public async Task<List<UserNote>> GetNotesByUserIdAsync(string userId)
     {
-        return await context.UserNotes
+        return await db.UserNotes
             .Where(n => n.UserId == userId)
             .Include(n => n.User)
             .ToListAsync();
@@ -22,7 +22,7 @@ public class NoteService(ApplicationDbContext context) : INoteService
 
     public async Task AddNoteAsync(UserNote note)
     {
-        context.UserNotes.Add(note);
-        await context.SaveChangesAsync();
+        db.UserNotes.Add(note);
+        await db.SaveChangesAsync();
     }
 }

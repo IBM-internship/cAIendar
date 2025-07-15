@@ -12,10 +12,7 @@ namespace AiCalendarAssistant.Controllers.ApiControllers;
 [ApiController]
 [Route("api/chat")]
 [Authorize]
-public class ChatApiController(
-    ApplicationDbContext db,
-    ChatMessenger chatMessenger)
-    : ControllerBase
+public class ChatApiController(ApplicationDbContext db, ChatMessenger chatMessenger): ControllerBase
 {
     public record MessageModel(int ChatId, string Text);
 
@@ -25,7 +22,7 @@ public class ChatApiController(
         [FromBody] MessageModel model,
         CancellationToken       ct)
     {
-        if (model is null || string.IsNullOrWhiteSpace(model.Text))
+        if (model == null || string.IsNullOrWhiteSpace(model.Text))
             return BadRequest("Text is required.");
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -55,8 +52,9 @@ public class ChatApiController(
         await db.SaveChangesAsync(ct);
 
         // ── 2) let the assistant respond via ChatMessager ──────────────────
-        var assistantMessage =
-            await chatMessenger.GenerateAssistantMessageAsync(chat, ct);
+        var user = await db.Users
+            .FirstOrDefaultAsync(u => u.Id == userId, ct);
+        var assistantMessage = await chatMessenger.GenerateAssistantMessageAsync(chat, user!, ct);
 
         // ── 3) return both IDs & the assistant text ────────────────────────
         return Ok(new

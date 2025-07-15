@@ -95,12 +95,13 @@ namespace AiCalendarAssistant.Controllers
 		[HttpDelete("delete/{id}")]
 		public async Task<ActionResult> DeleteEvent(int id)
 		{
-			Console.WriteLine("event deleted");
+			Console.WriteLine($"Event deleted: {id}");
 			var success = await _calendarService.DeleteEventAsync(id);
 			if (!success)
 				return NotFound($"Event with ID {id} not found.");
 			return NoContent();
 		}
+
 
 		[HttpPut("replace")]
 		public async Task<ActionResult> ReplaceEvent([FromBody] Event updatedEvent)
@@ -121,7 +122,11 @@ namespace AiCalendarAssistant.Controllers
 		public async Task<IActionResult> UpdateEventTime([FromBody] UpdateTimeRequest update)
 		{
 			Console.WriteLine("event moved");
-			var success = await _calendarService.UpdateEventTimeAsync(update.Id, update.Start, update.End);
+			// Ensure UTC handling
+			var utcStart = DateTime.SpecifyKind(update.Start, DateTimeKind.Utc);
+			var utcEnd = DateTime.SpecifyKind(update.End, DateTimeKind.Utc);
+    
+			var success = await _calendarService.UpdateEventTimeAsync(update.Id, utcStart, utcEnd);
 			if (!success)
 				return NotFound();
 

@@ -60,9 +60,11 @@
             }
         });
 
-        // Event handlers
-        newCalendar.on('clickEvent', function (e) {
-            showEventDetails(e.event);
+        
+        // Calendar event handlers
+        calendar.on('clickEvent', function (e) {
+            const event = e.event;
+            showEventDetails(event);
         });
 
         newCalendar.on('beforeUpdateEvent', function (e) {
@@ -94,21 +96,28 @@
                 fetch('/api/tasks/all').then(res => res.json()),
             ]);
 
-            events.forEach(event => {
-                calendar.createEvents([{
-                    id: String(event.id),
-                    calendarId: '1',
-                    title: event.title,
-                    category: event.isAllDay ? 'allday' : 'time',
-                    start: event.start,
-                    end: event.end,
-                    isAllDay: event.isAllDay,
-                    location: event.location,
-                    backgroundColor: event.color || '#007bff',
-                    borderColor: event.color || '#007bff',
-                    raw: event
-                }]);
+                events.forEach(event => {
+                    calendar.createEvents([{
+                        id: String(event.id),
+                        calendarId: '1',
+                        title: event.title,
+                        category: event.isAllDay ? 'allday' : 'time',
+                        start: isoStringToLocalDatetime(event.start + 'Z'),
+                        end: isoStringToLocalDatetime(event.end + 'Z'),
+                        isAllDay: event.isAllDay,
+                        location: event.location,
+                        backgroundColor: event.color || '#007bff',
+                        borderColor: event.color || '#007bff',
+                        raw: event
+                    }]);
+
+                });
+            })
+            .catch(error => {
+                console.error('Error loading events:', error);
+                showToast('Error while loading events', 'error');
             });
+    }
 
             tasks.forEach(task => {
                 const taskDate = new Date(`${task.date}T00:00:00`);
@@ -276,6 +285,60 @@ document.getElementById('addTaskBtn').addEventListener('click', () => {
         eventModal.show();
     }
 
+    function showEventDetails(event) {
+        
+
+        selectedEvent = {
+            id: event.id,
+            title: event.title,
+            description: event.raw?.Description || '',
+            start: event.start,
+            end: event.end,
+            isAllDay: event.isAllDay,
+            location: event.location || '',
+            meetingLink: event.raw?.MeetingLink || '',
+            isInPerson: event.raw?.IsInPerson || false,
+            color: event.backgroundColor || '#007bff'
+        };
+
+        const content = document.getElementById('eventDetailsContent');
+
+        content.innerHTML = `
+        <div class="event-details">
+            <div class="event-detail-item">
+                <div class="event-color-indicator" style="background-color: ${event.backgroundColor}"></div>
+                <strong>${event.title}</strong>
+            </div>
+            ${event.raw?.Description ? `
+                <div class="event-detail-item">
+                    <i class="fas fa-align-left event-detail-icon"></i>
+                    <span>${event.raw.Description.replace(/\n/g, '<br>')}</span>
+                </div>
+            ` : ''}
+            <div class="event-detail-item">
+                <i class="fas fa-clock event-detail-icon"></i>
+                <span>${formatEventTime(event)}</span>
+            </div>
+            ${event.location ? `
+                <div class="event-detail-item">
+                    <i class="fas fa-map-marker-alt event-detail-icon"></i>
+                    <span>${event.location}</span>
+                </div>
+            ` : ''}
+            ${event.raw?.MeetingLink ? `
+                <div class="event-detail-item">
+                    <i class="fas fa-link event-detail-icon"></i>
+                    <a href="${event.raw.MeetingLink}" target="_blank">${event.raw.MeetingLink}</a>
+                </div>
+            ` : ''}
+            ${event.raw?.IsInPerson ? `
+                <div class="event-detail-item">
+                    <i class="fas fa-users event-detail-icon"></i>
+                    <span>In-person event</span>
+                </div>
+            ` : ''}
+        </div>
+    `;
     // Form submission
     document.getElementById('eventForm').addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -287,6 +350,7 @@ document.getElementById('taskForm').addEventListener('submit', async function (e
     await saveTask();
     });
 
+
     async function saveEvent() {
         const eventIdValue = document.getElementById('eventId').value;
         const isNew = !eventIdValue || eventIdValue === '0';
@@ -297,11 +361,11 @@ document.getElementById('taskForm').addEventListener('submit', async function (e
             Title: document.getElementById('eventTitle').value,
             Description: document.getElementById('eventDescription').value,
             Start: isAllDay
-                ? toLocalISOString(new Date(document.getElementById('eventStart').value + 'T00:00:00'))//idk what im doing
-                : localDatetimeToISOString(document.getElementById('eventStart').value),
+                ? new Date(document.getElementById('eventStart').value + 'T00:00:00').toISOString()
+                : new Date(document.getElementById('eventStart').value).toISOString(),
             End: isAllDay
-                ? toLocalISOString(new Date(document.getElementById('eventEnd').value + 'T23:59:59'))
-                : localDatetimeToISOString(document.getElementById('eventEnd').value),//hopes and dreams 
+                ? new Date(document.getElementById('eventEnd').value + 'T23:59:59').toISOString()
+                : new Date(document.getElementById('eventEnd').value).toISOString(),
             IsAllDay: isAllDay,
             Location: document.getElementById('eventLocation').value,
             MeetingLink: document.getElementById('eventMeetingLink').value,
@@ -528,10 +592,15 @@ async function saveTask() {
             });
 
             if (response.ok) {
-                calendar.deleteEvent(eventId, '1');
+                calendar.deleteEvent(eventId, '1'); 
                 eventModal.hide();
                 eventDetailsModal.hide();
                 showToast('Event was deleted successfully!', 'success');
+
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000); 
             } else {
                 const errorText = await response.text();
                 showToast(`Error while deleting event: ${errorText}`, 'error');
@@ -541,6 +610,7 @@ async function saveTask() {
             showToast('Error while deleting event', 'error');
         }
     }
+
 
     function createQuickEvent(eventData) {
         const title = prompt('Insert event title:');
@@ -556,7 +626,7 @@ async function saveTask() {
                 MeetingLink: '',
                 IsInPerson: false,
                 Color: '#007bff'
-            };
+            };  
 
             // Save to server
             fetch('/api/calendarapi/add', {

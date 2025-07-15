@@ -28,3 +28,17 @@ README.md
 !.git/config
 !.git/packed-refs
 !.git/refs/heads/**
+# compiled artefacts
+**/bin/
+**/obj/
+
+# local database files
+*.mdf
+*.ldf
+*.ndf
+sqlserver_data/
+
+# tooling noise
+.vscode/
+.DS_Store
+

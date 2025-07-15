@@ -36,7 +36,6 @@
             <th>From</th>
             <th>Subject</th>
             <th>Message</th>
-            <th>Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -47,17 +46,6 @@
                 <td>@email.SendingUserEmail</td>
                 <td>@email.Title</td>
                 <td>@email.Body</td>
-                <td>
-                    <form asp-action="Reply" method="post" style="display: inline;">
-                        <input type="hidden" name="messageId" value="@email.Id" />
-                        <input type="hidden" name="threadId" value="@email.ThreadId" />
-                        <input type="hidden" name="originalSubject" value="@email.Title" />
-                        <input type="hidden" name="fromEmail" value="@email.SendingUserEmail" />
-                        <button type="submit" class="btn btn-sm btn-primary">
-                            <i class="bi bi-reply"></i> Reply
-                        </button>
-                    </form>
-                </td>
             </tr>
         }
         </tbody>
