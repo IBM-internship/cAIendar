@@ -117,7 +117,7 @@ public class EmailProcessor(
         email.IsProcessed = true;
 
         var isRelevant = await IsRelevantEventAsync(email, user, ct);
-        if (/*!isRelevant*/false)
+        if (!isRelevant)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Email is not relevant for calendar event, skipping. {email.Body}");
@@ -164,13 +164,17 @@ public class EmailProcessor(
         Console.WriteLine($"Determining if email is relevant for calendar event. {email.Body}");
         Console.ResetColor();
         var prompt = new PromptRequest([
-                new Message("system",
-                    """
-                    You are an assistant that determines if an email is to create a task or an event.
-                    A task is something that can be done at any time of the day, while an event is something that has a specific time and date.
-                    An event can also be a meeting, an appointment, or any other event that requires scheduling.
-                    A task that has a specific date, but not a specific time to start and end, and could be added to a todo list or a task manager.
-                    """),
+                // new Message("system",
+                //     """
+                //     You are an assistant that determines if an email is to create a task or an event.
+                //     A task is something that can be done at any time of the day, while an event is something that has a specific time and date.
+                //     An event can also be a meeting, an appointment, or any other event that requires scheduling.
+                //     A task that has a specific date, but not a specific time to start and end, and could be added to a todo list or a task manager.
+                //     """),
+				new Message("system",
+					"""
+					You are a small router that reads emails from the user's inbox and determines if they are relevant to the user and should be added to the user's calendar and or todo list.
+					"""),
                 new Message("user",
                     $"""
                      Determine if this email is event or task that could be added to the user's calendar or todo list:
@@ -203,13 +207,18 @@ public class EmailProcessor(
     private async Task<bool> IsEventAsync(Email email, ApplicationUser user, CancellationToken ct = default)
     {
         var prompt = new PromptRequest([
-                new Message("system",
-                    """
-                    You are an assistant that determines if an email should be processed as a task or as an event.
-                    An event is something that has a specific time and date, while a task is something that can be done at any time of the day.
-                    An event can also be a meeting, an appointment, or any other event that requires scheduling.
-                    A task on the other hand, is something that can be done at any time of the day, and does not have a specific time to start and end.
-                    """),
+                // new Message("system",
+                //     """
+                //     You are an assistant that determines if an email should be processed as a task or as an event.
+                //     An event is something that has a specific time and date, while a task is something that can be done at any time of the day.
+                //     An event can also be a meeting, an appointment, or any other event that requires scheduling.
+                //     A task on the other hand, is something that can be done at any time of the day, and does not have a specific time to start and end.
+                //     """),
+				new Message("system",
+					"""
+					Determine if this email should be added to the user's calendar as an event which has a specific time frame and requires attendance, or it should be added to the user's todo list where not so important tasks are stored in a done-undone style todo.
+					If the email mentiones a specific time and date, it should be added to the user's calendar as an event.
+					"""),
                 new Message("user",
                     $"""
                      Determine if this email should be processed as a task or as an event:
