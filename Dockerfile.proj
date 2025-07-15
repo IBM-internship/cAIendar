@@ -1,21 +1,11 @@
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
 
-# Install required packages including ICU and debugging tools
-RUN apk add --no-cache \
-icu-libs \
-icu-data-full \
-ca-certificates \
-tzdata \
-&& ln -sf /usr/share/zoneinfo/UTC /etc/localtime
-
-# Create app directory and set permissions before switching user
-WORKDIR /app
-RUN mkdir -p /app/keys /app/certs /app/logs \
-&& chown -R $APP_UID:$APP_UID /app
-
-# Switch to non-root user
+RUN apk add --no-cache icu-libs
 USER $APP_UID
+
+WORKDIR /app
+RUN mkdir -p /app/keys
 
 EXPOSE 8080
 EXPOSE 8081
