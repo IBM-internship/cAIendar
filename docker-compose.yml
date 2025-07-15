@@ -1,19 +1,4 @@
 services:
-  dotnet-dev:
-    build: .
-    image: my/dotnet9-dev
-    working_dir: /workspace
-    volumes:
-      - ./:/workspace
-    ports:
-      - "2223:22"
-      - "5033:5032"
-      - "7194:7194"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - app-network
-
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sqlserver
@@ -28,14 +13,14 @@ services:
     networks:
       - app-network
 
-  sqlclient:
-    image: mcr.microsoft.com/mssql-tools
-    depends_on:
-      - sqlserver
-    entrypoint: /bin/bash
-    tty: true
-    networks:
-      - app-network
+#  sqlclient:
+#    image: mcr.microsoft.com/mssql-tools
+#    depends_on:
+#      - sqlserver
+#    entrypoint: /bin/bash
+#    tty: true
+#    networks:
+#      - app-network
   app:
     build:
       context: .

@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Runtime.InteropServices;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -118,8 +119,10 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
     
     private string GetTimezoneFromRequest()
     {
-        return TZConvert.IanaToWindows(Request.Headers["X-Timezone"].FirstOrDefault() ?? 
-               Request.Cookies["timezone"] ?? 
-               "GMT Standard Time");
+        var timezone = Request.Headers["X-Timezone"].FirstOrDefault() ??
+                       Request.Cookies["timezone"] ??
+                       "UTC";
+
+        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? TZConvert.IanaToWindows(timezone) : timezone;
     }
 }
