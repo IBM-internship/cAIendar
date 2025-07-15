@@ -12,7 +12,10 @@ using AiCalendarAssistant.Models;
 using DotNetEnv;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
+using System.Text.Json.Serialization; // Make sure this is at the top
+
 using Message = AiCalendarAssistant.Models.Message;
+using AiCalendarAssistant.Infrastructure.JsonConverters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -104,7 +107,13 @@ builder.Services.AddAuthentication()
         };
     });
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); // optional, for enums
+    });
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<TokenRefreshService>(provider =>
     new TokenRefreshService(

@@ -60,9 +60,9 @@
             }
         });
 
-        
+
         // Calendar event handlers
-        calendar.on('clickEvent', function (e) {
+        newCalendar.on('clickEvent', function (e) {
             const event = e.event;
             showEventDetails(event);
         });
@@ -96,28 +96,22 @@
                 fetch('/api/tasks/all').then(res => res.json()),
             ]);
 
-                events.forEach(event => {
-                    calendar.createEvents([{
-                        id: String(event.id),
-                        calendarId: '1',
-                        title: event.title,
-                        category: event.isAllDay ? 'allday' : 'time',
-                        start: isoStringToLocalDatetime(event.start + 'Z'),
-                        end: isoStringToLocalDatetime(event.end + 'Z'),
-                        isAllDay: event.isAllDay,
-                        location: event.location,
-                        backgroundColor: event.color || '#007bff',
-                        borderColor: event.color || '#007bff',
-                        raw: event
-                    }]);
+            events.forEach(event => {
+                calendar.createEvents([{
+                    id: String(event.id),
+                    calendarId: '1',
+                    title: event.title,
+                    category: event.isAllDay ? 'allday' : 'time',
+                    start: isoStringToLocalDatetime(event.start + 'Z'),
+                    end: isoStringToLocalDatetime(event.end + 'Z'),
+                    isAllDay: event.isAllDay,
+                    location: event.location,
+                    backgroundColor: event.color || '#007bff',
+                    borderColor: event.color || '#007bff',
+                    raw: event
+                }]);
 
-                });
-            })
-            .catch(error => {
-                console.error('Error loading events:', error);
-                showToast('Error while loading events', 'error');
             });
-    }
 
             tasks.forEach(task => {
                 const taskDate = new Date(`${task.date}T00:00:00`);
@@ -142,8 +136,8 @@
                     raw: task
                 }]);
             });
-
-        } catch (error) {
+        }
+        catch (error) {
             console.error('Error loading calendar data:', error);
             showToast('Error while loading calendar data', 'error');
         }
@@ -153,8 +147,8 @@
 
     // Modal handlers
     const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
-const eventDetailsModal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
-const taskModal = new bootstrap.Modal(document.getElementById('taskModal'));
+    const eventDetailsModal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+    const taskModal = new bootstrap.Modal(document.getElementById('taskModal'));
 
     // Color picker
     document.querySelectorAll('.color-option').forEach(option => {
@@ -201,9 +195,9 @@ const taskModal = new bootstrap.Modal(document.getElementById('taskModal'));
         openEventForm();
     });
 
-document.getElementById('addTaskBtn').addEventListener('click', () => {
-    openTaskForm();
-});
+    document.getElementById('addTaskBtn').addEventListener('click', () => {
+        openTaskForm();
+    });
 
     function openTaskForm(task = null) {
         selectedTask = task;
@@ -233,7 +227,6 @@ document.getElementById('addTaskBtn').addEventListener('click', () => {
 
         taskModal.show();
     }
-}
 
     // Helper functions
     function openEventForm(event = null) {
@@ -286,7 +279,7 @@ document.getElementById('addTaskBtn').addEventListener('click', () => {
     }
 
     function showEventDetails(event) {
-        
+
 
         selectedEvent = {
             id: event.id,
@@ -339,15 +332,16 @@ document.getElementById('addTaskBtn').addEventListener('click', () => {
             ` : ''}
         </div>
     `;
+    }
     // Form submission
     document.getElementById('eventForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         await saveEvent();
     });
 
-document.getElementById('taskForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    await saveTask();
+    document.getElementById('taskForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        await saveTask();
     });
 
 
@@ -423,73 +417,74 @@ document.getElementById('taskForm').addEventListener('submit', async function (e
             console.error('Error saving event:', error);
             showToast('Грешка при запазване на събитието', 'error');
         }
-}
-async function saveTask() {
-    const taskIdValue = document.getElementById('taskId').value;
-    const isNew = !taskIdValue || taskIdValue === '0';
-
-    const task = {
-        id: isNew ? 0 : parseInt(taskIdValue, 10),
-        title: document.getElementById('taskTitle').value,
-        description: document.getElementById('taskDescription').value,
-        date: document.getElementById('taskDueDate').value, // matches UserTask.Date
-        importance: document.getElementById('taskPriority').value, // Low/Medium/High
-        isCompleted: document.getElementById('taskStatus').value === 'true',
-        color: document.getElementById('taskColor').value
-    };
-
-    const endpoint = isNew ? '/api/tasks/add' : '/api/tasks/replace';
-    const method = isNew ? 'POST' : 'PUT';
-
-    try {
-        const response = await fetch(endpoint, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(task)
-        });
-
-        if (response.ok) {
-            const result = isNew ? await response.json() : task.id;
-
-            const start = new Date(`${task.date}T00:00:00`);
-            const end = new Date(`${task.date}T23:59:59`);
-
-            if (isNew) {
-                calendar.createEvents([{
-                    id: `task-${result}`,
-                    calendarId: '2',
-                    title: task.title,
-                    category: 'task',
-                    start,
-                    end,
-                    isAllDay: true,
-                    backgroundColor: task.color,
-                    borderColor: task.color,
-                    raw: task
-                }]);
-            } else {
-                calendar.updateEvent(`task-${task.id}`, '2', {
-                    title: task.title,
-                    start,
-                    end,
-                    isAllDay: true,
-                    backgroundColor: task.color,
-                    borderColor: task.color,
-                    raw: task
-                });
-            }
-
-            taskModal.hide();
-            showToast(isNew ? 'Task created successfully!' : 'Task updated successfully!', 'success');
-        } else {
-            const errorText = await response.text();
-            showToast(`Error saving task: ${errorText}`, 'error');
-        }
-    } catch (error) {
-        console.error('Error saving task:', error);
-        showToast('Error saving task', 'error');
     }
-}
+
+    async function saveTask() {
+        const taskIdValue = document.getElementById('taskId').value;
+        const isNew = !taskIdValue || taskIdValue === '0';
+
+        const task = {
+            id: isNew ? 0 : parseInt(taskIdValue, 10),
+            title: document.getElementById('taskTitle').value,
+            description: document.getElementById('taskDescription').value,
+            date: document.getElementById('taskDueDate').value, // matches UserTask.Date
+            importance: document.getElementById('taskPriority').value, // Low/Medium/High
+            isCompleted: document.getElementById('taskStatus').value === 'true',
+            color: document.getElementById('taskColor').value
+        };
+
+        const endpoint = isNew ? '/api/tasks/add' : '/api/tasks/replace';
+        const method = isNew ? 'POST' : 'PUT';
+
+        try {
+            const response = await fetch(endpoint, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(task)
+            });
+
+            if (response.ok) {
+                const result = isNew ? await response.json() : task.id;
+
+                const start = new Date(`${task.date}T00:00:00`);
+                const end = new Date(`${task.date}T23:59:59`);
+
+                if (isNew) {
+                    calendar.createEvents([{
+                        id: `task-${result}`,
+                        calendarId: '2',
+                        title: task.title,
+                        category: 'task',
+                        start,
+                        end,
+                        isAllDay: true,
+                        backgroundColor: task.color,
+                        borderColor: task.color,
+                        raw: task
+                    }]);
+                } else {
+                    calendar.updateEvent(`task-${task.id}`, '2', {
+                        title: task.title,
+                        start,
+                        end,
+                        isAllDay: true,
+                        backgroundColor: task.color,
+                        borderColor: task.color,
+                        raw: task
+                    });
+                }
+
+                taskModal.hide();
+                showToast(isNew ? 'Task created successfully!' : 'Task updated successfully!', 'success');
+            } else {
+                const errorText = await response.text();
+                showToast(`Error saving task: ${errorText}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error saving task:', error);
+            showToast('Error saving task', 'error');
+        }
+    }
     function showEventDetails(event) {
         selectedEvent = {
             id: event.id,
@@ -592,15 +587,15 @@ async function saveTask() {
             });
 
             if (response.ok) {
-                calendar.deleteEvent(eventId, '1'); 
+                calendar.deleteEvent(eventId, '1');
                 eventModal.hide();
                 eventDetailsModal.hide();
                 showToast('Event was deleted successfully!', 'success');
 
-                
+
                 setTimeout(() => {
                     window.location.reload();
-                }, 1000); 
+                }, 1000);
             } else {
                 const errorText = await response.text();
                 showToast(`Error while deleting event: ${errorText}`, 'error');
@@ -626,7 +621,7 @@ async function saveTask() {
                 MeetingLink: '',
                 IsInPerson: false,
                 Color: '#007bff'
-            };  
+            };
 
             // Save to server
             fetch('/api/calendarapi/add', {
@@ -727,7 +722,7 @@ async function saveTask() {
         const hours = String(dt.getHours()).padStart(2, '0');
         const minutes = String(dt.getMinutes()).padStart(2, '0');
         const seconds = String(dt.getSeconds()).padStart(2, '0');
-        
+
         // Format as local datetime string similar to input format: "YYYY-MM-DDTHH:mm:ss"
         return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     }

@@ -10,6 +10,7 @@ public class UserTaskDto
     public string? Color { get; set; }
     public Importance Importance { get; set; } = Importance.Medium;
     public bool IsCompleted { get; set; } = false;
+    public DateOnly Date { get; set; }
 
     public static UserTaskDto FromTask(UserTask task)
     {
@@ -20,7 +21,8 @@ public class UserTaskDto
             Description = task.Description,
             Color = task.Color,
             Importance = task.Importance,
-            IsCompleted = task.IsCompleted
+            IsCompleted = task.IsCompleted,
+            Date = task.Date 
         };
     }
 
@@ -34,7 +36,9 @@ public class UserTaskDto
             Color = this.Color,
             Importance = this.Importance,
             IsCompleted = this.IsCompleted,
+            Date = this.Date,
             UserId = userId
+
         };
     }
 }
